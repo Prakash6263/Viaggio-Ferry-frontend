@@ -1,13 +1,120 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.ck-editor__editable {
+  min-height: 400px;
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 15px !important;
+}
+.ck.ck-editor {
+  border-radius: 8px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.tab-button.active { color: #fff !important; }
+
+       
+                  #list-view, #kanban-view {
+            display: none;
+        }
+        #list-view.active, #kanban-view.active {
+            display: block;
+        }
+         .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .close-button {
+            color: #fff;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .tab-container {
+            overflow: hidden;
+         border-bottom:1px solid #ddd;
+        }
+        .tab-container button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 14px;
+            transition: 0.3s;
+            font-size: 14px;
+            color:var(--text-color);
+        }
+        
+        .tab-container button.active {
+               color: var(--text-color);
+    background: linear-gradient(90deg, #00B5AD, #00D2CB);
+    border-color: #ddd !important;
+    border-radius: 5px 5px 0px 0px !important;
+        }
+        /* .tab-content {
+            display: none;
+          
+           
+            border-top: none;
+        } */
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        #add-user-btn {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #add-user-btn:hover {
+            background-color: #218838;
+        }
+
+
+
+        /* Make sure modal is above the dark backdrop */
+.modal {
+  z-index: 1060 !important;
+}
+
+/* Keep the backdrop below the modal */
+.modal-backdrop {
+  z-index: 1050 !important; /* or even 1040 */
 }

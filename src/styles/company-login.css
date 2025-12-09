@@ -1,0 +1,217 @@
+.company-login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-card {
+  background: var(--info-card);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 6px 20px;
+  height: 100%;
+}
+
+.contact-card h4 {
+  color: #002b5c;
+  margin-bottom: 1.5rem;
+}
+
+.contact-card .form-label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.contact-card .form-control {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.contact-card .form-control:focus {
+  border-color: #004aad;
+  box-shadow: 0 0 0 0.2rem rgba(0, 74, 173, 0.25);
+}
+
+.contact-card .btn-primary-navy {
+  background-color: #004aad;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.contact-card .btn-primary-navy:hover {
+  background-color: #003380;
+}
+
+.contact-card .btn-primary-navy:disabled {
+  background-color: #b3d9ff;
+  cursor: not-allowed;
+}
+
+.alert {
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.spinner-border-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Hero Section */
+.hero1 {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 60px 20px 40px;
+  text-align: center;
+}
+
+.hero1 h3 {
+  color: #002b5c;
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+/* Features Section */
+.features {
+  background-color: #f9f9f9;
+}
+
+/* Footer Styles */
+footer {
+  background-color: #002b5c;
+  color: #fff;
+  margin-top: auto;
+}
+
+.footer-top {
+  padding: 40px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-title {
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.footer-link {
+  display: block;
+  color: #ccc;
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #fff;
+}
+
+.social a {
+  color: #fff;
+  font-size: 1.5rem;
+  transition: color 0.3s ease;
+}
+
+.social a:hover {
+  color: #4aadff;
+}
+
+.footer-bottom {
+  background-color: #001a3d;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Navbar */
+.headback {
+  background-color: #f9f9f9;
+}
+
+.btn-turquoise {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+}
+
+.btn-turquoise:hover {
+  background-color: #138496;
+  color: white;
+}
+
+.btn-primary-navy {
+  background-color: #004aad;
+  color: white;
+  border: none;
+}
+
+.btn-primary-navy:hover {
+  background-color: #003380;
+  color: white;
+}
+
+.btn-outline-navy {
+  color: #004aad;
+  border: 2px solid #004aad;
+}
+
+.btn-outline-navy:hover {
+  background-color: #004aad;
+  color: white;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #004aad;
+  padding: 0.5rem;
+}
+
+.theme-toggle:hover {
+  color: #002b5c;
+}
+
+/* Dark Mode */
+html[data-theme="dark"] {
+  --info-card: #2a2a2a;
+  --bg: #1a1a1a;
+  --text: #fff;
+}
+
+html[data-theme="dark"] .contact-card .form-label {
+  color: #e0e0e0;
+}
+
+html[data-theme="dark"] .hero1 {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+}
+
+html[data-theme="dark"] .hero1 h3 {
+  color: #fff;
+}
+
+html[data-theme="dark"] .features {
+  background-color: #1a1a1a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero1 h3 {
+    font-size: 1.5rem;
+  }
+
+  .contact-card {
+    padding: 20px;
+  }
+
+  footer {
+    font-size: 0.9rem;
+  }
+}
