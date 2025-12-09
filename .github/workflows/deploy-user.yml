@@ -1,0 +1,43 @@
+name: Deploy User Site
+
+on:
+  push:
+    branches:
+      - main      # change if your main branch name is different
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build user app
+        run: CI=false npm run build   # CI=false so warnings don't break build
+
+      - name: Prepare SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
+
+      - name: Deploy build to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          rsync -avz --delete \
+            ./build/ ${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/
