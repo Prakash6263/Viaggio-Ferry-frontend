@@ -241,7 +241,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Login Page */}
+        {/* Logins Page */}
         <Route path="/company-login" element={<PublicRoute element={<CompanyLogin />} />} />
 
         {/* Dashboard Page */}

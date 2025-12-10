@@ -1,9 +1,9 @@
-name: Deploy User Site
+name: Deploy Company Dashboard
 
 on:
   push:
     branches:
-      - main      # change if your main branch name is different
+      - main      # change if your branch is different
 
 jobs:
   build-and-deploy:
@@ -21,8 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build user app
-        run: CI=false npm run build   # CI=false so warnings don't break build
+      - name: Build app
+        # disable CI error-as-warning if needed
+        run: CI=false npm run build
 
       - name: Prepare SSH
         env:
@@ -39,5 +40,4 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
         run: |
-          rsync -avz --delete \
-            ./build/ ${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/
+          rsync -avz --delete ./build/ ${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/
