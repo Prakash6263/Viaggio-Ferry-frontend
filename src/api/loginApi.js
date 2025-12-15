@@ -38,6 +38,7 @@ export const loginApi = {
   logout: () => {
     localStorage.removeItem("authToken")
     localStorage.removeItem("companyId")
+    localStorage.removeItem("companyProfile")
   },
 
   // Get stored token
@@ -48,5 +49,34 @@ export const loginApi = {
   // Check if user is authenticated
   isAuthenticated: () => {
     return !!localStorage.getItem("authToken")
+  },
+
+  // Fetch company profile
+  getCompanyProfile: async () => {
+    try {
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/companies/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch company profile")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Get Company Profile Error:", error.message)
+      throw error
+    }
   },
 }
