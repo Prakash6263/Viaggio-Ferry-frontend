@@ -4,10 +4,9 @@
  * Handles all API calls for fetching, updating, and publishing terms & conditions
  */
 
-// Get the base URL from environment or use a default
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3001"
+import { apiFetch, API_BASE_URL } from "./apiClient"
 
-
+export { API_BASE_URL }
 
 /**
  * Fetch published terms & conditions for a company
@@ -16,12 +15,8 @@ const BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3001"
  */
 export const getPublishedTerms = async (companyId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/terms-and-conditions/${companyId}/published`, {
+    const response = await apiFetch(`/api/terms-and-conditions/${companyId}/published`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
-      },
     })
 
     if (!response.ok) {
@@ -43,12 +38,8 @@ export const getPublishedTerms = async (companyId) => {
  */
 export const getDraftTerms = async (companyId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/terms-and-conditions/${companyId}/draft`, {
+    const response = await apiFetch(`/api/terms-and-conditions/${companyId}/draft`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
-      },
     })
 
     if (!response.ok) {
@@ -71,12 +62,8 @@ export const getDraftTerms = async (companyId) => {
  */
 export const saveDraftTerms = async (companyId, content) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/terms-and-conditions/${companyId}/draft`, {
+    const response = await apiFetch(`/api/terms-and-conditions/${companyId}/draft`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
-      },
       body: JSON.stringify({ content }),
     })
 
@@ -100,12 +87,8 @@ export const saveDraftTerms = async (companyId, content) => {
  */
 export const publishTerms = async (companyId, content) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/terms-and-conditions/${companyId}/publish`, {
+    const response = await apiFetch(`/api/terms-and-conditions/${companyId}/publish`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
-      },
       body: JSON.stringify({ content }),
     })
 
@@ -128,12 +111,8 @@ export const publishTerms = async (companyId, content) => {
  */
 export const getTermsVersionHistory = async (companyId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/terms-and-conditions/${companyId}/history`, {
+    const response = await apiFetch(`/api/terms-and-conditions/${companyId}/history`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
-      },
     })
 
     if (!response.ok) {

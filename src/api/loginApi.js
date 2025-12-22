@@ -1,14 +1,12 @@
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3001"
+import { apiFetch, AUTH_LOGOUT_EVENT } from "./apiClient"
 
 export const loginApi = {
   // Login with email and password
   login: async (email, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/companies/login`, {
+      const response = await apiFetch("/api/companies/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        skipAuth: true,
         body: JSON.stringify({ email, password }),
       })
 
@@ -39,6 +37,7 @@ export const loginApi = {
     localStorage.removeItem("authToken")
     localStorage.removeItem("companyId")
     localStorage.removeItem("companyProfile")
+    window.dispatchEvent(new CustomEvent(AUTH_LOGOUT_EVENT))
   },
 
   // Get stored token
@@ -59,12 +58,8 @@ export const loginApi = {
         throw new Error("No authentication token found")
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/companies/me`, {
+      const response = await apiFetch("/api/companies/me", {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
       })
 
       if (!response.ok) {
