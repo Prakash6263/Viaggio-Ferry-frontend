@@ -223,28 +223,17 @@ export default function CompanyProfile() {
               {/* Header with Logo and Edit Button */}
               <div className="d-flex justify-content-between align-items-start mb-4">
                 <div className="d-flex align-items-center gap-3">
-                  {companyData?.logoUrl ? (
-                    <img
-                      src={`${API_BASE_URL}${companyData?.logoUrl}`}
-                      alt={companyData.companyName}
-                      style={{
-                        width: "100px",
-                        height: "100px",
-                        objectFit: "contain",
-                        border: "1px solid #ddd",
-                        padding: "5px",
-                        borderRadius: "8px",
-                      }}
-                      crossOrigin="anonymous"
-                    />
-                  ) : (
-                    <div
-                      className="circle-avatar bg-primary d-flex align-items-center justify-content-center"
-                      style={{ width: "100px", height: "100px", fontSize: "24px" }}
-                    >
-                      {companyData.companyName?.substring(0, 3).toUpperCase() || "N/A"}
-                    </div>
-                  )}
+{companyData?.logoUrl ? (
+  <img
+    src={`${API_BASE_URL}${companyData.logoUrl}`}
+    alt={companyData.companyName || "Company"}
+  />
+) : (
+  <div className="circle-avatar">
+    {(companyData?.companyName || "NA").substring(0, 2).toUpperCase()}
+  </div>
+)}
+
                   <div>
                     <h2 className="mb-1">{companyData.companyName || "N/A"}</h2>
                     <p className="text-muted mb-0">Registration: {companyData.registrationNumber || "N/A"}</p>
