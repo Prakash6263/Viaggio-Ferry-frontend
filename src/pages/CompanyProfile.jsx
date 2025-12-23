@@ -9,7 +9,8 @@ import { CirclesWithBar } from "react-loader-spinner"
 
 export default function CompanyProfile() {
   const navigate = useNavigate()
-  const [companyData, setCompanyData] = useState(null)
+ const [companyData, setCompanyData] = useState({})
+
   const [showLoader, setShowLoader] = useState(true)
   const [error, setError] = useState(null)
 
@@ -222,9 +223,9 @@ export default function CompanyProfile() {
               {/* Header with Logo and Edit Button */}
               <div className="d-flex justify-content-between align-items-start mb-4">
                 <div className="d-flex align-items-center gap-3">
-                  {companyData.logoUrl ? (
+                  {companyData?.logoUrl ? (
                     <img
-                      src={`${API_BASE_URL}${companyData.logoUrl}`}
+                      src={`${API_BASE_URL}${companyData?.logoUrl}`}
                       alt={companyData.companyName}
                       style={{
                         width: "100px",
