@@ -65,6 +65,7 @@ import AccountingPeriodsPage from "./pages/AccountingPeriods"
 
 //settings
 import CompanyProfile from "./pages/CompanyProfile"
+import CompanyEditProfile from "./pages/EditCompanyProfile"
 import CompanyProfileList from "./pages/CompanyProfileList"
 import RolePermission from "./pages/RolePermission"
 import AddGroupPermission from "./pages/AddGroupPermission"
@@ -88,6 +89,7 @@ export default function App() {
 
         {/* Administration */}
         <Route path="/company/administration/add-user" element={<AdminAddUser />} />
+        <Route path="/company/administration/edit-profile" element={<CompanyEditProfile />} />
         <Route path="/company/administration/user-list" element={<AdminUserList />} />
         <Route path="/company/administration/currency" element={<CompanyCurrencyList />} />
         <Route path="/company/administration/add-currency" element={<CompanyAddCurrency />} />

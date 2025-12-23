@@ -1,12 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import Header from "../components/layout/Header"
 import { Sidebar } from "../components/layout/Sidebar"
 import { companyApi, API_BASE_URL } from "../api/companyapi"
 import { CirclesWithBar } from "react-loader-spinner"
 
 export default function CompanyProfile() {
+  const navigate = useNavigate()
   const [companyData, setCompanyData] = useState(null)
   const [showLoader, setShowLoader] = useState(true)
   const [error, setError] = useState(null)
@@ -115,31 +117,7 @@ export default function CompanyProfile() {
   }
 
   const handleOpenCompanyModal = () => {
-    if (companyData) {
-      setCompanyFormData({
-        companyName: companyData.companyName || "",
-        taxVatNumber: companyData.taxVatNumber || "",
-        dateEstablished: companyData.dateEstablished ? companyData.dateEstablished.split("T")[0] : "",
-        address: companyData.address || "",
-        city: companyData.city || "",
-        country: companyData.country || "",
-        postalCode: companyData.postalCode || "",
-        mainPhoneNumber: companyData.mainPhoneNumber || "",
-        emailAddress: companyData.emailAddress || "",
-        website: companyData.website || "",
-        defaultCurrency: companyData.defaultCurrency || "",
-        timeZone: companyData.timeZone || "",
-        workingHours: companyData.workingHours || "",
-        facebookUrl: companyData.facebookUrl || "",
-        instagramUrl: companyData.instagramUrl || "",
-        whatsappNumber: companyData.whatsappNumber || "",
-        linkedinProfile: companyData.linkedinProfile || "",
-        skypeId: companyData.skypeId || "",
-      })
-      setCompanyLogo(null)
-      setCompanyLogoPreview(companyData.logoUrl ? `${API_BASE_URL}${companyData.logoUrl}` : "")
-    }
-    setShowCompanyModal(true)
+    navigate("/company/administration/edit-profile")
   }
 
   const handleCompanyInputChange = (e) => {
@@ -224,15 +202,6 @@ export default function CompanyProfile() {
           {/* Top Bar */}
           <div className="top-bar d-flex justify-content-between align-items-center">
             <div></div>
-            {/* Right icons – bars (cards) active, grid (list) normal */}
-            <div>
-              {/* <Link to="/company/settings/company-profile" className="actives me-3">
-                <i className="fa-solid fa-bars fa-lg" />
-              </Link>
-              <Link to="/company/settings/company-profile-list">
-                <i className="fa-solid fa-th-large fa-lg" />
-              </Link> */}
-            </div>
           </div>
 
           {showLoader ? (
@@ -249,127 +218,253 @@ export default function CompanyProfile() {
               />
             </div>
           ) : (
-            <div className="row g-4">
-              {error ? (
-                <div className="col-md-3">
-                  <div className="card p-3 card-purple text-center">
-                    <p className="text-danger">Error: {error}</p>
-                  </div>
-                </div>
-              ) : companyData ? (
-                <div className="col-md-3">
-                  <div className="card p-3 card-purple text-center">
-                    {companyData.logoUrl ? (
-                      <img
-                        src={`${API_BASE_URL}${companyData.logoUrl}`}
-                        alt={companyData.companyName}
-                        className="mb-3"
-                        style={{
-                          width: "80px",
-                          height: "80px",
-                          objectFit: "contain",
-                          margin: "0 auto",
-                          display: "block",
-                        }}
-                        crossOrigin="anonymous"
-                      />
-                    ) : (
-                      <div className="circle-avatar bg-primary">
-                        {companyData.companyName?.substring(0, 3).toUpperCase() || "N/A"}
-                      </div>
-                    )}
-                    <h6>{companyData.companyName || "N/A"}</h6>
-                    <p className="text-muted mb-1">Reg. No: {companyData.registrationNumber || "N/A"}</p>
-                    <span className="badge bg-success status-badge">Company Profile</span>
-                    <div className="mt-3 d-flex justify-content-center gap-2">
-                      <button className="btn btn-sm btn-primary" onClick={handleOpenCompanyModal}>
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="col-md-3">
-                <div className="card p-3 card-purple text-center">
-                  {whoWeAreData?.image ? (
+            <div className="card p-4" style={{ backgroundColor: "#f8f9fa" }}>
+              {/* Header with Logo and Edit Button */}
+              <div className="d-flex justify-content-between align-items-start mb-4">
+                <div className="d-flex align-items-center gap-3">
+                  {companyData.logoUrl ? (
                     <img
-                      src={`${API_BASE_URL}${whoWeAreData.image}`}
-                      alt="Who We Are"
-                      className="mb-3"
+                      src={`${API_BASE_URL}${companyData.logoUrl}`}
+                      alt={companyData.companyName}
                       style={{
-                        width: "80px",
-                        height: "80px",
-                        objectFit: "cover",
-                        margin: "0 auto",
-                        display: "block",
-                        borderRadius: "50%",
+                        width: "100px",
+                        height: "100px",
+                        objectFit: "contain",
+                        border: "1px solid #ddd",
+                        padding: "5px",
+                        borderRadius: "8px",
                       }}
                       crossOrigin="anonymous"
                     />
                   ) : (
-                    <div className="circle-avatar bg-primary">OVL</div>
+                    <div
+                      className="circle-avatar bg-primary d-flex align-items-center justify-content-center"
+                      style={{ width: "100px", height: "100px", fontSize: "24px" }}
+                    >
+                      {companyData.companyName?.substring(0, 3).toUpperCase() || "N/A"}
+                    </div>
                   )}
-                  <h6>Who Are We</h6>
+                  <div>
+                    <h2 className="mb-1">{companyData.companyName || "N/A"}</h2>
+                    <p className="text-muted mb-0">Registration: {companyData.registrationNumber || "N/A"}</p>
+                    <span className="badge bg-success mt-2">{companyData.status || "Active"}</span>
+                  </div>
+                </div>
+                <button className="btn btn-primary" onClick={handleOpenCompanyModal}>
+                  <i className="fa-solid fa-edit me-2"></i>Edit
+                </button>
+              </div>
 
-                  <p className="text-muted mb-1">Last Update</p>
-                  <span className="badge bg-success status-badge">{formatDate(whoWeAreData?.updatedAt)}</span>
-                  <div className="mt-3">
-                    <button className="btn btn-sm btn-primary" onClick={handleOpenWhoWeAreModal}>
-                      Edit
-                    </button>
+              <hr className="my-4" />
+
+              {/* Company Information Grid */}
+              <div className="row g-4">
+                {/* Left Column */}
+                <div className="col-lg-6">
+                  <h5 className="mb-3">General Information</h5>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Company Name</label>
+                    <p className="mb-0">{companyData.companyName || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Date Established</label>
+                    <p className="mb-0">{formatDate(companyData.dateEstablished) || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Registration Number</label>
+                    <p className="mb-0">{companyData.registrationNumber || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Default Currency</label>
+                    <p className="mb-0">{companyData.defaultCurrency || "N/A"}</p>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="col-lg-6">
+                  <h5 className="mb-3">Contact Information</h5>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Email Address</label>
+                    <p className="mb-0">
+                      <a href={`mailto:${companyData.emailAddress}`}>{companyData.emailAddress || "N/A"}</a>
+                    </p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Phone Number</label>
+                    <p className="mb-0">{companyData.mainPhoneNumber || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Website</label>
+                    <p className="mb-0">
+                      {companyData.website ? (
+                        <a href={companyData.website} target="_blank" rel="noopener noreferrer">
+                          {companyData.website}
+                        </a>
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Card 2 */}
-              <div className="col-md-3">
-                <div className="card p-3 card-purple text-center">
-                  <div className="circle-avatar bg-success">MLI</div>
-                  <h6>Our Vision</h6>
-                  <p className="text-muted mb-1">Canada</p>
-                  <span className="badge bg-warning text-dark status-badge">Pending</span>
-                  <div className="mt-3">
-                    <button className="btn btn-sm btn-primary">Edit</button>
+              <hr className="my-4" />
+
+              {/* Address Section */}
+              <div className="row g-4">
+                <div className="col-lg-6">
+                  <h5 className="mb-3">Address</h5>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Street Address</label>
+                    <p className="mb-0">{companyData.address || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">City</label>
+                    <p className="mb-0">{companyData.city || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Country</label>
+                    <p className="mb-0">{companyData.country || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Postal Code</label>
+                    <p className="mb-0">{companyData.postalCode || "N/A"}</p>
+                  </div>
+                </div>
+
+                {/* Social Media Section */}
+                <div className="col-lg-6">
+                  <h5 className="mb-3">Social Media & Other Links</h5>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">LinkedIn</label>
+                    <p className="mb-0">
+                      {companyData.linkedinProfile ? (
+                        <a href={companyData.linkedinProfile} target="_blank" rel="noopener noreferrer">
+                          {companyData.linkedinProfile}
+                        </a>
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Facebook</label>
+                    <p className="mb-0">
+                      {companyData.facebookUrl ? (
+                        <a href={companyData.facebookUrl} target="_blank" rel="noopener noreferrer">
+                          {companyData.facebookUrl}
+                        </a>
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Instagram</label>
+                    <p className="mb-0">
+                      {companyData.instagramUrl ? (
+                        <a href={companyData.instagramUrl} target="_blank" rel="noopener noreferrer">
+                          {companyData.instagramUrl}
+                        </a>
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">WhatsApp</label>
+                    <p className="mb-0">
+                      {companyData.whatsappNumber ? (
+                        <a
+                          href={`https://wa.me/${companyData.whatsappNumber}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {companyData.whatsappNumber}
+                        </a>
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Card 3 */}
-              <div className="col-md-3">
-                <div className="card p-3 card-purple text-center">
-                  <div className="circle-avatar bg-warning">SBF</div>
-                  <h6>Our Mission</h6>
-                  <p className="text-muted mb-1">UK</p>
-                  <span className="badge bg-success status-badge">Active</span>
-                  <div className="mt-3">
-                    <button className="btn btn-sm btn-primary">Edit</button>
-                  </div>
+              <hr className="my-4" />
+
+              {/* Vision, Mission, Purpose Section */}
+              <div className="row g-4">
+                <div className="col-lg-4">
+                  <h5 className="mb-3">Vision</h5>
+                  <p className="mb-0">{companyData.vision || "N/A"}</p>
+                </div>
+                <div className="col-lg-4">
+                  <h5 className="mb-3">Mission</h5>
+                  <p className="mb-0">{companyData.mission || "N/A"}</p>
+                </div>
+                <div className="col-lg-4">
+                  <h5 className="mb-3">Purpose</h5>
+                  <p className="mb-0">{companyData.purpose || "N/A"}</p>
                 </div>
               </div>
 
-              {/* Card 4 */}
-              <div className="col-md-3">
-                <div className="card p-3 card-purple text-center">
-                  <div className="circle-avatar bg-info">GSC</div>
-                  <h6>Our Purpose</h6>
-                  <p className="text-muted mb-1">Australia</p>
-                  <span className="badge bg-success status-badge">Active</span>
-                  <div className="mt-3">
-                    <button className="btn btn-sm btn-primary">Edit</button>
+              <hr className="my-4" />
+
+{/* Who We Are Section */}
+<div className="row g-4">
+  <div className="col-lg-12">
+    <h5 className="mb-3">Who We Are</h5>
+
+    {companyData.whoWeAreImage ? (
+      <div className="mb-3">
+        <img
+          src={`${API_BASE_URL}${companyData.whoWeAreImage}`}
+          alt="Who We Are"
+          style={{
+            width: "100%",
+            maxHeight: "300px",
+            objectFit: "cover",
+            borderRadius: "8px",
+            border: "1px solid #ddd",
+          }}
+          crossOrigin="anonymous"
+        />
+      </div>
+    ) : (
+      <p className="text-muted">No Who We Are image uploaded</p>
+    )}
+
+    <p>{companyData.whoWeAre || "No description available"}</p>
+  </div>
+</div>
+
+
+              {/* Additional Information */}
+              <div className="row g-4">
+                <div className="col-lg-6">
+                  <h5 className="mb-3">Additional Information</h5>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Working Hours</label>
+                    <p className="mb-0">{companyData.workingHours || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Status</label>
+                    <p className="mb-0">
+                      <span className={`badge ${companyData.status === "approved" ? "bg-success" : "bg-warning"}`}>
+                        {companyData.status || "N/A"}
+                      </span>
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Card 5 */}
-              <div className="col-md-3">
-                <div className="card p-3 card-purple text-center">
-                  <div className="circle-avatar bg-danger">AP</div>
-                  <h6>Atlantic Passage</h6>
-                  <p className="text-muted mb-1">Germany</p>
-                  <span className="badge bg-warning text-dark status-badge">Pending</span>
-                  <div className="mt-3">
-                    <button className="btn btn-sm btn-primary">Edit</button>
+                <div className="col-lg-6">
+                  <h5 className="mb-3">Dates</h5>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Created At</label>
+                    <p className="mb-0">{formatDate(companyData.createdAt) || "N/A"}</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-600">Last Updated</label>
+                    <p className="mb-0">{formatDate(companyData.updatedAt) || "N/A"}</p>
                   </div>
                 </div>
               </div>
