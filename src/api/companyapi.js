@@ -58,30 +58,7 @@ export const companyApi = {
     }
   },
 
-  // Fetch Who We Are data
-  getWhoWeAre: async () => {
-    try {
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        throw new Error("No authentication token found")
-      }
 
-      const response = await apiFetch("/api/who-we-are/me", {
-        method: "GET",
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to fetch Who We Are data")
-      }
-
-      const data = await response.json()
-      return data
-    } catch (error) {
-      console.error("Get Who We Are Error:", error.message)
-      throw error
-    }
-  },
 
   // Update Who We Are data (supports image upload via FormData)
   updateWhoWeAre: async (formData) => {

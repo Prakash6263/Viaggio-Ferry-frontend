@@ -59,19 +59,10 @@ export default function CompanyProfile() {
       }
     }
 
-    const fetchWhoWeAre = async () => {
-      try {
-        const response = await companyApi.getWhoWeAre()
-        if (response.success) {
-          setWhoWeAreData(response.data)
-        }
-      } catch (err) {
-        console.error("Error fetching Who We Are:", err)
-      }
-    }
+
 
     fetchCompanyProfile()
-    fetchWhoWeAre()
+
 
     const timer = setTimeout(() => {
       setShowLoader(false)
@@ -225,7 +216,7 @@ export default function CompanyProfile() {
                 <div className="d-flex align-items-center gap-3">
 {companyData?.logoUrl ? (
   <img
-    src={`${API_BASE_URL}${companyData.logoUrl}`}
+    src={`https://api.voyagian.com/${companyData.logoUrl}`}
     alt={companyData.companyName || "Company"}
   />
 ) : (
@@ -408,7 +399,7 @@ export default function CompanyProfile() {
     {companyData.whoWeAreImage ? (
       <div className="mb-3">
         <img
-          src={`${API_BASE_URL}${companyData.whoWeAreImage}`}
+          src={`https://api.voyagian.com${companyData.whoWeAreImage}`}
           alt="Who We Are"
           style={{
             width: "100%",
@@ -417,7 +408,7 @@ export default function CompanyProfile() {
             borderRadius: "8px",
             border: "1px solid #ddd",
           }}
-          crossOrigin="anonymous"
+         
         />
       </div>
     ) : (

@@ -122,11 +122,19 @@ export default function Header() {
         <li className="nav-item dropdown">
           <a href="#" className="user-link nav-link" data-bs-toggle="dropdown" onClick={(e) => e.preventDefault()}>
             <span className="user-img">
-              <img
-                src={companyLogoUrl || avatar || "/placeholder.svg"}
-                alt={companyProfile?.companyName || "img"}
-                className="profilesidebar"
-              />
+<img
+  src={
+    companyProfile?.adminProfileImage
+      ? `${API_BASE_URL}${companyProfile.adminProfileImage}`
+      : avatar
+  }
+  alt={companyProfile?.companyName || "Admin Profile"}
+  className="profilesidebar"
+  onError={(e) => {
+    e.currentTarget.src = avatar;
+  }}
+/>
+
               <span className="animate-circle"></span>
             </span>
             <span className="user-content">
