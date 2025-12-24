@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { PublicRoute } from "./components/ProtectedRoute"
 import AuthLogoutHandler from "./components/AuthLogoutHandler"
 import CompanyLogin from "./pages/CompanyLogin" // Import CompanyLogin
+import CompanyForgotPassword from "./pages/CompanyForgotPassword" // Import forgot password page
 
 // Administration
 import AdminUserList from "./pages/AdminUserList"
@@ -83,6 +84,7 @@ export default function App() {
       <Routes>
         {/* Logins Page */}
         <Route path="/company-login" element={<PublicRoute element={<CompanyLogin />} />} />
+        <Route path="/company-forgot-password" element={<PublicRoute element={<CompanyForgotPassword />} />} />
 
         {/* Dashboard Page */}
         <Route path="/company/dashboard" element={<Dashboard />} />

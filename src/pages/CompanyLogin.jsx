@@ -51,6 +51,10 @@ export default function CompanyLogin() {
     }
   }
 
+  const toggleTheme = () => {
+    // Implement theme toggle logic here
+  }
+
   return (
     <div className="company-login-wrapper">
       {/* Navbar */}
@@ -98,8 +102,6 @@ export default function CompanyLogin() {
         </div>
       </nav> */}
 
-
-
       {/* Login Form Section */}
       <section className="features py-5">
         <div className="container-lg">
@@ -144,6 +146,16 @@ export default function CompanyLogin() {
                     />
                   </div>
 
+                  <div className="text-end mb-3">
+                    <a
+                      href="/company-forgot-password"
+                      className="text-decoration-none fw-500"
+                      style={{ color: "#004aad" }}
+                    >
+                      Forgot Password?
+                    </a>
+                  </div>
+
                   <button type="submit" className="btn btn-primary-navy w-100" disabled={loading}>
                     {loading ? (
                       <>
@@ -160,9 +172,6 @@ export default function CompanyLogin() {
           </div>
         </div>
       </section>
-
     </div>
   )
 }
-
-

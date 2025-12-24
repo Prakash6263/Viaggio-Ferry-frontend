@@ -71,12 +71,7 @@ export default function CompanyProfile() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleOpenWhoWeAreModal = () => {
-    setWhoWeAreText(whoWeAreData?.text || "")
-    setWhoWeAreImage(null)
-    setWhoWeAreImagePreview(whoWeAreData?.image ? `${API_BASE_URL}${whoWeAreData.image}` : "")
-    setShowWhoWeAreModal(true)
-  }
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]

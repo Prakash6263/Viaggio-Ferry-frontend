@@ -53,6 +53,39 @@
   cursor: not-allowed;
 }
 
+.contact-card .btn-outline-secondary {
+  color: #004aad;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.contact-card .btn-outline-secondary:hover {
+  background-color: #f5f5f5;
+  border-color: #004aad;
+  color: #004aad;
+}
+
+/* Added input-group styling for password toggle */
+.input-group .btn-outline-secondary {
+  border-left: none;
+  border-right: 1px solid #dee2e6;
+}
+
+.input-group .form-control:focus + .btn-outline-secondary,
+.input-group .btn-outline-secondary:focus {
+  border-color: #004aad;
+  color: #004aad;
+}
+
+.contact-card .text-muted {
+  color: #6c757d;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .alert {
   border-radius: 8px;
   margin-bottom: 1.5rem;
