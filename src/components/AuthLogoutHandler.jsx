@@ -14,15 +14,20 @@ export default function AuthLogoutHandler() {
 
   useEffect(() => {
     const handleLogout = () => {
-      // Navigate to login page
-      navigate("/company-login", { replace: true })
+      console.log("[v0] AuthLogoutHandler received logout event, navigating to login")
+      setTimeout(() => {
+        navigate("/company-login", { replace: true })
+      }, 100)
     }
 
-    // Listen for logout events
-    window.addEventListener(AUTH_LOGOUT_EVENT, handleLogout)
+    const listener = handleLogout
+    window.addEventListener(AUTH_LOGOUT_EVENT, listener)
+
+    console.log("[v0] AuthLogoutHandler mounted and listening for logout events")
 
     return () => {
-      window.removeEventListener(AUTH_LOGOUT_EVENT, handleLogout)
+      window.removeEventListener(AUTH_LOGOUT_EVENT, listener)
+      console.log("[v0] AuthLogoutHandler unmounted and listener removed")
     }
   }, [navigate])
 

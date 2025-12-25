@@ -111,7 +111,7 @@ export default function Header() {
       {/* Header Menu (right) */}
       <ul className="nav nav-tabs user-menu">
         <li className="nav-item">
-          <a href="https://voyagian.com/company-site" className="text-decoration-none">
+          <a href={companyProfile?.website || "https://voyagian.com/company-site"} className="text-decoration-none">
             <span className="btn btn-turquoise">
               <strong>Visit Site</strong>
             </span>

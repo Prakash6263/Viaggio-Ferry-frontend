@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { PublicRoute } from "./components/ProtectedRoute"
+import { PublicRoute, ProtectedRoute } from "./components/ProtectedRoute"
 import AuthLogoutHandler from "./components/AuthLogoutHandler"
 import CompanyLogin from "./pages/CompanyLogin" // Import CompanyLogin
 import CompanyForgotPassword from "./pages/CompanyForgotPassword" // Import forgot password page
@@ -87,77 +87,120 @@ export default function App() {
         <Route path="/company-forgot-password" element={<PublicRoute element={<CompanyForgotPassword />} />} />
 
         {/* Dashboard Page */}
-        <Route path="/company/dashboard" element={<Dashboard />} />
+        <Route path="/company/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
 
         {/* Administration */}
-        <Route path="/company/administration/add-user" element={<AdminAddUser />} />
-        <Route path="/company/administration/edit-profile" element={<CompanyEditProfile />} />
-        <Route path="/company/administration/user-list" element={<AdminUserList />} />
-        <Route path="/company/administration/currency" element={<CompanyCurrencyList />} />
-        <Route path="/company/administration/add-currency" element={<CompanyAddCurrency />} />
-        <Route path="/company/administration/taxes" element={<CompanyTaxesList />} />
-        <Route path="/company/administration/add-tax" element={<CompanyAddTax />} />
-        <Route path="/company/administration/contact-messages" element={<CompanyContactMessages />} />
-        <Route path="/company/administration/terms" element={<CompanyTerms />} />
-        <Route path="/company/administration/policies" element={<CompanyPoliciesEditor />} />
+        <Route path="/company/administration/add-user" element={<ProtectedRoute element={<AdminAddUser />} />} />
+        <Route
+          path="/company/administration/edit-profile"
+          element={<ProtectedRoute element={<CompanyEditProfile />} />}
+        />
+        <Route path="/company/administration/user-list" element={<ProtectedRoute element={<AdminUserList />} />} />
+        <Route path="/company/administration/currency" element={<ProtectedRoute element={<CompanyCurrencyList />} />} />
+        <Route
+          path="/company/administration/add-currency"
+          element={<ProtectedRoute element={<CompanyAddCurrency />} />}
+        />
+        <Route path="/company/administration/taxes" element={<ProtectedRoute element={<CompanyTaxesList />} />} />
+        <Route path="/company/administration/add-tax" element={<ProtectedRoute element={<CompanyAddTax />} />} />
+        <Route
+          path="/company/administration/contact-messages"
+          element={<ProtectedRoute element={<CompanyContactMessages />} />}
+        />
+        <Route path="/company/administration/terms" element={<ProtectedRoute element={<CompanyTerms />} />} />
+        <Route
+          path="/company/administration/policies"
+          element={<ProtectedRoute element={<CompanyPoliciesEditor />} />}
+        />
         {/* Ships and Trips */}
-        <Route path="/company/ship-trip/ships" element={<CompanyShipsList />} />
-        <Route path="/company/ship-trip/add-ship" element={<CompanyAddShip />} />
-        <Route path="/company/ship-trip/trips" element={<CompanyTripsList />} />
-        <Route path="/company/ship-trip/add-trip" element={<CompanyAddTrip />} />
+        <Route path="/company/ship-trip/ships" element={<ProtectedRoute element={<CompanyShipsList />} />} />
+        <Route path="/company/ship-trip/add-ship" element={<ProtectedRoute element={<CompanyAddShip />} />} />
+        <Route path="/company/ship-trip/trips" element={<ProtectedRoute element={<CompanyTripsList />} />} />
+        <Route path="/company/ship-trip/add-trip" element={<ProtectedRoute element={<CompanyAddTrip />} />} />
+
         {/* Partners */}
-        <Route path="/company/partner-management/promotions" element={<CompanyPromotionsList />} />
-        <Route path="/company/partner-management/add-promotion" element={<CompanyAddPromotion />} />
-        <Route path="/company/partners" element={<BusinessPartnersPage />} />
-        <Route path="/company/b2c-customers" element={<B2CCustomersPage />} />
-        <Route path="/company/salesmen" element={<SalesmenPage />} />
-        <Route path="/company/markup" element={<MarkupDiscountBoardPage />} />
-        <Route path="/company/markup/add-rule" element={<AddRulePage />} />
-        <Route path="/company/commission" element={<CommissionBoardPage />} />
-        <Route path="/company/commission/add" element={<AddCommissionPage />} />
+        <Route
+          path="/company/partner-management/promotions"
+          element={<ProtectedRoute element={<CompanyPromotionsList />} />}
+        />
+        <Route
+          path="/company/partner-management/add-promotion"
+          element={<ProtectedRoute element={<CompanyAddPromotion />} />}
+        />
+        <Route path="/company/partners" element={<ProtectedRoute element={<BusinessPartnersPage />} />} />
+        <Route path="/company/b2c-customers" element={<ProtectedRoute element={<B2CCustomersPage />} />} />
+        <Route path="/company/salesmen" element={<ProtectedRoute element={<SalesmenPage />} />} />
+        <Route path="/company/markup" element={<ProtectedRoute element={<MarkupDiscountBoardPage />} />} />
+        <Route path="/company/markup/add-rule" element={<ProtectedRoute element={<AddRulePage />} />} />
+        <Route path="/company/commission" element={<ProtectedRoute element={<CommissionBoardPage />} />} />
+        <Route path="/company/commission/add" element={<ProtectedRoute element={<AddCommissionPage />} />} />
 
         {/* Sales and Booking */}
-        <Route path="/company/pricelist" element={<PriceListPage />} />
-        <Route path="/company/ticketing-rules" element={<TicketingRulesPage />} />
-        <Route path="/company/add-ticket-rule" element={<AddTicketRulePage />} />
-        <Route path="/company/booking-and-tickets" element={<BookingAndTicketsPage />} />
-        <Route path="/company/excess-baggage-tickets" element={<ExcessBaggageTickets />} />
+        <Route path="/company/pricelist" element={<ProtectedRoute element={<PriceListPage />} />} />
+        <Route path="/company/ticketing-rules" element={<ProtectedRoute element={<TicketingRulesPage />} />} />
+        <Route path="/company/add-ticket-rule" element={<ProtectedRoute element={<AddTicketRulePage />} />} />
+        <Route path="/company/booking-and-tickets" element={<ProtectedRoute element={<BookingAndTicketsPage />} />} />
+        <Route path="/company/excess-baggage-tickets" element={<ProtectedRoute element={<ExcessBaggageTickets />} />} />
 
         {/* Checking and Boarding */}
-        <Route path="/company/passenger-checking" element={<PassengerCheckingPage />} />
-        <Route path="/company/cargo-checking" element={<CargoCheckingPage />} />
-        <Route path="/company/vehicle-checking" element={<VehicleCheckingPage />} />
-        <Route path="/company/cargo-boarding" element={<CargoBoardingPage />} />
-        <Route path="/company/passenger-boarding" element={<PassengerBoardingPage />} />
-        <Route path="/company/vehicle-boarding" element={<VehicleBoardingPage />} />
-        <Route path="/company/trip-completion" element={<TripCompletionPage />} />
+        <Route path="/company/passenger-checking" element={<ProtectedRoute element={<PassengerCheckingPage />} />} />
+        <Route path="/company/cargo-checking" element={<ProtectedRoute element={<CargoCheckingPage />} />} />
+        <Route path="/company/vehicle-checking" element={<ProtectedRoute element={<VehicleCheckingPage />} />} />
+        <Route path="/company/cargo-boarding" element={<ProtectedRoute element={<CargoBoardingPage />} />} />
+        <Route path="/company/passenger-boarding" element={<ProtectedRoute element={<PassengerBoardingPage />} />} />
+        <Route path="/company/vehicle-boarding" element={<ProtectedRoute element={<VehicleBoardingPage />} />} />
+        <Route path="/company/trip-completion" element={<ProtectedRoute element={<TripCompletionPage />} />} />
 
         {/* Finance */}
-        <Route path="/company/finance" element={<FinancePage />} />
-        <Route path="/company/finance/bank-cash-accounts" element={<BankAndCashAccountsPage />} />
-        <Route path="/company/finance/chart-of-accounts" element={<ChartOfAccountsPage />} />
-        <Route path="/company/finance/journal-entries" element={<JournalEntries />} />
-        <Route path="/company/finance/add-new-journal-entry" element={<AddNewJournalEntry />} />
-        <Route path="/company/finance/agent-top-up-deposits" element={<AgentTopup />} />
-        <Route path="/company/finance/add-topup" element={<AddTopup />} />
-        <Route path="/company/finance/payments-receipts" element={<PaymentsAndReceipts />} />
-        <Route path="/company/finance/add-internal-payment-receipt" element={<AddInternalPaymentReceipt />} />
-        <Route path="/company/finance/general-ledger" element={<GeneralLedger />} />
-        <Route path="/company/finance/trial-balance" element={<TrialBalance />} />
-        <Route path="/company/finance/accounting-periods" element={<AccountingPeriodsPage />} />
+        <Route path="/company/finance" element={<ProtectedRoute element={<FinancePage />} />} />
+        <Route
+          path="/company/finance/bank-cash-accounts"
+          element={<ProtectedRoute element={<BankAndCashAccountsPage />} />}
+        />
+        <Route
+          path="/company/finance/chart-of-accounts"
+          element={<ProtectedRoute element={<ChartOfAccountsPage />} />}
+        />
+        <Route path="/company/finance/journal-entries" element={<ProtectedRoute element={<JournalEntries />} />} />
+        <Route
+          path="/company/finance/add-new-journal-entry"
+          element={<ProtectedRoute element={<AddNewJournalEntry />} />}
+        />
+        <Route path="/company/finance/agent-top-up-deposits" element={<ProtectedRoute element={<AgentTopup />} />} />
+        <Route path="/company/finance/add-topup" element={<ProtectedRoute element={<AddTopup />} />} />
+        <Route
+          path="/company/finance/payments-receipts"
+          element={<ProtectedRoute element={<PaymentsAndReceipts />} />}
+        />
+        <Route
+          path="/company/finance/add-internal-payment-receipt"
+          element={<ProtectedRoute element={<AddInternalPaymentReceipt />} />}
+        />
+        <Route path="/company/finance/general-ledger" element={<ProtectedRoute element={<GeneralLedger />} />} />
+        <Route path="/company/finance/trial-balance" element={<ProtectedRoute element={<TrialBalance />} />} />
+        <Route
+          path="/company/finance/accounting-periods"
+          element={<ProtectedRoute element={<AccountingPeriodsPage />} />}
+        />
 
         {/* Settings */}
-        <Route path="/company/settings/company-profile" element={<CompanyProfile />} />
-        <Route path="/company/settings/company-profile-list" element={<CompanyProfileList />} />
-        <Route path="/company/settings/role-permission" element={<RolePermission />} />
-        <Route path="/company/settings/add-group-permission" element={<AddGroupPermission />} />
-        <Route path="/company/settings/port" element={<Port />} />
-        <Route path="/company/settings/add-port" element={<AddPort />} />
-        <Route path="/company/settings/cabin" element={<Cabin />} />
-        <Route path="/company/settings/add-cabin" element={<AddCabin />} />
-        <Route path="/company/settings/payload-type" element={<PayloadType />} />
+        <Route path="/company/settings/company-profile" element={<ProtectedRoute element={<CompanyProfile />} />} />
+        <Route
+          path="/company/settings/company-profile-list"
+          element={<ProtectedRoute element={<CompanyProfileList />} />}
+        />
+        <Route path="/company/settings/role-permission" element={<ProtectedRoute element={<RolePermission />} />} />
+        <Route
+          path="/company/settings/add-group-permission"
+          element={<ProtectedRoute element={<AddGroupPermission />} />}
+        />
+        <Route path="/company/settings/port" element={<ProtectedRoute element={<Port />} />} />
+        <Route path="/company/settings/add-port" element={<ProtectedRoute element={<AddPort />} />} />
+        <Route path="/company/settings/cabin" element={<ProtectedRoute element={<Cabin />} />} />
+        <Route path="/company/settings/add-cabin" element={<ProtectedRoute element={<AddCabin />} />} />
+        <Route path="/company/settings/payload-type" element={<ProtectedRoute element={<PayloadType />} />} />
 
-        <Route path="/company/system-alerts" element={<SystemAlerts />} />
+        <Route path="/company/system-alerts" element={<ProtectedRoute element={<SystemAlerts />} />} />
 
         {/* Redirect Root → Dashboard */}
         <Route path="/" element={<Navigate to="/company/dashboard" replace />} />
