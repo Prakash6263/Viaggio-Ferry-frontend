@@ -6,7 +6,6 @@ import { apiRequest } from "../../api/apiClient"
 
 export default function SupportMessagesTable() {
   const [messages, setMessages] = useState([])
-  const [filteredMessages, setFilteredMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedMessage, setSelectedMessage] = useState(null)
@@ -19,14 +18,6 @@ export default function SupportMessagesTable() {
   useEffect(() => {
     fetchMessages()
   }, [])
-
-  useEffect(() => {
-    if (statusFilter === "All") {
-      setFilteredMessages(messages)
-    } else {
-      setFilteredMessages(messages.filter((msg) => msg.status === statusFilter))
-    }
-  }, [messages, statusFilter])
 
   const fetchMessages = async () => {
     try {
@@ -61,11 +52,9 @@ export default function SupportMessagesTable() {
       if (response.success) {
         setReplySuccess(true)
         setReplyText("")
-        // Close the reply modal after 2 seconds
         setTimeout(() => {
           document.querySelector('[data-bs-dismiss="modal"]')?.click()
           setReplySuccess(false)
-          // Refresh messages to get updated status
           fetchMessages()
         }, 2000)
       }
@@ -110,38 +99,36 @@ export default function SupportMessagesTable() {
       } catch {}
       el._dt = null
     }
-  }, [filteredMessages])
+  }, [messages])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleString()
   }
 
-  const truncateMessage = (message, length = 50) => {
-    return message.length > length ? message.substring(0, length) + "…" : message
-  }
-
   const decodeMessage = (encodedMessage) => {
     if (!encodedMessage) return "No message content"
-
-    // Check if it looks like a JWT token
     if (encodedMessage.includes(".")) {
       try {
-        // JWT format: header.payload.signature
         const parts = encodedMessage.split(".")
         if (parts.length === 3) {
-          // The actual message might be in the API response already,
-          // but for now we'll display a placeholder or try to decode
-          // This is a security note: never decode secrets in browser
           return "Message content received"
         }
       } catch (e) {
         console.error("Error decoding message:", e)
       }
     }
-
     return encodedMessage
   }
+
+  const getFilteredMessages = () => {
+    if (statusFilter === "All") {
+      return messages
+    }
+    return messages.filter((msg) => msg.status === statusFilter)
+  }
+
+  const filteredMessages = getFilteredMessages()
 
   if (loading) {
     return (
@@ -172,21 +159,23 @@ export default function SupportMessagesTable() {
           </div>
         )}
 
-        <div className="mb-3 d-flex align-items-center gap-2">
-          <label htmlFor="statusFilter" className="form-label mb-0">
-            Status:
-          </label>
-          <select
-            id="statusFilter"
-            className="form-select form-select-sm"
-            style={{ width: "150px" }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="All">All</option>
-            <option value="New">New</option>
-            <option value="Closed">Closed</option>
-          </select>
+        <div className="mb-3">
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <label htmlFor="statusFilter" className="form-label mb-0" style={{ whiteSpace: "nowrap" }}>
+              Status:
+            </label>
+            <select
+              id="statusFilter"
+              className="form-select"
+              style={{ width: "200px" }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="New">New</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
         </div>
 
         <div className="table-responsive">
