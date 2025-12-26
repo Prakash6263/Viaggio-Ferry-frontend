@@ -3,6 +3,7 @@ import { PublicRoute, ProtectedRoute } from "./components/ProtectedRoute"
 import AuthLogoutHandler from "./components/AuthLogoutHandler"
 import CompanyLogin from "./pages/CompanyLogin" // Import CompanyLogin
 import CompanyForgotPassword from "./pages/CompanyForgotPassword" // Import forgot password page
+import CompanySupport from "./pages/CompanySupport"
 
 // Administration
 import AdminUserList from "./pages/AdminUserList"
@@ -112,6 +113,7 @@ export default function App() {
           path="/company/administration/policies"
           element={<ProtectedRoute element={<CompanyPoliciesEditor />} />}
         />
+        <Route path="/company/administration/support" element={<ProtectedRoute element={<CompanySupport />} />} />
         {/* Ships and Trips */}
         <Route path="/company/ship-trip/ships" element={<ProtectedRoute element={<CompanyShipsList />} />} />
         <Route path="/company/ship-trip/add-ship" element={<ProtectedRoute element={<CompanyAddShip />} />} />
