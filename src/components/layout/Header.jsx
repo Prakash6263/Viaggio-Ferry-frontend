@@ -49,6 +49,20 @@ export default function Header() {
     e.preventDefault()
   }
 
+  const handleVisitSite = (e) => {
+    const token = loginApi.getToken()
+    if (companyProfile?.website && token) {
+      const separator = companyProfile.website.includes("?") ? "&" : "?"
+      const urlWithToken = `${companyProfile.website}${separator}token=${encodeURIComponent(token)}`
+      window.open(urlWithToken, "_blank")
+      e.preventDefault()
+    } else if (companyProfile?.website) {
+      // Fallback if no token
+      window.open(companyProfile.website, "_blank")
+      e.preventDefault()
+    }
+  }
+
   const companyLogoUrl = companyProfile?.logoUrl ? `${API_BASE_URL}${companyProfile.logoUrl}` : null
 
   return (
@@ -111,7 +125,11 @@ export default function Header() {
       {/* Header Menu (right) */}
       <ul className="nav nav-tabs user-menu">
         <li className="nav-item">
-          <a href={companyProfile?.website || "https://voyagian.com/company-site"} className="text-decoration-none">
+          <a
+            href={companyProfile?.website || "https://voyagian.com/company-site"}
+            className="text-decoration-none"
+            onClick={handleVisitSite}
+          >
             <span className="btn btn-turquoise">
               <strong>Visit Site</strong>
             </span>
@@ -122,18 +140,14 @@ export default function Header() {
         <li className="nav-item dropdown">
           <a href="#" className="user-link nav-link" data-bs-toggle="dropdown" onClick={(e) => e.preventDefault()}>
             <span className="user-img">
-<img
-  src={
-    companyProfile?.adminProfileImage
-      ? `${API_BASE_URL}${companyProfile.adminProfileImage}`
-      : avatar
-  }
-  alt={companyProfile?.companyName || "Admin Profile"}
-  className="profilesidebar"
-  onError={(e) => {
-    e.currentTarget.src = avatar;
-  }}
-/>
+              <img
+                src={companyProfile?.adminProfileImage ? `${API_BASE_URL}${companyProfile.adminProfileImage}` : avatar}
+                alt={companyProfile?.companyName || "Admin Profile"}
+                className="profilesidebar"
+                onError={(e) => {
+                  e.currentTarget.src = avatar
+                }}
+              />
 
               <span className="animate-circle"></span>
             </span>
