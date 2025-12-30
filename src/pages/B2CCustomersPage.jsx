@@ -15,6 +15,7 @@ export default function B2CCustomersPage() {
   const [view, setView] = useState("list") // "list" | "form"
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(false) // Added loading state
+  const [statusFilter, setStatusFilter] = useState("Active") // Added statusFilter state, default to "Active"
   const partners = ["Partner A", "Partner B", "Partner C"]
   const nationalities = ["USA", "Canada", "UK", "Egypt", "Saudi Arabia", "UAE", "Qatar", "Germany", "France", "Japan"]
   const countryCodes = [
@@ -33,7 +34,7 @@ export default function B2CCustomersPage() {
   const fetchCustomers = async () => {
     setLoading(true)
     try {
-      const response = await b2cApi.getUsers({ status: "Active", page: 1, limit: 10 })
+      const response = await b2cApi.getUsers({ status: statusFilter, page: 1, limit: 10 })
       if (response.success) {
         // Map API data to component format
         const mappedData = response.data.map((user) => ({
@@ -59,7 +60,7 @@ export default function B2CCustomersPage() {
 
   useEffect(() => {
     fetchCustomers()
-  }, [])
+  }, [statusFilter]) // Refetch when statusFilter changes
 
   const handleAddClick = () => setView("form")
   const handleCancel = () => setView("list")
@@ -115,7 +116,8 @@ export default function B2CCustomersPage() {
     try {
       const res = await b2cApi.toggleStatus(id, newStatus)
       if (res.success) {
-        setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, status: newStatus } : c)))
+        setCustomers((prev) => prev.filter((c) => c.id !== id))
+
         Swal.fire({
           icon: "success",
           title: "Status Updated",
@@ -151,26 +153,43 @@ export default function B2CCustomersPage() {
             <div id="listViewContainer">
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h5>B2C Customers</h5>
-                <button
-                  id="addNewBtn"
-                  className="btn btn-turquoise fw-medium btn-hover-transform"
-                  onClick={handleAddClick}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 me-1"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    style={{ width: "1.25rem", height: "1.25rem" }}
+                <div className="d-flex align-items-center gap-3">
+                  <div className="d-flex align-items-center">
+                    <label htmlFor="statusFilter" className="me-2 mb-0 fw-medium text-nowrap">
+                      Filter Status:
+                    </label>
+                    <select
+                      id="statusFilter"
+                      className="form-select"
+                      style={{ width: "auto" }}
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="Active">Active Users</option>
+                      <option value="Inactive">Inactive Users</option>
+                    </select>
+                  </div>
+                  <button
+                    id="addNewBtn"
+                    className="btn btn-turquoise fw-medium btn-hover-transform"
+                    onClick={handleAddClick}
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Add New Customer
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 me-1"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      style={{ width: "1.25rem", height: "1.25rem" }}
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Add New Customer
+                  </button>
+                </div>
               </div>
 
               <div className="row">
