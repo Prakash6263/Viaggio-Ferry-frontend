@@ -58,8 +58,6 @@ export const companyApi = {
     }
   },
 
-
-
   // Update Who We Are data (supports image upload via FormData)
   updateWhoWeAre: async (formData) => {
     try {

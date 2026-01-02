@@ -11,6 +11,8 @@ import AdminAddUser from "./pages/AdminAddUser"
 import Dashboard from "./pages/Dashboard"
 import CompanyCurrencyList from "./pages/CompanyCurrencyList"
 import CompanyAddCurrency from "./pages/CompanyAddCurrency"
+import CompanyEditCurrency from "./pages/CompanyEditCurrency"
+import CompanyCurrencyHistory from "./pages/CompanyCurrencyHistory"
 import CompanyTaxesList from "./pages/CompanyTaxesList"
 import CompanyAddTax from "./pages/CompanyAddTax"
 import CompanyContactMessages from "./pages/CompanyContactMessages"
@@ -101,6 +103,14 @@ export default function App() {
         <Route
           path="/company/administration/add-currency"
           element={<ProtectedRoute element={<CompanyAddCurrency />} />}
+        />
+        <Route
+          path="/company/administration/edit-currency/:currencyId"
+          element={<ProtectedRoute element={<CompanyEditCurrency />} />}
+        />
+        <Route
+          path="/company/administration/currency-history/:currencyId"
+          element={<ProtectedRoute element={<CompanyCurrencyHistory />} />}
         />
         <Route path="/company/administration/taxes" element={<ProtectedRoute element={<CompanyTaxesList />} />} />
         <Route path="/company/administration/add-tax" element={<ProtectedRoute element={<CompanyAddTax />} />} />
