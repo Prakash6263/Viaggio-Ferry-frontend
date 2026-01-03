@@ -16,6 +16,8 @@ export default function AddCurrencyForm() {
   const [currencyName, setCurrencyName] = useState("")
   const [currencyCode, setCurrencyCode] = useState("")
 
+  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState("USD")
+
   const [rates, setRates] = useState([{ id: 1, rateDate: "", rate: "" }])
 
   useEffect(() => {
@@ -25,6 +27,14 @@ export default function AddCurrencyForm() {
         const response = await currencyApi.getAllCurrencies()
         if (response.data) {
           setCurrencies(response.data)
+        }
+
+        const companyCurrenciesResponse = await currencyApi.getCompanyCurrencies(1, 100)
+        if (companyCurrenciesResponse.data && companyCurrenciesResponse.data.length > 0) {
+          const defaultCurrency = companyCurrenciesResponse.data.find((c) => c.isDefault)
+          if (defaultCurrency) {
+            setDefaultCurrencyCode(defaultCurrency.currencyCode)
+          }
         }
       } catch (err) {
         console.error("[v0] Error fetching currencies:", err)
@@ -160,7 +170,7 @@ export default function AddCurrencyForm() {
         </div>
       </div>
 
-      <h5 className="mb-3">Exchange Rates (to USD)</h5>
+      <h5 className="mb-3">Exchange Rates (to {defaultCurrencyCode})</h5>
 
       <div className="rates-container mb-3">
         {rates.map((r) => (
