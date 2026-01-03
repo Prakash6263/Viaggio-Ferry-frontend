@@ -191,13 +191,13 @@ export default function CurrencyListTable() {
                           >
                             <i className="bi bi-pencil"></i> Update
                           </button>
-                          <button
+                          {/* <button
                             className="btn btn-sm btn-danger"
                             onClick={() => handleDelete(currency._id)}
                             title="Delete Currency"
                           >
                             <i className="bi bi-trash"></i> Delete
-                          </button>
+                          </button> */}
                         </>
                       ) : (
                         <span className="badge bg-secondary">Default Currency</span>
