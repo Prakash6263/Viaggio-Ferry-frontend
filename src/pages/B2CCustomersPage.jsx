@@ -40,7 +40,7 @@ export default function B2CCustomersPage() {
         const mappedData = response.data.map((user) => ({
           id: user._id,
           name: user.name,
-          partner: user.partner || "N/A", // Updated mapping to use user.partner directly and fallback to "N/A" if null
+          partner: user.partner?.name || "N/A",
           nationality: user.nationality,
           countryCode: "", // API doesn't provide separate code, mapped in whatsapp
           whatsappNumber: user.whatsappNumber,
@@ -169,7 +169,7 @@ export default function B2CCustomersPage() {
                       <option value="Inactive">Inactive Users</option>
                     </select>
                   </div>
-                  <button
+                  {/* <button
                     id="addNewBtn"
                     className="btn btn-turquoise fw-medium btn-hover-transform"
                     onClick={handleAddClick}
@@ -188,7 +188,7 @@ export default function B2CCustomersPage() {
                       />
                     </svg>
                     Add New Customer
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
