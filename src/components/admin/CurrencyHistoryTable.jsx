@@ -123,7 +123,6 @@ export default function CurrencyHistoryTable({ currencyId }) {
             <table id="historyTable" className="table table-striped" style={{ width: "100%" }}>
               <thead>
                 <tr>
-                  <th>Rate Date</th>
                   <th>Exchange Rate</th>
                   <th>Created At</th>
                 </tr>
@@ -132,14 +131,13 @@ export default function CurrencyHistoryTable({ currencyId }) {
                 {history.length > 0 ? (
                   history.map((record) => (
                     <tr key={record._id}>
-                      <td>{formatDateTime(record.rateDate)}</td>
                       <td>{record.rate ? record.rate.toFixed(4) : "N/A"}</td>
                       <td>{formatDateTime(record.createdAt)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3" className="text-center">
+                    <td colSpan="2" className="text-center">
                       No exchange rate history available
                     </td>
                   </tr>

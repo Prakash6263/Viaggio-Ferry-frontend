@@ -17,8 +17,7 @@ export default function AddCurrencyForm() {
   const [currencyCode, setCurrencyCode] = useState("")
 
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState("USD")
-
-  const [rates, setRates] = useState([{ id: 1, rateDate: "", rate: "" }])
+  const [rates, setRates] = useState([{ id: 1, rate: "" }])
 
   useEffect(() => {
     const fetchCurrencies = async () => {
@@ -52,12 +51,12 @@ export default function AddCurrencyForm() {
     if (selected) {
       setSelectedCurrencyId(currencyId)
       setCurrencyCode(selected.currencyCode)
-      setCurrencyName(selected.countryName)
+      setCurrencyName(selected.currencyName)
     }
   }
 
   const addRate = () => {
-    setRates((r) => [...r, { id: Date.now(), rateDate: "", rate: "" }])
+    setRates((r) => [...r, { id: Date.now(), rate: "" }])
   }
 
   const removeRate = (id) => setRates((r) => r.filter((x) => x.id !== id))
@@ -72,7 +71,7 @@ export default function AddCurrencyForm() {
       return
     }
 
-    if (rates.length === 0 || rates.some((r) => !r.rateDate || !r.rate)) {
+    if (rates.length === 0 || rates.some((r) => !r.rate)) {
       setError("Please add at least one exchange rate")
       return
     }
@@ -86,19 +85,15 @@ export default function AddCurrencyForm() {
         throw new Error("Company ID not found")
       }
 
-      // Format exchange rates to match API requirement
-      const exchangeRates = rates.map((r) => ({
-        rate: Number.parseFloat(r.rate),
-        rateDate: new Date(r.rateDate).toISOString(),
-      }))
-
       const payload = {
         currencyId: selectedCurrencyId,
-        exchangeRates: exchangeRates,
         isDefault: false,
+        exchangeRates: rates.map((r) => ({
+          rate: Number.parseFloat(r.rate),
+        })),
       }
 
-      const response = await currencyApi.addCompanyCurrency(companyId, payload)
+      const response = await currencyApi.addCompanyCurrencyWithRates(companyId, payload)
 
       if (response.success || response.data) {
         navigate("/company/administration/currency")
@@ -151,7 +146,7 @@ export default function AddCurrencyForm() {
             <option value="">-- Select Currency --</option>
             {currencies.map((curr) => (
               <option key={curr._id} value={curr._id}>
-                {curr.currencyCode} - {curr.countryName}
+                {curr.currencyCode} - {curr.currencyName}
               </option>
             ))}
           </select>
@@ -175,17 +170,7 @@ export default function AddCurrencyForm() {
       <div className="rates-container mb-3">
         {rates.map((r) => (
           <div key={r.id} className="row rate-row align-items-center mb-2">
-            <div className="col-md-5">
-              <input
-                type="datetime-local"
-                className="form-control"
-                placeholder="Effective Date & Time"
-                value={r.rateDate}
-                onChange={(e) => update(r.id, "rateDate", e.target.value)}
-                required
-              />
-            </div>
-            <div className="col-md-5">
+            <div className="col-md-7">
               <input
                 type="number"
                 step="any"
@@ -196,7 +181,7 @@ export default function AddCurrencyForm() {
                 required
               />
             </div>
-            <div className="col-md-2 text-center">
+            <div className="col-md-5 text-center">
               <button type="button" className="btn btn-danger btn-sm remove-rate" onClick={() => removeRate(r.id)}>
                 <i className="bi bi-trash"></i>
               </button>
@@ -205,7 +190,7 @@ export default function AddCurrencyForm() {
         ))}
       </div>
 
-      <div className="text-end">
+      <div className="text-end mb-4">
         <button type="button" className="btn btn-success btn-add-rate" onClick={addRate}>
           Add New Rate
         </button>

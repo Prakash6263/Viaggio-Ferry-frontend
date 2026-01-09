@@ -18,7 +18,7 @@ export default function EditCurrencyForm({ currencyId }) {
 
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState("USD")
 
-  const [rates, setRates] = useState([{ id: 1, rateDate: "", rate: "" }])
+  const [rates, setRates] = useState([{ id: 1, rate: "" }])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +66,7 @@ export default function EditCurrencyForm({ currencyId }) {
   }
 
   const addRate = () => {
-    setRates((r) => [...r, { id: Date.now(), rateDate: "", rate: "" }])
+    setRates((r) => [...r, { id: Date.now(), rate: "" }])
   }
 
   const removeRate = (id) => setRates((r) => r.filter((x) => x.id !== id))
@@ -81,7 +81,7 @@ export default function EditCurrencyForm({ currencyId }) {
       return
     }
 
-    if (rates.length === 0 || rates.some((r) => !r.rateDate || !r.rate)) {
+    if (rates.length === 0 || rates.some((r) => !r.rate)) {
       setError("Please add at least one exchange rate")
       return
     }
@@ -98,7 +98,6 @@ export default function EditCurrencyForm({ currencyId }) {
       for (const rate of rates) {
         const payload = {
           rate: Number.parseFloat(rate.rate),
-          rateDate: new Date(rate.rateDate).toISOString(),
         }
         await currencyApi.addExchangeRate(currencyId, payload)
       }
@@ -164,17 +163,7 @@ export default function EditCurrencyForm({ currencyId }) {
       <div className="rates-container mb-3">
         {rates.map((r) => (
           <div key={r.id} className="row rate-row align-items-center mb-2">
-            <div className="col-md-5">
-              <input
-                type="datetime-local"
-                className="form-control"
-                placeholder="Effective Date & Time"
-                value={r.rateDate}
-                onChange={(e) => update(r.id, "rateDate", e.target.value)}
-                required
-              />
-            </div>
-            <div className="col-md-5">
+            <div className="col-md-10">
               <input
                 type="number"
                 step="any"

@@ -292,4 +292,37 @@ export const currencyApi = {
       throw error
     }
   },
+
+  // Add a new currency to company with exchange rates
+  addCompanyCurrencyWithRates: async (companyId, currencyData) => {
+    try {
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      // Combined payload with exchangeRates array
+      const payload = {
+        currencyId: currencyData.currencyId,
+        exchangeRates: currencyData.exchangeRates, // Array of rate objects
+        isDefault: currencyData.isDefault || false,
+      }
+
+      const response = await apiFetch(`/api/companies/${companyId}/currencies`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to add currency with rates")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Add Company Currency With Rates Error:", error.message)
+      throw error
+    }
+  },
 }

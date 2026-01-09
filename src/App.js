@@ -15,6 +15,7 @@ import CompanyEditCurrency from "./pages/CompanyEditCurrency"
 import CompanyCurrencyHistory from "./pages/CompanyCurrencyHistory"
 import CompanyTaxesList from "./pages/CompanyTaxesList"
 import CompanyAddTax from "./pages/CompanyAddTax"
+import CompanyEditTax from "./pages/CompanyEditTax" // Import CompanyEditTax
 import CompanyContactMessages from "./pages/CompanyContactMessages"
 import CompanyTerms from "./pages/CompanyTerms"
 import CompanyPoliciesEditor from "./pages/CompanyPoliciesEditor"
@@ -114,6 +115,10 @@ export default function App() {
         />
         <Route path="/company/administration/taxes" element={<ProtectedRoute element={<CompanyTaxesList />} />} />
         <Route path="/company/administration/add-tax" element={<ProtectedRoute element={<CompanyAddTax />} />} />
+        <Route
+          path="/company/administration/edit-tax/:taxId"
+          element={<ProtectedRoute element={<CompanyEditTax />} />}
+        />
         <Route
           path="/company/administration/contact-messages"
           element={<ProtectedRoute element={<CompanyContactMessages />} />}
