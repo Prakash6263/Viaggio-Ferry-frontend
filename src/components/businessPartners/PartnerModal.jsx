@@ -5,7 +5,7 @@ import React, { useEffect } from "react"
 import { createPortal } from "react-dom"
 import PartnerUsersTable from "./PartnerUsersTable"
 
-export default function PartnerModal({ open, onClose, onSave, editingPartner = null }) {
+export default function PartnerModal({ open, onClose, onSave, editingPartner = null, allPartners = [] }) {
   const [tab, setTab] = React.useState("basic") // "basic" | "credit" | "contact" | "users"
   const [users, setUsers] = React.useState([])
 
@@ -13,10 +13,10 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
     name: "",
     phone: "",
     address: "",
+    parentAccount: "", // added parentAccount field
     layer: "Marine",
     partnerStatus: "Active",
     priceList: "",
-    password: "",
     creditLimit: {
       limitAmount: 0,
       limitTicket: 0,
@@ -52,10 +52,10 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
         name: "",
         phone: "",
         address: "",
+        parentAccount: "", // initialize empty parentAccount
         layer: "Marine",
         partnerStatus: "Active",
         priceList: "",
-        password: "",
         creditLimit: {
           limitAmount: 0,
           limitTicket: 0,
@@ -123,6 +123,8 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
     }
     if (onSave) onSave(payload)
   }
+
+  const availableParentAccounts = allPartners.filter((p) => p._id !== editingPartner?._id)
 
   if (!open) return null
 
@@ -200,18 +202,23 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="basic-password" className="form-label">
-                    Password
+                  <label htmlFor="basic-parent-account" className="form-label">
+                    Parent Account
                   </label>
-                  <input
-                    type="password"
-                    id="basic-password"
-                    name="password"
+                  <select
+                    id="basic-parent-account"
+                    name="parentAccount"
                     className="form-control"
-                    value={formData.password}
+                    value={formData.parentAccount}
                     onChange={handleFormChange}
-                    placeholder={editingPartner ? "Leave empty to keep current password" : "Enter password"}
-                  />
+                  >
+                    <option value="">-- Select Parent Account --</option>
+                    {availableParentAccounts.map((partner) => (
+                      <option key={partner._id} value={partner._id}>
+                        {partner.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="basic-status" className="form-label">

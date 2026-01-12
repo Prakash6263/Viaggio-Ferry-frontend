@@ -186,8 +186,8 @@ export default function BusinessPartnersPage() {
               ) : (
                 <>
                   {view === "list" ? (
-                    <PartnerList 
-                      partners={partners} 
+                    <PartnerList
+                      partners={partners}
                       onUpdate={handleUpdatePartner}
                       onDisable={handleDisablePartner}
                       onEnable={handleEnablePartner}
@@ -204,6 +204,7 @@ export default function BusinessPartnersPage() {
               onClose={handleModalClose}
               onSave={handleAddPartner}
               editingPartner={editingPartner}
+              allPartners={partners}
             />
           </div>
         </div>
