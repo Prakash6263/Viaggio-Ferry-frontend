@@ -1,10 +1,100 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import Header from "../components/layout/Header";
-import { Sidebar } from "../components/layout/Sidebar";
-import { PageWrapper } from "../components/layout/PageWrapper";
+"use client"
+
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import Header from "../components/layout/Header"
+import { Sidebar } from "../components/layout/Sidebar"
+import { PageWrapper } from "../components/layout/PageWrapper"
+import { accessGroupsApi } from "../api/accessGroupsApi"
+import Swal from "sweetalert2"
+import { CirclesWithBar } from "react-loader-spinner"
 
 export default function RolePermission() {
+  const [groups, setGroups] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 })
+
+  useEffect(() => {
+    fetchAccessGroups()
+  }, [pagination.page])
+
+  const fetchAccessGroups = async () => {
+    try {
+      setLoading(true)
+      const response = await accessGroupsApi.getAccessGroupsList(pagination.page, pagination.limit)
+      setGroups(response.data || [])
+      setPagination(response.pagination || {})
+      setError(null)
+    } catch (err) {
+      setError(err.message || "Failed to fetch access groups")
+      console.error("Error fetching access groups:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (groupId) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You want to delete this access group?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc3545",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    })
+
+    if (result.isConfirmed) {
+      try {
+        await accessGroupsApi.deleteAccessGroup(groupId)
+        Swal.fire({
+          title: "Deleted!",
+          text: "Access group deleted successfully",
+          icon: "success",
+          timer: 1500,
+        })
+        fetchAccessGroups()
+      } catch (err) {
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to delete access group: " + err.message,
+          icon: "error",
+        })
+      }
+    }
+  }
+
+  const handleStatusToggle = async (group) => {
+    try {
+      await accessGroupsApi.toggleAccessGroupStatus(group._id, !group.isActive)
+      Swal.fire({
+        title: "Success!",
+        text: `Access group is now ${!group.isActive ? "active" : "inactive"}`,
+        icon: "success",
+        timer: 1500,
+      })
+      fetchAccessGroups()
+    } catch (err) {
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to update status: " + err.message,
+        icon: "error",
+      })
+    }
+  }
+
+  const getLayerBadgeClass = (layer) => {
+    const layerMap = {
+      company: "bg-primary",
+      "marine-agent": "bg-info",
+      "commercial-agent": "bg-success",
+      "selling-agent": "bg-warning text-dark",
+    }
+    return layerMap[layer] || "bg-secondary"
+  }
+
   return (
     <div className="main-wrapper">
       <Header />
@@ -20,14 +110,8 @@ export default function RolePermission() {
               <div className="list-btn" style={{ justifySelf: "end" }}>
                 <ul className="filter-list">
                   <li>
-                    <Link
-                      className="btn btn-turquoise"
-                      to="/company/settings/add-group-permission"
-                    >
-                      <i
-                        className="fa fa-plus-circle me-2"
-                        aria-hidden="true"
-                      ></i>
+                    <Link className="btn btn-turquoise" to="/company/settings/add-group-permission">
+                      <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>
                       Add New Group Permission
                     </Link>
                   </li>
@@ -68,101 +152,143 @@ export default function RolePermission() {
                         background-color: #0d6efd;
                         border-color: #0d6efd;
                       }
+
+                      /* New button styles for actions */
+                      .action-buttons {
+                        display: flex;
+                        gap: 8px;
+                        align-items: center;
+                      }
+
+                      .action-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 8px;
+                        border: 2px solid;
+                        background: white;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        padding: 0;
+                      }
+
+                      .action-btn-edit {
+                        border-color: #007bff;
+                        color: #007bff;
+                      }
+
+                      .action-btn-edit:hover {
+                        background-color: #007bff;
+                        color: white;
+                      }
+
+                      .action-btn-delete {
+                        border-color: #dc3545;
+                        color: #dc3545;
+                      }
+
+                      .action-btn-delete:hover {
+                        background-color: #dc3545;
+                        color: white;
+                      }
+
+                      .action-btn i {
+                        font-size: 18px;
+                      }
                     `}
                   </style>
 
-                  <div className="table-responsive">
-                    <table
-                      id="example"
-                      className="table table-striped"
-                      style={{ width: "100%" }}
-                    >
-                      <thead>
-                        <tr>
-                          <th>Group Name</th>
-                          <th>Group Code</th>
-                          <th>Module Name</th>
-                          <th>Layer</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>Finance Admin</td>
-                          <td>FIN-001</td>
-                          <td>Finance</td>
-                          <td>
-                            <span className="badge bg-primary">Company</span>
-                          </td>
-                          <td>
-                            <label className="status-toggle">
-                              <input type="checkbox" defaultChecked />
-                              <span className="slider"></span>
-                            </label>
-                          </td>
-                          <td className="action-buttons">
-                            <button className="btn btn-sm btn-outline-primary">
-                              <i className="bi bi-pencil"></i>
-                            </button>
-                            <button className="btn btn-sm btn-outline-danger">
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
+                  {loading && (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+                      <CirclesWithBar
+                        height="100"
+                        width="100"
+                        color="#05468f"
+                        outerCircleColor="#05468f"
+                        innerCircleColor="#05468f"
+                        barColor="#05468f"
+                        ariaLabel="circles-with-bar-loading"
+                        visible={true}
+                      />
+                    </div>
+                  )}
 
-                        <tr>
-                          <td>Sales Manager</td>
-                          <td>SLS-002</td>
-                          <td>Sales &amp; Bookings</td>
-                          <td>
-                            <span className="badge bg-success">
-                              Commercial Agent
-                            </span>
-                          </td>
-                          <td>
-                            <label className="status-toggle">
-                              <input type="checkbox" defaultChecked />
-                              <span className="slider"></span>
-                            </label>
-                          </td>
-                          <td className="action-buttons">
-                            <button className="btn btn-sm btn-outline-primary">
-                              <i className="bi bi-pencil"></i>
-                            </button>
-                            <button className="btn btn-sm btn-outline-danger">
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
+                  {error && (
+                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                      {error}
+                      <button type="button" className="btn-close" onClick={() => setError(null)}></button>
+                    </div>
+                  )}
 
-                        <tr>
-                          <td>Operations Staff</td>
-                          <td>OPS-003</td>
-                          <td>Checkin &amp; Boardings</td>
-                          <td>
-                            <span className="badge bg-warning text-dark">
-                              Selling Agent
-                            </span>
-                          </td>
-                          <td>
-                            <label className="status-toggle">
-                              <input type="checkbox" />
-                              <span className="slider"></span>
-                            </label>
-                          </td>
-                          <td className="action-buttons">
-                            <button className="btn btn-sm btn-outline-primary">
-                              <i className="bi bi-pencil"></i>
-                            </button>
-                            <button className="btn btn-sm btn-outline-danger">
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  {!loading && !error && (
+                    <div className="table-responsive">
+                      <table id="example" className="table table-striped" style={{ width: "100%" }}>
+                        <thead>
+                          <tr>
+                            <th>Group Name</th>
+                            <th>Group Code</th>
+                            <th>Module Name</th>
+                            <th>Layer</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {groups.length > 0 ? (
+                            groups.map((group) => (
+                              <tr key={group._id}>
+                                <td>{group.groupName}</td>
+                                <td>{group.groupCode}</td>
+                                <td>{group.moduleCode}</td>
+                                <td>
+                                  <span className={`badge ${getLayerBadgeClass(group.layer)}`}>
+                                    {group.layer.replace("-", " ").charAt(0).toUpperCase() +
+                                      group.layer.slice(1).replace("-", " ")}
+                                  </span>
+                                </td>
+                                <td>
+                                  <label className="status-toggle">
+                                    <input
+                                      type="checkbox"
+                                      checked={group.isActive}
+                                      onChange={() => handleStatusToggle(group)}
+                                    />
+                                    <span className="slider"></span>
+                                  </label>
+                                </td>
+                                <td>
+                                  <div className="action-buttons">
+                                    <Link
+                                      to={`/company/settings/add-group-permission?id=${group._id}`}
+                                      className="action-btn action-btn-edit"
+                                      title="Edit"
+                                    >
+                                      <i className="bi bi-pencil"></i>
+                                    </Link>
+                                    <button
+                                      className="action-btn action-btn-delete"
+                                      onClick={() => handleDelete(group._id)}
+                                      title="Delete"
+                                    >
+                                      <i className="bi bi-trash"></i>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="6" className="text-center py-5">
+                                <p className="text-muted">No access groups found</p>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                   {/* end table-responsive */}
                 </div>
               </div>
@@ -171,5 +297,5 @@ export default function RolePermission() {
         </div>
       </PageWrapper>
     </div>
-  );
+  )
 }

@@ -61,6 +61,7 @@ export default function PartnerList({ partners = [], onUpdate, onDisable, onEnab
               <th>Phone</th>
               <th>Address</th>
               <th>Layer</th>
+              <th>Parent Company</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -72,16 +73,13 @@ export default function PartnerList({ partners = [], onUpdate, onDisable, onEnab
                 <td>{p.phone}</td>
                 <td>{p.address}</td>
                 <td>{p.layer}</td>
+                <td>{p.layer === "Marine" ? p.parentCompany?.companyName || "-" : p.parentAccount?.name || "-"}</td>
                 <td>{p.partnerStatus || p.status}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
-                  <button
-                    className="btn btn-sm btn-primary me-2"
-                    onClick={() => onUpdate?.(p)}
-                    title="Edit partner"
-                  >
+                  <button className="btn btn-sm btn-primary me-2" onClick={() => onUpdate?.(p)} title="Edit partner">
                     <i className="fa fa-edit"></i>
                   </button>
-                  {(p.partnerStatus === "Active" || p.status === "Active") ? (
+                  {p.partnerStatus === "Active" || p.status === "Active" ? (
                     <button
                       className="btn btn-sm btn-warning me-2"
                       onClick={() => onDisable?.(p)}

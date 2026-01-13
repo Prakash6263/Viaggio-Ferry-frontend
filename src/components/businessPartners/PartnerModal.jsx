@@ -121,10 +121,37 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
       ...formData,
       users,
     }
+
+    if (formData.layer === "Marine") {
+      payload.parentAccount = null
+    }
+
     if (onSave) onSave(payload)
   }
 
-  const availableParentAccounts = allPartners.filter((p) => p._id !== editingPartner?._id)
+  const getFilteredParentAccounts = () => {
+    return allPartners.filter((p) => {
+      // Don't show the current partner being edited
+      if (editingPartner && p._id === editingPartner._id) return false
+
+      // Filter based on current layer selection
+      if (formData.layer === "Marine") {
+        // Marine layer can only have Company as parent (or no parent)
+        // So filter out any partners that have a parent (they're already in a layer)
+        return !p.parentAccount || p.parentAccount === ""
+      } else if (formData.layer === "Commercial") {
+        // Commercial layer can only have Marine layer partners as parent
+        return p.layer === "Marine"
+      } else if (formData.layer === "Selling") {
+        // Selling layer can have Commercial layer partners as parent
+        return p.layer === "Commercial"
+      }
+
+      return true
+    })
+  }
+
+  const availableParentAccounts = getFilteredParentAccounts()
 
   if (!open) return null
 
@@ -202,8 +229,26 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                   />
                 </div>
                 <div className="form-group">
+                  <label htmlFor="basic-layer" className="form-label">
+                    Layer
+                  </label>
+                  <select
+                    id="basic-layer"
+                    name="layer"
+                    className="form-control"
+                    value={formData.layer}
+                    onChange={handleFormChange}
+                  >
+                    <option value="Marine">Marine</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Selling">Selling</option>
+                  </select>
+                </div>
+                <div className="form-group">
                   <label htmlFor="basic-parent-account" className="form-label">
-                    Parent Account
+                    Parent Account {formData.layer === "Marine" && "(Company)"}
+                    {formData.layer === "Commercial" && "(Marine Partner)"}
+                    {formData.layer === "Selling" && "(Commercial Partner)"}
                   </label>
                   <select
                     id="basic-parent-account"
@@ -247,22 +292,6 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                     value={formData.priceList}
                     onChange={handleFormChange}
                   />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="basic-layer" className="form-label">
-                    Layer
-                  </label>
-                  <select
-                    id="basic-layer"
-                    name="layer"
-                    className="form-control"
-                    value={formData.layer}
-                    onChange={handleFormChange}
-                  >
-                    <option value="Marine">Marine</option>
-                    <option value="Commercial">Commercial</option>
-                    <option value="Selling">Selling</option>
-                  </select>
                 </div>
               </div>
 
