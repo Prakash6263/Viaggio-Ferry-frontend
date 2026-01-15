@@ -19,7 +19,7 @@ import CompanyEditTax from "./pages/CompanyEditTax" // Import CompanyEditTax
 import CompanyContactMessages from "./pages/CompanyContactMessages"
 import CompanyTerms from "./pages/CompanyTerms"
 import CompanyPoliciesEditor from "./pages/CompanyPoliciesEditor"
-
+import EditUser from "./pages/AdminEditUser"
 // Ship and Trip
 import CompanyShipsList from "./pages/CompanyShipsList"
 import CompanyAddShip from "./pages/CompanyAddShip"
@@ -108,6 +108,10 @@ export default function App() {
         <Route
           path="/company/administration/edit-currency/:currencyId"
           element={<ProtectedRoute element={<CompanyEditCurrency />} />}
+        />
+        <Route
+          path="/company/administration/edit-user/:userId"
+          element={<ProtectedRoute element={<EditUser />} />}
         />
         <Route
           path="/company/administration/currency-history/:currencyId"

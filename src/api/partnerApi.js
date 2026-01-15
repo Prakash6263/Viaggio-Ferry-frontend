@@ -40,4 +40,8 @@ export const partnerApi = {
       method: "PATCH",
     })
   },
+
+  getPartnersByType: async (type) => {
+    return apiRequest(`/api/partners?type=${type}`)
+  },
 }
