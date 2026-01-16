@@ -1,23 +1,9 @@
-// src/pages/SalesmenPage.jsx
-import React, { useState } from "react";
-import Header from "../components/layout/Header";
-import { Sidebar } from "../components/layout/Sidebar";
-import { PageWrapper } from "../components/layout/PageWrapper";
-import SalesmenList from "../components/salesmen/SalesmenList";
+import Header from "../components/layout/Header"
+import { Sidebar } from "../components/layout/Sidebar"
+import { PageWrapper } from "../components/layout/PageWrapper"
+import SalesmenList from "../components/salesmen/SalesmenList"
 
 export default function SalesmenPage() {
-  // sample data (replace with API data later)
-  const [salesmen] = useState([
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.j@marineagent.com",
-      position: "Salesman",
-      assignment: "Company",
-      status: true,
-    },
-  ]);
-
   return (
     <div className="main-wrapper">
       <Header />
@@ -34,7 +20,7 @@ export default function SalesmenPage() {
             <div className="col-sm-12">
               <div className="card-table card p-2">
                 <div className="card-body">
-                  <SalesmenList salesmen={salesmen} />
+                  <SalesmenList />
                 </div>
               </div>
             </div>
@@ -42,5 +28,5 @@ export default function SalesmenPage() {
         </div>
       </PageWrapper>
     </div>
-  );
+  )
 }

@@ -49,4 +49,15 @@ export const usersApi = {
   getAccessGroupsByModuleLayer: async (moduleCode, layer) => {
     return apiRequest(`/api/users/access-groups/by-module-layer?moduleCode=${moduleCode}&layer=${layer}`)
   },
+
+  getSalesmenList: async (page = 1, limit = 10, status = "Active", sortBy = "createdAt", sortOrder = "desc") => {
+    const params = new URLSearchParams({
+      page,
+      limit,
+      status,
+      sortBy,
+      sortOrder,
+    })
+    return apiRequest(`/api/users/salesman/list?${params.toString()}`)
+  },
 }
