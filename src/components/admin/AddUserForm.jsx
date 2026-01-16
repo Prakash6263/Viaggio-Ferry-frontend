@@ -162,10 +162,10 @@ export default function AddUserForm() {
   }
 
   const onSelectAccess = (moduleCode, value) => {
-    if (value && !moduleAccess[moduleCode]?.includes(value)) {
+    if (value) {
       setModuleAccess((s) => ({
         ...s,
-        [moduleCode]: [...(s[moduleCode] || []), value],
+        [moduleCode]: [value],
       }))
     }
   }
@@ -222,6 +222,16 @@ export default function AddUserForm() {
       }
 
       const response = await usersApi.createUser(payload)
+
+      if (form.isSalesman && response.success) {
+        try {
+          const { ledgerApi } = await import("../../api/ledgerApi")
+          await ledgerApi.createSalesmanLedger(form.fullName)
+        } catch (ledgerErr) {
+          console.error("[v0] Error creating salesman ledger:", ledgerErr)
+          // Don't fail the entire process if ledger creation fails
+        }
+      }
 
       Swal.fire({
         icon: "success",
@@ -502,9 +512,6 @@ export default function AddUserForm() {
                     const accessGroups = accessGroupsByModule[module.code] || []
                     const isLoading = accessGroupsLoading[module.code]
                     const selectedValues = moduleAccess[module.code] || []
-                    const selectedGroupNames = selectedValues
-                      .map((id) => accessGroups.find((g) => g._id === id)?.groupName)
-                      .filter(Boolean)
 
                     return (
                       <tr key={module.code}>
@@ -512,11 +519,10 @@ export default function AddUserForm() {
                         <td>
                           <select
                             className="form-select"
-                            value=""
+                            value={selectedValues[0] || ""}
                             onChange={(e) => {
                               if (e.target.value) {
                                 onSelectAccess(module.code, e.target.value)
-                                e.target.value = ""
                               }
                             }}
                             disabled={isLoading}
@@ -534,47 +540,6 @@ export default function AddUserForm() {
                               </option>
                             )}
                           </select>
-                          {selectedGroupNames.length > 0 && (
-                            <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                              {selectedGroupNames.map((groupName, idx) => {
-                                const groupId = selectedValues[idx]
-                                return (
-                                  <span
-                                    key={groupId}
-                                    style={{
-                                      backgroundColor: "#e8f4f8",
-                                      color: "#001f4d",
-                                      padding: "6px 12px",
-                                      borderRadius: "20px",
-                                      fontSize: "14px",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "8px",
-                                      border: "1px solid #b3e5fc",
-                                    }}
-                                  >
-                                    {groupName}
-                                    <button
-                                      type="button"
-                                      onClick={() => onRemoveAccess(module.code, groupId)}
-                                      style={{
-                                        background: "none",
-                                        border: "none",
-                                        color: "#001f4d",
-                                        cursor: "pointer",
-                                        fontSize: "18px",
-                                        lineHeight: "1",
-                                        padding: "0",
-                                      }}
-                                      title="Remove"
-                                    >
-                                      ×
-                                    </button>
-                                  </span>
-                                )
-                              })}
-                            </div>
-                          )}
                         </td>
                       </tr>
                     )
