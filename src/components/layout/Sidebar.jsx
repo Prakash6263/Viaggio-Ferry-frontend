@@ -64,20 +64,20 @@ export function Sidebar() {
                   </Link>
                 </li>
 
-                <li>
+                {/* <li>
                   <Link
                     to="/company/administration/contact-messages"
                     className={isActive("/company/administration/contact-messages") ? "active" : ""}
                   >
                     Contact Messages
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link
                     to="/company/administration/support"
                     className={isActive("/company/administration/support") ? "active" : ""}
                   >
-                    <i className="fa fa-headset"></i> Support
+                     Contact Messages
                   </Link>
                 </li>
                 <li>
