@@ -4,6 +4,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import AddCurrencyForm from "../components/admin/AddCurrencyForm";
 import { Link } from "react-router-dom";
+import Can from "../components/Can";
 
 export default function CompanyAddCurrency() {
   return (
@@ -11,27 +12,30 @@ export default function CompanyAddCurrency() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        {/* Back Button */}
-        <div className="mb-3">
-          <Link to="/company/administration/currency" className="btn btn-turquoise">
-            <i className="bi bi-arrow-left"></i> Back to List
-          </Link>
-        </div>
+        {/* CREATE action - uses LIST route path */}
+        <Can action="create" path="/company/administration/currency">
+          {/* Back Button */}
+          <div className="mb-3">
+            <Link to="/company/administration/currency" className="btn btn-turquoise">
+              <i className="bi bi-arrow-left"></i> Back to List
+            </Link>
+          </div>
 
-        <div className="row g-4">
-          <div className="col-md-12">
-            <div className="card flex-fill">
-              <div className="card-header">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5 className="card-title">Add New Currency</h5>
+          <div className="row g-4">
+            <div className="col-md-12">
+              <div className="card flex-fill">
+                <div className="card-header">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h5 className="card-title">Add New Currency</h5>
+                  </div>
                 </div>
-              </div>
-              <div className="card-body">
-                <AddCurrencyForm />
+                <div className="card-body">
+                  <AddCurrencyForm />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

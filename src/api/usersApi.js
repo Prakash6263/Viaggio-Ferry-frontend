@@ -60,4 +60,17 @@ export const usersApi = {
     })
     return apiRequest(`/api/users/salesman/list?${params.toString()}`)
   },
+
+  // Get current user profile
+  getCurrentProfile: async () => {
+    return apiRequest("/api/users/me")
+  },
+
+  // Update current user profile
+  updateProfile: async (formData) => {
+    return apiRequest("/api/users/me/update", {
+      method: "PUT",
+      body: formData, // FormData object with fullName, position, profileImage
+    })
+  },
 }

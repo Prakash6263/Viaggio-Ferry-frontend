@@ -14,6 +14,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { fetchSidebar, extractRoutesFromMenu, isPathAuthorized, getPermissionsForRoute } from "../services/sidebarApi"
 import { loginApi, AUTH_LOGIN_EVENT } from "../api/loginApi"
+import { AUTH_LOGOUT_EVENT } from "../api/apiClient"
 
 const SidebarContext = createContext(null)
 
@@ -108,18 +109,27 @@ export function SidebarProvider({ children }) {
 
   /**
    * Listen for login event to reload sidebar
+   * Also listen for logout event to clear sidebar
    */
   useEffect(() => {
     const handleLogin = () => {
+      console.log("[v0] Auth login event received, reloading sidebar...")
       loadSidebar()
     }
 
+    const handleLogout = () => {
+      console.log("[v0] Auth logout event received, clearing sidebar...")
+      clearSidebar()
+    }
+
     window.addEventListener(AUTH_LOGIN_EVENT, handleLogin)
+    window.addEventListener(AUTH_LOGOUT_EVENT, handleLogout)
 
     return () => {
       window.removeEventListener(AUTH_LOGIN_EVENT, handleLogin)
+      window.removeEventListener(AUTH_LOGOUT_EVENT, handleLogout)
     }
-  }, [loadSidebar])
+  }, [loadSidebar, clearSidebar])
 
   const value = {
     // State
@@ -158,34 +168,4 @@ export function useSidebar() {
   }
 
   return context
-}
-
-/**
- * Hook to get permissions for current route
- * @param {string} path - Current path (optional, uses context if not provided)
- * @returns {Object} Permissions object with read, create, update, delete flags
- */
-export function usePermissions(path) {
-  const { getRoutePermissions, user } = useSidebar()
-
-  // Company role has all permissions
-  if (user?.role === "company") {
-    return {
-      read: true,
-      create: true,
-      update: true,
-      delete: true,
-    }
-  }
-
-  const permissions = getRoutePermissions(path)
-
-  return (
-    permissions || {
-      read: false,
-      create: false,
-      update: false,
-      delete: false,
-    }
-  )
 }

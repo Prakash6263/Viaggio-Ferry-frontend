@@ -403,13 +403,22 @@ export default function CurrencyListTable() {
                           >
                             <i className="bi bi-clock-history"></i> History
                           </button>
-                          <CanDisable action="update">
+                          <CanDisable action="update" path="/company/administration/currency">
                             <button
                               className="btn btn-sm btn-primary me-2"
                               onClick={() => handleUpdate(currency._id)}
                               title="Update Currency"
                             >
                               <i className="bi bi-pencil"></i> Update
+                            </button>
+                          </CanDisable>
+                          <CanDisable action="delete" path="/company/administration/currency">
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDelete(currency._id)}
+                              title="Delete Currency"
+                            >
+                              <i className="bi bi-trash"></i> Delete
                             </button>
                           </CanDisable>
                           {/* <button

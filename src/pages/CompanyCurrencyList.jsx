@@ -54,31 +54,35 @@ export default function CompanyCurrencyList() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="content-page-header">
-            <h5>Currencies</h5>
-            <div className="list-btn" style={{ justifySelf: "end" }}>
-              <ul className="filter-list">
-                <li>
-                  <Can action="create">
-                    <Link className="btn btn-turquoise" to="/company/administration/add-currency">
-                      <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>
-                      Add New Currency
-                    </Link>
-                  </Can>
-                </li>
-              </ul>
+        {/* READ permission gate - hide entire page if no read access */}
+        <Can action="read">
+          {/* Page Header */}
+          <div className="page-header">
+            <div className="content-page-header">
+              <h5>Currencies</h5>
+              <div className="list-btn" style={{ justifySelf: "end" }}>
+                <ul className="filter-list">
+                  <li>
+                    {/* CREATE action - uses LIST route path */}
+                    <Can action="create" path="/company/administration/currency">
+                      <Link className="btn btn-turquoise" to="/company/administration/add-currency">
+                        <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>
+                        Add New Currency
+                      </Link>
+                    </Can>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="row">
-          <div className="col-sm-12">
-            <CurrencyListTable />
+          {/* Table */}
+          <div className="row">
+            <div className="col-sm-12">
+              <CurrencyListTable />
+            </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

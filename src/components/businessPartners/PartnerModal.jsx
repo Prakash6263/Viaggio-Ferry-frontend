@@ -1,15 +1,20 @@
 "use client"
 
 // src/components/businessPartners/PartnerModal.jsx
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import PartnerUsersTable from "./PartnerUsersTable"
+import { companyApi } from "../../api/companyapi"
+import { CountryCodeSelector } from "../common/CountryCodeSelector"
+import { companyProfile } from "../../api/companyapi" // Declare companyProfile variable
 
-export default function PartnerModal({ open, onClose, onSave, editingPartner = null, allPartners = [] }) {
-  const [tab, setTab] = React.useState("basic") // "basic" | "credit" | "contact" | "users"
-  const [users, setUsers] = React.useState([])
+export default function PartnerModal({ open, onClose, onSave, editingPartner = null, allPartners = [], companyName }) {
+  const [tab, setTab] = useState("basic") // "basic" | "credit" | "contact" | "users"
+  const [users, setUsers] = useState([])
+  const [countryCode, setCountryCode] = useState("+1")
+  const [contactCountryCode, setContactCountryCode] = useState("+1")
 
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
@@ -31,8 +36,11 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
   })
 
   useEffect(() => {
-    if (open) document.body.classList.add("modal-open")
-    else document.body.classList.remove("modal-open")
+    if (open) {
+      document.body.classList.add("modal-open")
+    } else {
+      document.body.classList.remove("modal-open")
+    }
     return () => document.body.classList.remove("modal-open")
   }, [open])
 
@@ -46,7 +54,17 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
 
   useEffect(() => {
     if (editingPartner) {
-      setFormData(editingPartner)
+      const partnerData = { ...editingPartner }
+      // Extract phone number without country code for editing
+      if (partnerData.phone) {
+        partnerData.phone = partnerData.phone.replace(/\D/g, "")
+      }
+      if (partnerData.contactInformation?.phone) {
+        partnerData.contactInformation.phone = partnerData.contactInformation.phone.replace(/\D/g, "")
+      }
+      setFormData(partnerData)
+      setCountryCode("+1")
+      setContactCountryCode("+1")
     } else {
       setFormData({
         name: "",
@@ -68,6 +86,8 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
           hotline: "",
         },
       })
+      setCountryCode("+1")
+      setContactCountryCode("+1")
     }
   }, [editingPartner, open])
 
@@ -91,13 +111,26 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
     const { name, value } = e.target
     if (name.startsWith("contact-")) {
       const fieldName = name.replace("contact-", "")
-      setFormData((prev) => ({
-        ...prev,
-        contactInformation: {
-          ...prev.contactInformation,
-          [fieldName]: value,
-        },
-      }))
+      if (fieldName === "phone") {
+        // Store just the phone number without country code for editing
+        // Extract only digits from the input
+        const phoneOnly = value.replace(/\D/g, "")
+        setFormData((prev) => ({
+          ...prev,
+          contactInformation: {
+            ...prev.contactInformation,
+            [fieldName]: phoneOnly,
+          },
+        }))
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          contactInformation: {
+            ...prev.contactInformation,
+            [fieldName]: value,
+          },
+        }))
+      }
     } else if (name.startsWith("credit-")) {
       const fieldName = name.replace("credit-", "")
       setFormData((prev) => ({
@@ -107,6 +140,29 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
           [fieldName]: value,
         },
       }))
+    } else if (name === "phone") {
+      // Store just the phone number without country code for editing
+      // Extract only digits from the input
+      const phoneOnly = value.replace(/\D/g, "")
+      setFormData((prev) => ({
+        ...prev,
+        [name]: phoneOnly,
+      }))
+    } else if (name === "layer") {
+      // Auto-populate parent account when Marine layer is selected
+      setFormData((prev) => {
+        const newFormData = { ...prev, [name]: value }
+        if (value === "Marine" && companyName) {
+          // Find the company in allPartners if it exists, otherwise use companyName
+          const companyPartner = allPartners.find(
+            (p) => p.name === companyName && (!p.parentAccount || p.parentAccount === ""),
+          )
+          if (companyPartner) {
+            newFormData.parentAccount = companyPartner._id
+          }
+        }
+        return newFormData
+      })
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -122,6 +178,16 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
       users,
     }
 
+    // Combine country code with phone number for submission
+    if (payload.phone) {
+      payload.phone = `${countryCode}${payload.phone}`
+    }
+
+    // Combine country code with contact phone number for submission
+    if (payload.contactInformation?.phone) {
+      payload.contactInformation.phone = `${contactCountryCode}${payload.contactInformation.phone}`
+    }
+
     if (formData.layer === "Marine") {
       payload.parentAccount = null
     }
@@ -130,7 +196,7 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
   }
 
   const getFilteredParentAccounts = () => {
-    return allPartners.filter((p) => {
+    let filtered = allPartners.filter((p) => {
       // Don't show the current partner being edited
       if (editingPartner && p._id === editingPartner._id) return false
 
@@ -149,6 +215,16 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
 
       return true
     })
+
+    // If Marine layer and company name exists, find company from allPartners and add to list
+    if (formData.layer === "Marine" && companyName) {
+      const company = allPartners.find((p) => p.name === companyName && (!p.parentAccount || p.parentAccount === ""))
+      if (company && !filtered.some((p) => p._id === company._id)) {
+        filtered.unshift(company)
+      }
+    }
+
+    return filtered
   }
 
   const availableParentAccounts = getFilteredParentAccounts()
@@ -203,17 +279,36 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="basic-phone" className="form-label">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    id="basic-phone"
-                    name="phone"
-                    className="form-control"
-                    value={formData.phone}
-                    onChange={handleFormChange}
-                  />
+                  <label className="form-label">Phone (with Country Code)</label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+                    <div style={{ flex: "0 0 auto" }}>
+                      <label htmlFor="country-code" style={{ fontSize: "12px", display: "block", marginBottom: "4px" }}>
+                        Country Code
+                      </label>
+                      <CountryCodeSelector
+                        id="country-code"
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="form-control"
+                        style={{ minWidth: "140px" }}
+                      />
+                    </div>
+                    <div style={{ flex: "1" }}>
+                      <label htmlFor="basic-phone" style={{ fontSize: "12px", display: "block", marginBottom: "4px" }}>
+                        Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="basic-phone"
+                        name="phone"
+                        className="form-control"
+                        value={formData.phone}
+                        onChange={handleFormChange}
+                        placeholder="123 456 7890"
+                      />
+                    </div>
+                  </div>
+                  <small className="form-text text-muted">Select country code and enter phone number</small>
                 </div>
                 <div className="form-group">
                   <label htmlFor="basic-address" className="form-label">
@@ -244,27 +339,28 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                     <option value="Selling">Selling</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="basic-parent-account" className="form-label">
-                    Parent Account {formData.layer === "Marine" && "(Company)"}
-                    {formData.layer === "Commercial" && "(Marine Partner)"}
-                    {formData.layer === "Selling" && "(Commercial Partner)"}
-                  </label>
-                  <select
-                    id="basic-parent-account"
-                    name="parentAccount"
-                    className="form-control"
-                    value={formData.parentAccount}
-                    onChange={handleFormChange}
-                  >
-                    <option value="">-- Select Parent Account --</option>
-                    {availableParentAccounts.map((partner) => (
-                      <option key={partner._id} value={partner._id}>
-                        {partner.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {formData.layer !== "Marine" && (
+                  <div className="form-group">
+                    <label htmlFor="basic-parent-account" className="form-label">
+                      Parent Account {formData.layer === "Commercial" && "(Marine Partner)"}
+                      {formData.layer === "Selling" && "(Commercial Partner)"}
+                    </label>
+                    <select
+                      id="basic-parent-account"
+                      name="parentAccount"
+                      className="form-control"
+                      value={formData.parentAccount}
+                      onChange={handleFormChange}
+                    >
+                      <option value="">-- Select Parent Account --</option>
+                      {availableParentAccounts.map((partner) => (
+                        <option key={partner._id} value={partner._id}>
+                          {partner.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="form-group">
                   <label htmlFor="basic-status" className="form-label">
                     Partner Status
@@ -362,17 +458,36 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="contact-phone" className="form-label">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    id="contact-phone"
-                    name="contact-phone"
-                    className="form-control"
-                    value={formData.contactInformation.phone}
-                    onChange={handleFormChange}
-                  />
+                  <label className="form-label">Phone (with Country Code)</label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
+                    <div style={{ flex: "0 0 auto" }}>
+                      <label htmlFor="contact-country-code" style={{ fontSize: "12px", display: "block", marginBottom: "4px" }}>
+                        Country Code
+                      </label>
+                      <CountryCodeSelector
+                        id="contact-country-code"
+                        value={contactCountryCode}
+                        onChange={(e) => setContactCountryCode(e.target.value)}
+                        className="form-control"
+                        style={{ minWidth: "140px" }}
+                      />
+                    </div>
+                    <div style={{ flex: "1" }}>
+                      <label htmlFor="contact-phone" style={{ fontSize: "12px", display: "block", marginBottom: "4px" }}>
+                        Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="contact-phone"
+                        name="contact-phone"
+                        className="form-control"
+                        value={formData.contactInformation.phone}
+                        onChange={handleFormChange}
+                        placeholder="123 456 7890"
+                      />
+                    </div>
+                  </div>
+                  <small className="form-text text-muted">Select country code and enter phone number</small>
                 </div>
                 <div className="form-group">
                   <label htmlFor="contact-email" className="form-label">

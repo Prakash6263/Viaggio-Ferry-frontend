@@ -6,9 +6,11 @@ import { usersApi } from "../../api/usersApi"
 import { loginApi } from "../../api/loginApi"
 import { useParams } from "react-router-dom"
 import Swal from "sweetalert2"
+import Can from "../Can"
 
-export default function EditUserForm() {
-  const { userId } = useParams()
+export default function EditUserForm({ userId: propUserId }) {
+  const { userId: paramUserId } = useParams()
+  const userId = propUserId || paramUserId
   const [tab, setTab] = useState("profile")
   const [form, setForm] = useState({
     fullName: "",
@@ -618,9 +620,12 @@ export default function EditUserForm() {
         </div>
       </div>
 
-      <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
-        {loading ? "Updating User..." : "Update User"}
-      </button>
+      {/* UPDATE permission gate for submit button */}
+      <Can action="update" path="/admin/administration/user">
+        <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
+          {loading ? "Updating User..." : "Update User"}
+        </button>
+      </Can>
     </form>
   )
 }

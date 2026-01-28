@@ -174,49 +174,46 @@
  * USE PERMISSIONS HOOK
  * ====================
  * Provides permission-based UI control for components.
+ * Normalizes backend permission formats into a single internal format.
  * 
  * SECURITY: This is a UX-only layer. Backend still enforces real security.
+ * 
+ * Backend sends TWO possible formats:
+ *   A) userPermissions: { canRead, canWrite, canEdit, canDelete }
+ *   B) permissions: { read, create, update, delete }
+ * 
+ * Frontend normalizes both to: { read, create, update, delete }
  * 
  * Usage (with <Can /> component - RECOMMENDED):
  *  <Can action="create">
  *    <button>Add New</button>
  *  </Can>
+ *  
+ *  <Can action="update" path="/company/currency">
+ *    <button>Edit</button>
+ *  </Can>
  * 
- * Legacy usage (direct access):
- *  const perms = usePermissions()
- *  {perms.canRead && <Component />}
- *  {perms.canCreate && <AddButton />}
- * 
- * Permission Mapping:
- *  - Backend keys: canRead, canWrite, canEdit, canDelete
- *  - Frontend actions: read, create, update, delete
- *  - Company role: Always has all permissions
+ * @param {string} customPath - Optional custom path to check (defaults to current route)
+ * @returns {Object} Normalized permissions: { read, create, update, delete }
  */
 
 import { useLocation } from "react-router-dom"
 import { useSidebar } from "../context/SidebarContext"
 
 /**
- * Hook to get permissions for current route or specific path
+ * Hook to get normalized permissions for current route or specific path
  * @param {string} customPath - Optional custom path to check (defaults to current route)
- * @returns {Object} Permission object with backend keys (canRead, canWrite, canEdit, canDelete)
+ * @returns {Object} Normalized permission object { read, create, update, delete }
  */
 export function usePermissions(customPath = null) {
   const location = useLocation()
-  const { getRoutePermissions, user, menu } = useSidebar()
+  const { getRoutePermissions, user } = useSidebar()
 
   const path = customPath || location.pathname
 
   // Company role has all permissions
   if (user?.role === "company") {
     return {
-      canRead: true,
-      canWrite: true,
-      canEdit: true,
-      canDelete: true,
-      // Legacy compatibility
-      canCreate: true,
-      canUpdate: true,
       read: true,
       create: true,
       update: true,
@@ -224,19 +221,22 @@ export function usePermissions(customPath = null) {
     }
   }
 
-  // Get permissions for route from backend
+  // Get raw permissions from backend (via sidebar context)
   const rawPermissions = getRoutePermissions(path) || {}
 
-  // Backend provides strict keys: canRead, canWrite, canEdit, canDelete
-  // Trust backend contract strictly - no fallbacks
-  const permissions = {
-    canRead: rawPermissions.canRead === true,
-    canWrite: rawPermissions.canWrite === true,
-    canEdit: rawPermissions.canEdit === true,
-    canDelete: rawPermissions.canDelete === true,
+  // Normalize: Backend sends either format, convert to internal standard
+  // Format A: { canRead, canWrite, canEdit, canDelete }
+  // Format B: { read, create, update, delete }
+  // We normalize to: { read, create, update, delete }
+  
+  const normalized = {
+    read: rawPermissions.canRead === true || rawPermissions.read === true,
+    create: rawPermissions.canWrite === true || rawPermissions.create === true,
+    update: rawPermissions.canEdit === true || rawPermissions.update === true,
+    delete: rawPermissions.canDelete === true || rawPermissions.delete === true,
   }
 
-  return permissions
+  return normalized
 }
 
 /**

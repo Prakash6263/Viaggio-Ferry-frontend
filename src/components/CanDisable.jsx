@@ -14,12 +14,13 @@ import { usePermissions } from "../hooks/usePermissions"
  *    <button>Edit</button>
  *  </CanDisable>
  *
- *  <CanDisable action="delete">
+ *  <CanDisable action="delete" path="/company/administration/currency">
  *    <button className="btn-danger">Delete</button>
  *  </CanDisable>
  *
  * Props:
  *  - action: "read" | "create" | "update" | "delete" (required)
+ *  - path: Optional path to check (defaults to current route)
  *  - children: Button or element to conditionally disable (required)
  *  - tooltip: Custom tooltip text (optional, default: "You do not have permission")
  *
@@ -33,29 +34,20 @@ import { usePermissions } from "../hooks/usePermissions"
  *  - Use <Can /> instead when you want to hide the UI completely
  *  - Works with both company and user roles
  */
-export default function CanDisable({ action, children, tooltip = "You do not have permission" }) {
-  const permissions = usePermissions()
+export default function CanDisable({ action, path = null, children, tooltip = "You do not have permission" }) {
+  const permissions = usePermissions(path)
 
   // If no permissions object (edge case), render enabled
   if (!permissions) return children
 
-  // Map frontend action names to permission keys
-  const permissionMap = {
-    read: "canRead",
-    create: "canWrite",
-    update: "canEdit",
-    delete: "canDelete",
-  }
-
-  const permissionKey = permissionMap[action]
-
-  if (!permissionKey) {
+  // Validate action
+  if (!["read", "create", "update", "delete"].includes(action)) {
     console.warn(`[v0] CanDisable: Unknown action "${action}". Use: read | create | update | delete`)
     return children
   }
 
-  // Check if permission is granted
-  const allowed = permissions[permissionKey] === true
+  // Check if permission is granted using normalized format
+  const allowed = permissions[action] === true
 
   // If allowed, render children as-is
   if (allowed) return children

@@ -52,10 +52,14 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`
 
-  // Add default headers
+  // Add default headers (but don't override Content-Type if body is FormData)
   const headers = {
-    "Content-Type": "application/json",
     ...fetchOptions.headers,
+  }
+
+  // Only set Content-Type for non-FormData requests
+  if (!(fetchOptions.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json"
   }
 
   // Add Authorization header if token exists and not skipped
@@ -106,12 +110,26 @@ export const apiFetch = async (endpoint, options = {}) => {
 export const apiRequest = async (endpoint, options = {}) => {
   const response = await apiFetch(endpoint, options)
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `Request failed with status ${response.status}`)
+  // Try to parse response as JSON
+  let responseData
+  try {
+    const contentType = response.headers.get("content-type")
+    if (contentType && contentType.includes("application/json")) {
+      responseData = await response.json()
+    } else {
+      // If not JSON, return empty object for non-JSON responses
+      responseData = {}
+    }
+  } catch (error) {
+    console.error("[v0] Failed to parse response:", error)
+    responseData = {}
   }
 
-  return response.json()
+  if (!response.ok) {
+    throw new Error(responseData.message || `Request failed with status ${response.status}`)
+  }
+
+  return responseData
 }
 
 export { API_BASE_URL }

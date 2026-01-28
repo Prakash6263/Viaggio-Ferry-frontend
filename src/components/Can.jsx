@@ -1,70 +1,41 @@
 import { usePermissions } from "../hooks/usePermissions"
 
 /**
- * Can Component - Enterprise-grade Permission Guard
- *
- * Provides clean, declarative permission-based UI rendering.
- * Replaces boilerplate permission checks throughout your pages.
- *
+ * Can Component - Permission-based Conditional Rendering
+ * 
+ * Hides UI completely if user lacks permission.
+ * Perfect for hiding buttons, sections, or features.
+ * 
  * SECURITY: This is a UX-only layer. Backend still enforces real security.
- *
+ * 
  * Usage:
  *  <Can action="create">
  *    <button>Add New</button>
  *  </Can>
- *
- *  <Can action="update">
- *    <button>Edit</button>
+ *  
+ *  <Can action="delete" path="/company/administration/currency">
+ *    <button className="btn-danger">Delete</button>
  *  </Can>
- *
- *  <Can action="delete">
- *    <button>Delete</button>
- *  </Can>
- *
- *  <Can action="read" fallback={<p>No access</p>}>
- *    <PageContent />
- *  </Can>
- *
+ * 
  * Props:
  *  - action: "read" | "create" | "update" | "delete" (required)
- *  - children: JSX to render if permitted (required)
- *  - fallback: JSX to render if NOT permitted (optional, default: null)
- *
- * Notes:
- *  - Frontend permission mapping:
- *    - read   → backend canRead
- *    - create → backend canWrite
- *    - update → backend canEdit
- *    - delete → backend canDelete
- *  - Handles missing permissions gracefully
- *  - Works with both company and user roles
+ *  - path: Optional path to check (defaults to current route)
+ *  - children: Content to render if allowed (required)
+ *  - fallback: Content to render if denied (default: null)
+ * 
+ * Permission resolution:
+ *  - If path provided: checks permissions for that path
+ *  - Otherwise: checks permissions for current route
+ *  - Company role: Always allowed
+ *  - User role: Checks normalized permissions from backend
  */
-export default function Can({ action, children, fallback = null }) {
-  const permissions = usePermissions()
+export default function Can({ action, path = null, children, fallback = null }) {
+  const permissions = usePermissions(path)
 
-  // If no permissions object (edge case), show fallback
   if (!permissions) return fallback
 
-  // Map frontend action names to permission keys
-  // Backend returns: canRead, canWrite, canEdit, canDelete
-  // Frontend actions: read, create, update, delete
-  const permissionMap = {
-    read: "canRead",
-    create: "canWrite",
-    update: "canEdit",
-    delete: "canDelete",
-  }
+  // All actions map to the normalized permission format
+  const allowed = permissions[action] === true
 
-  const permissionKey = permissionMap[action]
-
-  if (!permissionKey) {
-    console.warn(`[v0] Can: Unknown action "${action}". Use: read | create | update | delete`)
-    return fallback
-  }
-
-  // Check if permission is granted
-  const allowed = permissions[permissionKey] === true
-
-  // Render children if allowed, otherwise render fallback
   return allowed ? children : fallback
 }
