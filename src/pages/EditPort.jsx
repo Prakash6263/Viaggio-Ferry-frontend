@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
@@ -10,9 +10,12 @@ import { PageWrapper } from "../components/layout/PageWrapper";
 import { portsApi } from "../api/portsApi";
 import { countryApi } from "../api/countryApi";
 
-export default function AddPort() {
+
+export default function EditPort() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [countriesLoading, setCountriesLoading] = useState(true);
   const [countries, setCountries] = useState([]);
   const [formData, setFormData] = useState({
@@ -46,11 +49,47 @@ export default function AddPort() {
     fetchCountries();
   }, []);
 
+  // Fetch port data
+  useEffect(() => {
+    const fetchPort = async () => {
+      try {
+        setLoading(true);
+       const response = await portsApi.getPortById(id);
+const data = response.data;
+
+        console.log("[v0] Fetched port data:", data);
+        
+        setFormData({
+          name: data.name || "",
+          code: data.code || "",
+          country: data.country || "",
+          timezone: data.timezone || "",
+          status: data.status || "Active",
+          notes: data.notes || "",
+        });
+      } catch (error) {
+        console.error("[v0] Error fetching port:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to load port details",
+        });
+        navigate("/company/settings/port");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPort();
+    }
+  }, [id, navigate]);
+
   const handleInputChange = (e) => {
-    const { id, value } = e.target;
+    const { id: fieldId, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [id === "portName" ? "name" : id === "portCode" ? "code" : id === "countrySelect" ? "country" : id === "statusSelect" ? "status" : id]: value,
+      [fieldId === "portName" ? "name" : fieldId === "portCode" ? "code" : fieldId === "countrySelect" ? "country" : fieldId === "statusSelect" ? "status" : fieldId]: value,
     }));
   };
 
@@ -68,7 +107,7 @@ export default function AddPort() {
     }
 
     try {
-      setLoading(true);
+      setSubmitting(true);
       const payload = {
         name: formData.name,
         code: formData.code.toUpperCase(),
@@ -78,26 +117,26 @@ export default function AddPort() {
         notes: formData.notes,
       };
 
-      await portsApi.createPort(payload);
+      await portsApi.updatePort(id, payload);
 
       Swal.fire({
         icon: "success",
         title: "Success!",
-        text: "Port created successfully",
+        text: "Port updated successfully",
         timer: 2000,
         showConfirmButton: false,
       });
 
       navigate("/company/settings/port");
     } catch (error) {
-      console.error("[v0] Error creating port:", error);
+      console.error("[v0] Error updating port:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.message || "Failed to create port",
+        text: error.message || "Failed to update port",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -119,7 +158,7 @@ export default function AddPort() {
             <div className="col-sm-12">
               <div className="card-table card p-2">
                 <div className="card-body">
-                  <h5 className="mb-3">Add New Port</h5>
+                  <h5 className="mb-3">Edit Port</h5>
 
                   {loading ? (
                     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
@@ -235,8 +274,8 @@ export default function AddPort() {
                         ></textarea>
                       </div>
 
-                      <button type="submit" className="btn btn-turquoise" disabled={loading}>
-                        {loading ? "Creating..." : "Add Port"}
+                      <button type="submit" className="btn btn-turquoise" disabled={submitting || loading}>
+                        {submitting ? "Updating..." : "Update Port"}
                       </button>
                     </form>
                   )}
