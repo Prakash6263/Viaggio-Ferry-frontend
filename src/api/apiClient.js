@@ -35,6 +35,7 @@ const triggerLogout = () => {
   localStorage.removeItem("authToken")
   localStorage.removeItem("companyId")
   localStorage.removeItem("companyProfile")
+  localStorage.removeItem("userInfo")
 
   // Dispatch custom event so components can react to logout
   window.dispatchEvent(new CustomEvent(AUTH_LOGOUT_EVENT))

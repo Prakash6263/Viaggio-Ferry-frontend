@@ -320,6 +320,7 @@ import Port from "./pages/Port"
 import AddPort from "./pages/AddPort"
 import Cabin from "./pages/Cabin"
 import AddCabin from "./pages/AddCabin"
+import EditCabin from "./pages/EditCabin"
 import PayloadType from "./pages/PayloadType"
 import SystemAlerts from "./pages/SystemAlerts"
 import EditPort from "./pages/EditPort"
@@ -524,6 +525,7 @@ function AppRoutes() {
         <Route path="/company/settings/add-port" element={<ProtectedRoute element={<AddPort />} />} />
         <Route path="/company/settings/port/:id" element={<ProtectedRoute element={<EditPort />} />} />
         <Route path="/company/settings/cabin" element={<ProtectedRoute element={<Cabin />} />} />
+        <Route path="/company/settings/cabin/:cabinId" element={<ProtectedRoute element={<EditCabin />} />} />
         <Route path="/company/settings/add-cabin" element={<ProtectedRoute element={<AddCabin />} />} />
         <Route path="/company/settings/payload-type" element={<ProtectedRoute element={<PayloadType />} />} />
 

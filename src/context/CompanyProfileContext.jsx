@@ -7,6 +7,23 @@ import { AUTH_LOGOUT_EVENT } from "../api/apiClient"
 
 const CompanyProfileContext = createContext(null)
 
+// Helper function to decode JWT and extract user role
+function getUserRoleFromToken() {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
+
+    const parts = token.split(".")
+    if (parts.length !== 3) return null
+
+    const decoded = JSON.parse(atob(parts[1]))
+    return decoded.role // Returns "company" or "user" based on JWT
+  } catch (err) {
+    console.error("[v0] Failed to decode token:", err)
+    return null
+  }
+}
+
 export function CompanyProfileProvider({ children }) {
   const [companyProfile, setCompanyProfile] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -22,11 +39,24 @@ export function CompanyProfileProvider({ children }) {
     setError(null)
 
     try {
-      const company = await companyApi.getCompanyProfile()
-      setCompanyProfile(company)
+      const userRole = getUserRoleFromToken()
+      console.log("[v0] User role:", userRole)
+
+      let profile
+      if (userRole === "company") {
+        // Company user - fetch from companies/me
+        profile = await companyApi.getCompanyProfile()
+      } else if (userRole === "user") {
+        // Regular user - fetch from users/me
+        profile = await loginApi.getUserProfile()
+      } else {
+        throw new Error("Unknown user role")
+      }
+
+      setCompanyProfile(profile)
     } catch (err) {
-      console.error("[v0] Failed to fetch company profile:", err.message)
-      setError(err.message || "Unable to load company profile")
+      console.error("[v0] Failed to fetch profile:", err.message)
+      setError(err.message || "Unable to load profile")
       setCompanyProfile(null)
     } finally {
       setLoading(false)
