@@ -42,14 +42,31 @@ const triggerLogout = () => {
 }
 
 /**
+ * Wait for token to be available (with timeout)
+ * Used after login to ensure token is in localStorage before making API calls
+ */
+const waitForToken = async (maxWaitMs = 2000) => {
+  const startTime = Date.now()
+  while (Date.now() - startTime < maxWaitMs) {
+    const token = localStorage.getItem("authToken")
+    if (token) {
+      return token
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  return null
+}
+
+/**
  * Authenticated fetch wrapper that handles token expiration
  * @param {string} endpoint - API endpoint (relative to base URL)
  * @param {Object} options - Fetch options
  * @param {boolean} options.skipAuth - If true, don't add Authorization header
+ * @param {boolean} options.waitForToken - If true, wait for token to be available
  * @returns {Promise<Response>} - Fetch response
  */
 export const apiFetch = async (endpoint, options = {}) => {
-  const { skipAuth = false, ...fetchOptions } = options
+  const { skipAuth = false, waitForToken: shouldWaitForToken = false, ...fetchOptions } = options
 
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`
 
@@ -65,9 +82,18 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   // Add Authorization header if token exists and not skipped
   if (!skipAuth) {
-    const token = localStorage.getItem("authToken")
+    let token = localStorage.getItem("authToken")
+    
+    // If we should wait for token and it's not available, wait for it
+    if (shouldWaitForToken && !token) {
+      console.log("[v0] Waiting for token to be available...")
+      token = await waitForToken()
+    }
+    
     if (token) {
       headers.Authorization = `Bearer ${token}`
+    } else if (!skipAuth) {
+      console.warn("[v0] No authentication token found for request to", endpoint)
     }
   }
 

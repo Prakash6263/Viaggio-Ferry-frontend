@@ -639,12 +639,47 @@ import { useParams } from "react-router-dom"
 import Swal from "sweetalert2"
 import Can from "../Can"
 
+// Helper function to decode JWT and extract user role
+function getUserRoleFromToken() {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
 
+    const parts = token.split(".")
+    if (parts.length !== 3) return null
+
+    const decoded = JSON.parse(atob(parts[1]))
+    return decoded.role // Returns "company" or "user"
+  } catch (err) {
+    console.error("Failed to decode token:", err)
+    return null
+  }
+}
+
+// Helper function to get logged-in user ID
+function getLoggedInUserId() {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
+
+    const parts = token.split(".")
+    if (parts.length !== 3) return null
+
+    const decoded = JSON.parse(atob(parts[1]))
+    return decoded.id || decoded.userId // Returns the logged-in user's ID
+  } catch (err) {
+    console.error("Failed to decode token:", err)
+    return null
+  }
+}
 
 export default function EditUserForm({ userId: propUserId }) {
   const { userId: paramUserId } = useParams()
   const userId = propUserId || paramUserId
   const [tab, setTab] = useState("profile")
+  const loggedInUserRole = getUserRoleFromToken()
+  const loggedInUserId = getLoggedInUserId()
+  const isUserEditingOwnProfile = loggedInUserRole === "user" && loggedInUserId === userId
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -693,24 +728,34 @@ export default function EditUserForm({ userId: propUserId }) {
   )
 
   useEffect(() => {
-    fetchCurrentCompany()
-    fetchPartners()
-    fetchUserData()
+    // Add small delay to ensure token and sidebar are ready after login
+    const timer = setTimeout(() => {
+      fetchCurrentCompany()
+      fetchPartners()
+      fetchUserData()
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [userId])
 
   const fetchCurrentCompany = async () => {
     try {
-      const response = await loginApi.getCompanyProfile()
+      console.log("[v0] Fetching current profile (company or user)...")
+      // Use smart getProfile that chooses the right API based on login type
+      const response = await loginApi.getProfile()
       if (response.data) {
+        console.log("[v0] Profile fetched successfully")
         setCurrentCompany(response.data)
       }
     } catch (err) {
-      console.error("Error fetching current company:", err)
+      console.error("[v0] Error fetching profile:", err)
+      setError("Failed to load profile information")
     }
   }
 
   const fetchUserData = async () => {
     try {
+      console.log("[v0] Fetching user data for userId:", userId)
       setInitialLoading(true)
       const response = await usersApi.getUserById(userId)
       if (response.data) {
@@ -962,20 +1007,31 @@ export default function EditUserForm({ userId: propUserId }) {
         })
       })
 
-      const payload = {
-        fullName: form.fullName,
-        email: form.email,
-        position: form.position,
-        layer: layerInfo?.layer,
-        isSalesman: form.isSalesman,
-        partnerId: form.partnerId === "company" ? null : form.partnerId,
-        remarks: form.remarks,
-        moduleAccess: moduleAccessArray,
+      // If user is editing their own profile, only allow name and position changes
+      let payload
+      if (isUserEditingOwnProfile) {
+        payload = {
+          fullName: form.fullName,
+          position: form.position,
+        }
+      } else {
+        payload = {
+          fullName: form.fullName,
+          email: form.email,
+          position: form.position,
+          layer: layerInfo?.layer,
+          isSalesman: form.isSalesman,
+          partnerId: form.partnerId === "company" ? null : form.partnerId,
+          remarks: form.remarks,
+          moduleAccess: moduleAccessArray,
+        }
       }
 
       const result = await Swal.fire({
         title: "Confirm Update",
-        text: `Are you sure you want to update user ${form.fullName}?`,
+        text: isUserEditingOwnProfile 
+          ? `Are you sure you want to update your name and position?`
+          : `Are you sure you want to update user ${form.fullName}?`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#2575fc",
@@ -1057,6 +1113,15 @@ export default function EditUserForm({ userId: propUserId }) {
         </div>
       )}
 
+      {/* Show user restriction message if user is editing their own profile */}
+      {isUserEditingOwnProfile && (
+        <div className="alert alert-info alert-dismissible fade show" role="alert">
+          <i className="bi bi-info-circle me-2"></i>
+          You can only edit your Name and Position. Other details are managed by your company administrator.
+          <button type="button" className="btn-close" onClick={() => {}}></button>
+        </div>
+      )}
+
       <ul className="nav nav-tabs" id="userTabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button
@@ -1069,17 +1134,19 @@ export default function EditUserForm({ userId: propUserId }) {
             User Profile
           </button>
         </li>
-        <li className="nav-item" role="presentation">
-          <button
-            type="button"
-            className={`nav-link ${tab === "access" ? "active" : ""}`}
-            onClick={() => setTab("access")}
-            role="tab"
-            aria-selected={tab === "access"}
-          >
-            Module Access
-          </button>
-        </li>
+        {!isUserEditingOwnProfile && (
+          <li className="nav-item" role="presentation">
+            <button
+              type="button"
+              className={`nav-link ${tab === "access" ? "active" : ""}`}
+              onClick={() => setTab("access")}
+              role="tab"
+              aria-selected={tab === "access"}
+            >
+              Module Access
+            </button>
+          </li>
+        )}
       </ul>
 
       <div className="tab-content mt-3" id="userTabsContent">
@@ -1112,6 +1179,7 @@ export default function EditUserForm({ userId: propUserId }) {
                 placeholder="Email Address"
                 value={form.email}
                 onChange={onChange}
+                disabled={isUserEditingOwnProfile}
                 required
               />
             </div>
@@ -1140,7 +1208,7 @@ export default function EditUserForm({ userId: propUserId }) {
                 className="form-select"
                 value={form.partnerId || ""}
                 onChange={onChange}
-                disabled={partnersLoading}
+                disabled={partnersLoading || isUserEditingOwnProfile}
                 required
               >
                 <option value="">Select</option>
@@ -1205,13 +1273,14 @@ export default function EditUserForm({ userId: propUserId }) {
               <div>
                 <label
                   className="status-toggle"
-                  style={{ position: "relative", display: "inline-block", width: 50, height: 24 }}
+                  style={{ position: "relative", display: "inline-block", width: 50, height: 24, opacity: isUserEditingOwnProfile ? 0.5 : 1, cursor: isUserEditingOwnProfile ? "not-allowed" : "pointer" }}
                 >
                   <input
                     type="checkbox"
                     name="isSalesman"
                     checked={form.isSalesman}
                     onChange={onChange}
+                    disabled={isUserEditingOwnProfile}
                     style={{ opacity: 0, width: 0, height: 0 }}
                   />
                   <span
@@ -1253,6 +1322,7 @@ export default function EditUserForm({ userId: propUserId }) {
                 placeholder="Additional remarks"
                 value={form.remarks}
                 onChange={onChange}
+                disabled={isUserEditingOwnProfile}
               />
             </div>
           </div>

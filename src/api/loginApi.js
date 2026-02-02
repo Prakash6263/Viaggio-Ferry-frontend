@@ -145,13 +145,9 @@ export const loginApi = {
   // Fetch company profile
   getCompanyProfile: async () => {
     try {
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        throw new Error("No authentication token found")
-      }
-
       const response = await apiFetch("/api/companies/me", {
         method: "GET",
+        waitForToken: true, // Wait for token if not available yet
       })
 
       if (!response.ok) {
@@ -170,13 +166,9 @@ export const loginApi = {
   // Fetch user profile (for non-company users)
   getUserProfile: async () => {
     try {
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        throw new Error("No authentication token found")
-      }
-
       const response = await apiFetch("/api/users/me", {
         method: "GET",
+        waitForToken: true, // Wait for token if not available yet
       })
 
       if (!response.ok) {
@@ -188,6 +180,43 @@ export const loginApi = {
       return data
     } catch (error) {
       console.error("[v0] Get User Profile Error:", error.message)
+      throw error
+    }
+  },
+
+  // Smart profile getter - automatically chooses the right API based on JWT token role
+  getProfile: async () => {
+    try {
+      const token = localStorage.getItem("authToken")
+      let userRole = null
+
+      if (token) {
+        try {
+          const parts = token.split(".")
+          if (parts.length === 3) {
+            const decoded = JSON.parse(atob(parts[1]))
+            // Check multiple possible field names for role
+            userRole = decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
+            console.log("[v0] getProfile - JWT decoded, role found:", userRole)
+          }
+        } catch (decodeErr) {
+          console.error("[v0] getProfile - Failed to decode JWT:", decodeErr.message)
+        }
+      }
+
+      console.log("[v0] getProfile - Determined role:", userRole)
+
+      // If role is "user", call /api/users/me
+      if (userRole === "user") {
+        console.log("[v0] getProfile - Calling /api/users/me (user role detected)")
+        return await loginApi.getUserProfile()
+      } else {
+        // Default to company API for company logins or unknown roles
+        console.log("[v0] getProfile - Calling /api/companies/me (company role or default)")
+        return await loginApi.getCompanyProfile()
+      }
+    } catch (error) {
+      console.error("[v0] Get Profile Error:", error.message)
       throw error
     }
   },

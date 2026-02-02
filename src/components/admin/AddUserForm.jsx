@@ -58,12 +58,13 @@ export default function AddUserForm() {
 
   const fetchCurrentCompany = async () => {
     try {
-      const response = await loginApi.getCompanyProfile()
+      // Use smart getProfile that chooses the right API based on login type
+      const response = await loginApi.getProfile()
       if (response.data) {
         setCurrentCompany(response.data)
       }
     } catch (err) {
-      console.error("Error fetching current company:", err)
+      console.error("[v0] Error fetching profile:", err)
     }
   }
 

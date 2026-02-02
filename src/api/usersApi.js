@@ -10,7 +10,7 @@ export const usersApi = {
   },
 
   // 2. Get all users list with pagination and filters
-  getUsersList: async (page = 1, limit = 10, status = "Active", sortBy = "createdAt", sortOrder = "desc") => {
+  getUsersList: async (page = 1, limit = 10, status = "Active", sortBy = "createdAt", sortOrder = "desc", search = "") => {
     const params = new URLSearchParams({
       page,
       limit,
@@ -18,6 +18,9 @@ export const usersApi = {
       sortBy,
       sortOrder,
     })
+    if (search) {
+      params.append("search", search)
+    }
     return apiRequest(`/api/users?${params.toString()}`)
   },
 

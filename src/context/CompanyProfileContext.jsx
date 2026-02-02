@@ -17,7 +17,8 @@ function getUserRoleFromToken() {
     if (parts.length !== 3) return null
 
     const decoded = JSON.parse(atob(parts[1]))
-    return decoded.role // Returns "company" or "user" based on JWT
+    // Try different field names that backend might use
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
   } catch (err) {
     console.error("[v0] Failed to decode token:", err)
     return null
@@ -40,17 +41,15 @@ export function CompanyProfileProvider({ children }) {
 
     try {
       const userRole = getUserRoleFromToken()
-      console.log("[v0] User role:", userRole)
 
       let profile
       if (userRole === "company") {
-        // Company user - fetch from companies/me
         profile = await companyApi.getCompanyProfile()
       } else if (userRole === "user") {
-        // Regular user - fetch from users/me
         profile = await loginApi.getUserProfile()
       } else {
-        throw new Error("Unknown user role")
+        // Default to company API if role is not determined
+        profile = await companyApi.getCompanyProfile()
       }
 
       setCompanyProfile(profile)
@@ -70,18 +69,20 @@ export function CompanyProfileProvider({ children }) {
 
   useEffect(() => {
     if (loginApi.isAuthenticated()) {
-      fetchCompanyProfile()
+      // Add delay to ensure JWT token is properly stored and readable
+      const timer = setTimeout(() => {
+        fetchCompanyProfile()
+      }, 200)
+      return () => clearTimeout(timer)
     }
   }, [fetchCompanyProfile])
 
   useEffect(() => {
     const handleLogin = () => {
-      console.log("[v0] Auth login event, loading company profile...")
       fetchCompanyProfile()
     }
 
     const handleLogout = () => {
-      console.log("[v0] Auth logout event, clearing company profile...")
       clearCompanyProfile()
     }
 

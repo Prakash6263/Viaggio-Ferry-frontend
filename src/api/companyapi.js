@@ -6,13 +6,9 @@ export const companyApi = {
   // Fetch company profile
   getCompanyProfile: async () => {
     try {
-      const token = localStorage.getItem("authToken")
-      if (!token) {
-        throw new Error("No authentication token found")
-      }
-
       const response = await apiFetch("/api/companies/me", {
         method: "GET",
+        waitForToken: true, // Wait for token if not available yet
       })
 
       if (!response.ok) {

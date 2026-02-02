@@ -22,9 +22,10 @@ const getLoginRoleFromToken = () => {
   try {
     const token = localStorage.getItem("authToken")
     if (!token) return null
-    
+
     const decoded = JSON.parse(atob(token.split(".")[1]))
-    return decoded.role // "user" or "company"
+    // Try multiple field names that backend might use
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
   } catch (error) {
     console.error("[v0] Error decoding token:", error)
     return null
@@ -55,15 +56,13 @@ export default function Header() {
     const fetchProfileData = async () => {
       try {
         setLoadingProfile(true)
-        
+
         if (loginRole === "user") {
-          // Fetch user profile for user login
           const response = await usersApi.getCurrentProfile()
           if (response.success && response.data) {
             setUserProfile(response.data)
           }
         } else if (loginRole === "company") {
-          // Fetch company profile for company login
           const response = await companyApi.getCompanyProfile()
           if (response.data) {
             setCompanyData(response.data)
