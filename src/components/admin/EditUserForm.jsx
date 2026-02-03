@@ -1,825 +1,45 @@
-// "use client"
+'use client';
 
-// import { useMemo, useState, useEffect } from "react"
-// import { partnerApi } from "../../api/partnerApi"
-// import { usersApi } from "../../api/usersApi"
-// import { loginApi } from "../../api/loginApi"
-// import { useParams } from "react-router-dom"
-// import Swal from "sweetalert2"
-// import Can from "../Can"
-
-// export default function EditUserForm({ userId: propUserId }) {
-//   const { userId: paramUserId } = useParams()
-//   const userId = propUserId || paramUserId
-//   const [tab, setTab] = useState("profile")
-//   const [form, setForm] = useState({
-//     fullName: "",
-//     email: "",
-//     position: "",
-//     partnerId: null,
-//     isSalesman: false,
-//     remarks: "",
-//   })
-
-//   const [loading, setLoading] = useState(false)
-//   const [initialLoading, setInitialLoading] = useState(true)
-//   const [error, setError] = useState(null)
-//   const [partners, setPartners] = useState([])
-//   const [partnersLoading, setPartnersLoading] = useState(false)
-//   const [currentCompany, setCurrentCompany] = useState(null)
-
-//   const [moduleAccess, setModuleAccess] = useState({})
-//   const [accessGroupsByModule, setAccessGroupsByModule] = useState({})
-//   const [accessGroupsLoading, setAccessGroupsLoading] = useState({})
-//   const [loadedAccessGroups, setLoadedAccessGroups] = useState({})
-
-//   // ---- CONSTANTS
-//   const agentLayerMap = useMemo(
-//     () => ({
-//       company: { type: "Company", layer: "company" },
-//       "marine-agent": { type: "Marine Agent", layer: "marine-agent" },
-//       "commercial-agent": { type: "Commercial Agent", layer: "commercial-agent" },
-//       "selling-agent": { type: "Selling Agent", layer: "selling-agent" },
-//     }),
-//     [],
-//   )
-
-//   const modules = useMemo(
-//     () => [
-//       { code: "settings", name: "Settings" },
-//       { code: "administration", name: "Administration" },
-//       { code: "ship-trips", name: "Ship & Trips" },
-//       { code: "partners-management", name: "Partners Management" },
-//       { code: "sales-bookings", name: "Sales & Bookings" },
-//       { code: "checkin-boardings", name: "Check-in & Boardings" },
-//       { code: "finance", name: "Finance" },
-//     ],
-//     [],
-//   )
-
-//   useEffect(() => {
-//     fetchCurrentCompany()
-//     fetchPartners()
-//     fetchUserData()
-//   }, [userId])
-
-//   const fetchCurrentCompany = async () => {
-//     try {
-//       const response = await loginApi.getCompanyProfile()
-//       if (response.data) {
-//         setCurrentCompany(response.data)
-//       }
-//     } catch (err) {
-//       console.error("Error fetching current company:", err)
-//     }
-//   }
-
-//   const fetchUserData = async () => {
-//     try {
-//       setInitialLoading(true)
-//       const response = await usersApi.getUserById(userId)
-//       if (response.data) {
-//         const user = response.data
-//         setForm({
-//           fullName: user.fullName || "",
-//           email: user.email || "",
-//           position: user.position || "",
-//           partnerId: user.partnerId || "company",
-//           isSalesman: user.isSalesman || false,
-//           remarks: user.remarks || "",
-//         })
-
-//         if (user.moduleAccess && Array.isArray(user.moduleAccess)) {
-//           const accessMap = {}
-//           const groupDetailsMap = {}
-
-//           user.moduleAccess.forEach((access) => {
-//             const moduleCode = access.moduleCode
-//             const groupId = access.accessGroupId._id
-//             const groupDetails = access.accessGroupId
-
-//             if (!accessMap[moduleCode]) {
-//               accessMap[moduleCode] = []
-//             }
-//             if (!groupDetailsMap[moduleCode]) {
-//               groupDetailsMap[moduleCode] = []
-//             }
-
-//             accessMap[moduleCode].push(groupId)
-//             groupDetailsMap[moduleCode].push(groupDetails)
-//           })
-
-//           setModuleAccess(accessMap)
-//           setLoadedAccessGroups(groupDetailsMap)
-//         }
-//       }
-//     } catch (err) {
-//       console.error("Error fetching user:", err)
-//       setError(err.message || "Failed to load user data")
-//     } finally {
-//       setInitialLoading(false)
-//     }
-//   }
-
-//   useEffect(() => {
-//     if (form.partnerId) {
-//       fetchAccessGroupsForPartner()
-//     } else {
-//       setAccessGroupsByModule({})
-//     }
-//   }, [form.partnerId])
-
-//   const fetchPartners = async () => {
-//     try {
-//       setPartnersLoading(true)
-//       const response = await partnerApi.getPartnersList()
-//       setPartners(response.data || [])
-//       setError(null)
-//     } catch (err) {
-//       console.error("Error fetching partners:", err)
-//       setError("Failed to load partners")
-//     } finally {
-//       setPartnersLoading(false)
-//     }
-//   }
-
-//   const fetchAccessGroupsForPartner = async () => {
-//     if (!form.partnerId) return
-
-//     let selectedLayer = "company"
-
-//     if (form.partnerId !== "company") {
-//       const selectedPartner = partners.find((p) => p._id === form.partnerId)
-//       if (selectedPartner) {
-//         selectedLayer = (
-//           selectedPartner.layer?.toLowerCase() ||
-//           selectedPartner.type?.toLowerCase() ||
-//           "commercial-agent"
-//         )
-//           .replace(/\s+/g, "-")
-//           .replace("marine", "marine-agent")
-//           .replace("commercial", "commercial-agent")
-//           .replace("selling", "selling-agent")
-//       }
-//     }
-
-//     try {
-//       const groupedAccessGroups = {}
-
-//       for (const module of modules) {
-//         try {
-//           setAccessGroupsLoading((prev) => ({ ...prev, [module.code]: true }))
-//           const response = await usersApi.getAccessGroupsByModuleLayer(module.code, selectedLayer)
-//           const accessGroups = response.data?.accessGroups || []
-//           const loadedGroups = loadedAccessGroups[module.code] || []
-
-//           const merged = [
-//             ...loadedGroups,
-//             ...accessGroups.filter((ag) => !loadedGroups.some((lg) => lg._id === ag._id)),
-//           ]
-
-//           groupedAccessGroups[module.code] = merged
-//         } catch (err) {
-//           console.error(`Error fetching access groups for ${module.code}:`, err)
-//           groupedAccessGroups[module.code] = loadedAccessGroups[module.code] || []
-//         } finally {
-//           setAccessGroupsLoading((prev) => ({ ...prev, [module.code]: false }))
-//         }
-//       }
-
-//       setAccessGroupsByModule(groupedAccessGroups)
-//       setError(null)
-//     } catch (err) {
-//       console.error("Error fetching access groups:", err)
-//       setError("Failed to load access groups")
-//     }
-//   }
-
-//   const getLayerFromPartner = () => {
-//     if (!form.partnerId) return null
-
-//     if (form.partnerId === "company") {
-//       return agentLayerMap["company"]
-//     }
-
-//     const selectedPartner = partners.find((p) => p._id === form.partnerId)
-//     if (!selectedPartner) return null
-
-//     const layer = (selectedPartner.layer?.toLowerCase() || selectedPartner.type?.toLowerCase() || "commercial-agent")
-//       .replace(/\s+/g, "-")
-//       .replace("marine", "marine-agent")
-//       .replace("commercial", "commercial-agent")
-//       .replace("selling", "selling-agent")
-
-//     return agentLayerMap[layer] || null
-//   }
-
-//   const layerInfo = getLayerFromPartner()
-
-//   const onChange = (e) => {
-//     const { name, value, type, checked } = e.target
-//     setForm((s) => ({ ...s, [name]: type === "checkbox" ? checked : value }))
-//   }
-
-//   const onSelectAccess = (moduleCode, value) => {
-//     if (value) {
-//       setModuleAccess((s) => ({
-//         ...s,
-//         [moduleCode]: [value],
-//       }))
-//     }
-//   }
-
-//   const onRemoveAccess = (moduleCode, valueToRemove) => {
-//     setModuleAccess((s) => ({
-//       ...s,
-//       [moduleCode]: (s[moduleCode] || []).filter((id) => id !== valueToRemove),
-//     }))
-//   }
-
-//   const onSubmit = async (e) => {
-//     e.preventDefault()
-
-//     try {
-//       setLoading(true)
-//       setError(null)
-
-//       if (form.partnerId && form.partnerId !== "company") {
-//         const selectedPartner = partners.find((p) => p._id === form.partnerId)
-//         if (!selectedPartner) {
-//           setError("Selected partner is invalid")
-//           setLoading(false)
-//           return
-//         }
-//       } else if (!form.partnerId) {
-//         setError("Partner Assignment is required")
-//         setLoading(false)
-//         return
-//       }
-
-//       const moduleAccessArray = []
-//       Object.entries(moduleAccess).forEach(([moduleCode, accessGroupIds]) => {
-//         const ids = Array.isArray(accessGroupIds) ? accessGroupIds : [accessGroupIds]
-//         ids.forEach((id) => {
-//           if (id) {
-//             moduleAccessArray.push({
-//               moduleCode,
-//               accessGroupId: id,
-//             })
-//           }
-//         })
-//       })
-
-//       const payload = {
-//         fullName: form.fullName,
-//         email: form.email,
-//         position: form.position,
-//         layer: layerInfo?.layer,
-//         isSalesman: form.isSalesman,
-//         partnerId: form.partnerId === "company" ? null : form.partnerId,
-//         remarks: form.remarks,
-//         moduleAccess: moduleAccessArray,
-//       }
-
-//       const result = await Swal.fire({
-//         title: "Confirm Update",
-//         text: `Are you sure you want to update user ${form.fullName}?`,
-//         icon: "warning",
-//         showCancelButton: true,
-//         confirmButtonColor: "#2575fc",
-//         cancelButtonColor: "#6c757d",
-//         confirmButtonText: "Yes, update it!",
-//         cancelButtonText: "Cancel",
-//       })
-
-//       if (!result.isConfirmed) {
-//         setLoading(false)
-//         return
-//       }
-
-//       const response = await usersApi.updateUser(userId, payload)
-
-//       Swal.fire({
-//         icon: "success",
-//         title: "Success!",
-//         text: "User updated successfully!",
-//         timer: 2000,
-//         showConfirmButton: false,
-//       })
-
-//       setTimeout(() => {
-//         window.location.href = "/admin/administration/user-list"
-//       }, 2000)
-//     } catch (err) {
-//       console.error("Error updating user:", err)
-//       Swal.fire({
-//         icon: "error",
-//         title: "Error",
-//         text: err.message || "Failed to update user",
-//       })
-//       setError(err.message || "Failed to update user")
-//     } finally {
-//       setLoading(false)
-//     }
-//   }
-
-//   const partnersByLayer = useMemo(() => {
-//     const grouped = {
-//       company: null,
-//       "marine-agent": [],
-//       "commercial-agent": [],
-//       "selling-agent": [],
-//     }
-
-//     partners.forEach((partner) => {
-//       const layer = (partner.layer?.toLowerCase() || partner.type?.toLowerCase() || "commercial-agent")
-//         .replace(/\s+/g, "-")
-//         .replace("marine", "marine-agent")
-//         .replace("commercial", "commercial-agent")
-//         .replace("selling", "selling-agent")
-
-//       if (grouped[layer] !== undefined && layer !== "company") {
-//         grouped[layer].push(partner)
-//       }
-//     })
-
-//     return grouped
-//   }, [partners])
-
-//   if (initialLoading) {
-//     return (
-//       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
-//         <div className="spinner-border" role="status">
-//           <span className="visually-hidden">Loading...</span>
-//         </div>
-//       </div>
-//     )
-//   }
-
-//   return (
-//     <form onSubmit={onSubmit}>
-//       {error && (
-//         <div className="alert alert-danger alert-dismissible fade show" role="alert">
-//           {error}
-//           <button type="button" className="btn-close" onClick={() => setError(null)}></button>
-//         </div>
-//       )}
-
-//       <ul className="nav nav-tabs" id="userTabs" role="tablist">
-//         <li className="nav-item" role="presentation">
-//           <button
-//             type="button"
-//             className={`nav-link ${tab === "profile" ? "active" : ""}`}
-//             onClick={() => setTab("profile")}
-//             role="tab"
-//             aria-selected={tab === "profile"}
-//           >
-//             User Profile
-//           </button>
-//         </li>
-//         <li className="nav-item" role="presentation">
-//           <button
-//             type="button"
-//             className={`nav-link ${tab === "access" ? "active" : ""}`}
-//             onClick={() => setTab("access")}
-//             role="tab"
-//             aria-selected={tab === "access"}
-//           >
-//             Module Access
-//           </button>
-//         </li>
-//       </ul>
-
-//       <div className="tab-content mt-3" id="userTabsContent">
-//         <div className={`tab-pane fade ${tab === "profile" ? "show active" : ""}`} id="profile" role="tabpanel">
-//           <div className="row g-3">
-//             <div className="col-md-6">
-//               <label htmlFor="fullName" className="form-label">
-//                 Full Name
-//               </label>
-//               <input
-//                 type="text"
-//                 id="fullName"
-//                 name="fullName"
-//                 className="form-control"
-//                 placeholder="Full Name"
-//                 value={form.fullName}
-//                 onChange={onChange}
-//                 required
-//               />
-//             </div>
-//             <div className="col-md-6">
-//               <label htmlFor="email" className="form-label">
-//                 Email Address
-//               </label>
-//               <input
-//                 type="email"
-//                 id="email"
-//                 name="email"
-//                 className="form-control"
-//                 placeholder="Email Address"
-//                 value={form.email}
-//                 onChange={onChange}
-//                 required
-//               />
-//             </div>
-//             <div className="col-md-6">
-//               <label htmlFor="position" className="form-label">
-//                 Position
-//               </label>
-//               <input
-//                 type="text"
-//                 id="position"
-//                 name="position"
-//                 className="form-control"
-//                 placeholder="Position"
-//                 value={form.position}
-//                 onChange={onChange}
-//               />
-//             </div>
-
-//             <div className="col-md-6">
-//               <label htmlFor="partnerId" className="form-label">
-//                 Partner Assignment
-//               </label>
-//               <select
-//                 id="partnerId"
-//                 name="partnerId"
-//                 className="form-select"
-//                 value={form.partnerId || ""}
-//                 onChange={onChange}
-//                 disabled={partnersLoading}
-//                 required
-//               >
-//                 <option value="">Select</option>
-//                 {!partnersLoading && (
-//                   <>
-//                     <optgroup label="Company">
-//                       <option value="company">{currentCompany?.companyName || "Current Company"}</option>
-//                     </optgroup>
-
-//                     {partnersByLayer["marine-agent"] && partnersByLayer["marine-agent"].length > 0 && (
-//                       <optgroup label="Marine Agent">
-//                         {partnersByLayer["marine-agent"].map((partner) => (
-//                           <option key={partner._id} value={partner._id}>
-//                             {partner.name}
-//                           </option>
-//                         ))}
-//                       </optgroup>
-//                     )}
-
-//                     {partnersByLayer["commercial-agent"] && partnersByLayer["commercial-agent"].length > 0 && (
-//                       <optgroup label="Commercial Agent">
-//                         {partnersByLayer["commercial-agent"].map((partner) => (
-//                           <option key={partner._id} value={partner._id}>
-//                             {partner.name}
-//                           </option>
-//                         ))}
-//                       </optgroup>
-//                     )}
-
-//                     {partnersByLayer["selling-agent"] && partnersByLayer["selling-agent"].length > 0 && (
-//                       <optgroup label="Selling Agent">
-//                         {partnersByLayer["selling-agent"].map((partner) => (
-//                           <option key={partner._id} value={partner._id}>
-//                             {partner.name}
-//                           </option>
-//                         ))}
-//                       </optgroup>
-//                     )}
-//                   </>
-//                 )}
-//               </select>
-
-//               {layerInfo && (
-//                 <div className={`agent-info mt-3`}>
-//                   <div>
-//                     <strong>Agent Type:</strong> <span id="agentType">{layerInfo.type}</span>
-//                   </div>
-//                   <div>
-//                     <strong>Organizational Layer:</strong> <span id="agentLayer">{layerInfo.layer}</span>
-//                   </div>
-//                 </div>
-//               )}
-//             </div>
-
-//             <div className="col-md-6">
-//               <label className="form-label">Is Salesman</label>
-//               <div>
-//                 <label
-//                   className="status-toggle"
-//                   style={{ position: "relative", display: "inline-block", width: 50, height: 24 }}
-//                 >
-//                   <input
-//                     type="checkbox"
-//                     name="isSalesman"
-//                     checked={form.isSalesman}
-//                     onChange={onChange}
-//                     style={{ opacity: 0, width: 0, height: 0 }}
-//                   />
-//                   <span
-//                     className="slider"
-//                     style={{
-//                       position: "absolute",
-//                       cursor: "pointer",
-//                       inset: 0,
-//                       backgroundColor: form.isSalesman ? "#2575fc" : "#ccc",
-//                       transition: ".4s",
-//                       borderRadius: 24,
-//                     }}
-//                   />
-//                   <span
-//                     style={{
-//                       position: "absolute",
-//                       height: 16,
-//                       width: 16,
-//                       left: form.isSalesman ? 30 : 4,
-//                       bottom: 4,
-//                       backgroundColor: "#fff",
-//                       transition: ".4s",
-//                       borderRadius: "50%",
-//                     }}
-//                   />
-//                 </label>
-//               </div>
-//             </div>
-
-//             <div className="col-md-12">
-//               <label htmlFor="remarks" className="form-label">
-//                 Remarks
-//               </label>
-//               <textarea
-//                 id="remarks"
-//                 name="remarks"
-//                 rows="3"
-//                 className="form-control"
-//                 placeholder="Additional remarks"
-//                 value={form.remarks}
-//                 onChange={onChange}
-//               />
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className={`tab-pane fade ${tab === "access" ? "show active" : ""}`} id="access" role="tabpanel">
-//           {!layerInfo ? (
-//             <div id="moduleAccessContainer" className="mt-3 text-center text-muted">
-//               <i className="bi bi-shield-lock fs-1 mb-3"></i>
-//               <p>Select a Partner Assignment in User Profile to configure Module Access</p>
-//             </div>
-//           ) : (
-//             <div className="table-responsive mt-2">
-//               <table className="table table-bordered">
-//                 <thead>
-//                   <tr style={{ backgroundColor: "#001f4d", color: "#fff" }}>
-//                     <th style={{ color: "#fff" }}>Module</th>
-//                     <th style={{ color: "#fff" }}>Access Rights Group</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {modules.map((module) => {
-//                     const accessGroups = accessGroupsByModule[module.code] || []
-//                     const isLoading = accessGroupsLoading[module.code]
-//                     const selectedValues = moduleAccess[module.code] || []
-
-//                     return (
-//                       <tr key={module.code}>
-//                         <td>{module.name}</td>
-//                         <td>
-//                           <select
-//                             className="form-select"
-//                             value={selectedValues[0] || ""}
-//                             onChange={(e) => {
-//                               if (e.target.value) {
-//                                 onSelectAccess(module.code, e.target.value)
-//                               }
-//                             }}
-//                             disabled={isLoading}
-//                           >
-//                             <option value="">Select Role</option>
-//                             {accessGroups.length > 0 ? (
-//                               accessGroups.map((group) => (
-//                                 <option key={group._id} value={group._id}>
-//                                   {group.groupName}
-//                                 </option>
-//                               ))
-//                             ) : (
-//                               <option value="" disabled>
-//                                 {isLoading ? "Loading..." : "No Groups Available"}
-//                               </option>
-//                             )}
-//                           </select>
-//                         </td>
-//                       </tr>
-//                     )
-//                   })}
-//                 </tbody>
-//               </table>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-
-//       {/* UPDATE permission gate for submit button */}
-//       <Can action="update" path="/admin/administration/user">
-//         <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
-//           {loading ? "Updating User..." : "Update User"}
-//         </button>
-//       </Can>
-//     </form>
-//   )
-// }
-
-
-import { useMemo, useState, useEffect } from "react"
-import { partnerApi } from "../../api/partnerApi"
+import { useState, useEffect } from "react"
 import { usersApi } from "../../api/usersApi"
-import { loginApi } from "../../api/loginApi"
 import { useParams } from "react-router-dom"
 import Swal from "sweetalert2"
-import Can from "../Can"
 
-// Helper function to decode JWT and extract user role
-function getUserRoleFromToken() {
-  try {
-    const token = localStorage.getItem("authToken")
-    if (!token) return null
-
-    const parts = token.split(".")
-    if (parts.length !== 3) return null
-
-    const decoded = JSON.parse(atob(parts[1]))
-    return decoded.role // Returns "company" or "user"
-  } catch (err) {
-    console.error("Failed to decode token:", err)
-    return null
-  }
-}
-
-// Helper function to get logged-in user ID
-function getLoggedInUserId() {
-  try {
-    const token = localStorage.getItem("authToken")
-    if (!token) return null
-
-    const parts = token.split(".")
-    if (parts.length !== 3) return null
-
-    const decoded = JSON.parse(atob(parts[1]))
-    return decoded.id || decoded.userId // Returns the logged-in user's ID
-  } catch (err) {
-    console.error("Failed to decode token:", err)
-    return null
-  }
-}
-
-export default function EditUserForm({ userId: propUserId }) {
-  const { userId: paramUserId } = useParams()
-  const userId = propUserId || paramUserId
-  const [tab, setTab] = useState("profile")
-  const loggedInUserRole = getUserRoleFromToken()
-  const loggedInUserId = getLoggedInUserId()
-  const isUserEditingOwnProfile = loggedInUserRole === "user" && loggedInUserId === userId
+export default function EditUserForm() {
+  const { userId } = useParams()
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     position: "",
-    partnerId: null,
-    isSalesman: false,
-    remarks: "",
+    layer: "",
+    status: "",
+    createdAt: "",
   })
 
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [partners, setPartners] = useState([])
-  const [partnersLoading, setPartnersLoading] = useState(false)
-  const [currentCompany, setCurrentCompany] = useState(null)
-  const [userLayer, setUserLayer] = useState(null)
-  const [userPartnerName, setUserPartnerName] = useState(null)
 
-  const [moduleAccess, setModuleAccess] = useState({})
-  const [accessGroupsByModule, setAccessGroupsByModule] = useState({})
-  const [accessGroupsLoading, setAccessGroupsLoading] = useState({})
-  const [loadedAccessGroups, setLoadedAccessGroups] = useState({})
-
-  // ---- CONSTANTS
-  const agentLayerMap = useMemo(
-    () => ({
-      company: { type: "Company", layer: "company" },
-      "marine-agent": { type: "Marine Agent", layer: "marine-agent" },
-      "commercial-agent": { type: "Commercial Agent", layer: "commercial-agent" },
-      "selling-agent": { type: "Selling Agent", layer: "selling-agent" },
-    }),
-    [],
-  )
-
-  const modules = useMemo(
-    () => [
-      { code: "settings", name: "Settings" },
-      { code: "administration", name: "Administration" },
-      { code: "ship-trips", name: "Ship & Trips" },
-      { code: "partners-management", name: "Partners Management" },
-      { code: "sales-bookings", name: "Sales & Bookings" },
-      { code: "checkin-boardings", name: "Check-in & Boardings" },
-      { code: "finance", name: "Finance" },
-    ],
-    [],
-  )
-
+  // Fetch user data on mount
   useEffect(() => {
-    // Add small delay to ensure token and sidebar are ready after login
-    const timer = setTimeout(() => {
-      fetchCurrentCompany()
-      fetchPartners()
-      fetchUserData()
-    }, 100)
-    
-    return () => clearTimeout(timer)
+    fetchUserData()
   }, [userId])
-
-  const fetchCurrentCompany = async () => {
-    try {
-      console.log("[v0] Fetching current profile (company or user)...")
-      // Use smart getProfile that chooses the right API based on login type
-      const response = await loginApi.getProfile()
-      if (response.data) {
-        console.log("[v0] Profile fetched successfully")
-        setCurrentCompany(response.data)
-      }
-    } catch (err) {
-      console.error("[v0] Error fetching profile:", err)
-      setError("Failed to load profile information")
-    }
-  }
 
   const fetchUserData = async () => {
     try {
-      console.log("[v0] Fetching user data for userId:", userId)
       setInitialLoading(true)
       const response = await usersApi.getUserById(userId)
       if (response.data) {
         const user = response.data
-        
-        // Determine the correct partnerId based on user's layer or partnerId
-        let partnerId = "company"
-        if (user.partnerId) {
-          partnerId = user.partnerId
-        } else if (user.layer && user.layer !== "company") {
-          // If user has a layer but no partnerId, find the partner with matching layer
-          // This will be resolved after partners are loaded
-          partnerId = null
-        }
-        
         setForm({
           fullName: user.fullName || "",
           email: user.email || "",
           position: user.position || "",
-          partnerId: partnerId,
-          isSalesman: user.isSalesman || false,
-          remarks: user.remarks || "",
+          layer: user.layer || "",
+          status: user.status || "",
+          createdAt: user.createdAt || "",
         })
-        
-        // Store the user's original layer and agent name from API
-        if (user.layer) {
-          setUserLayer(user.layer)
-        }
-        
-        // Store the agent name from API response (the API returns "agent" field, not "partner")
-        if (user.agent && user.agent.name) {
-          setUserPartnerName(user.agent.name)
-          // Always use the agent._id from API as it's the source of truth
-          if (user.agent._id) {
-            setForm((prev) => ({
-              ...prev,
-              partnerId: user.agent._id,
-            }))
-          }
-        }
-
-        if (user.moduleAccess && Array.isArray(user.moduleAccess)) {
-          const accessMap = {}
-          const groupDetailsMap = {}
-
-          user.moduleAccess.forEach((access) => {
-            const moduleCode = access.moduleCode
-            const groupId = access.accessGroupId._id
-            const groupDetails = access.accessGroupId
-
-            if (!accessMap[moduleCode]) {
-              accessMap[moduleCode] = []
-            }
-            if (!groupDetailsMap[moduleCode]) {
-              groupDetailsMap[moduleCode] = []
-            }
-
-            accessMap[moduleCode].push(groupId)
-            groupDetailsMap[moduleCode].push(groupDetails)
-          })
-
-          setModuleAccess(accessMap)
-          setLoadedAccessGroups(groupDetailsMap)
-        }
+        setError(null)
       }
     } catch (err) {
       console.error("Error fetching user:", err)
@@ -829,149 +49,12 @@ export default function EditUserForm({ userId: propUserId }) {
     }
   }
 
-  // Resolve partnerId from userLayer after partners are loaded
-  useEffect(() => {
-    if (userLayer && userLayer !== "company" && !form.partnerId && partners.length > 0) {
-      // Find a partner with matching layer
-      const matchingPartner = partners.find((p) => {
-        const partnerLayer = (p.layer?.toLowerCase() || p.type?.toLowerCase() || "commercial-agent")
-          .replace(/\s+/g, "-")
-          .replace("marine", "marine-agent")
-          .replace("commercial", "commercial-agent")
-          .replace("selling", "selling-agent")
-        
-        return partnerLayer === userLayer.toLowerCase()
-      })
-      
-      if (matchingPartner) {
-        setForm((prev) => ({
-          ...prev,
-          partnerId: matchingPartner._id,
-        }))
-      }
-    }
-  }, [userLayer, partners])
-
-  useEffect(() => {
-    if (form.partnerId) {
-      fetchAccessGroupsForPartner()
-    } else {
-      setAccessGroupsByModule({})
-    }
-  }, [form.partnerId])
-
-  const fetchPartners = async () => {
-    try {
-      setPartnersLoading(true)
-      const response = await partnerApi.getPartnersList()
-      setPartners(response.data || [])
-      setError(null)
-    } catch (err) {
-      console.error("Error fetching partners:", err)
-      setError("Failed to load partners")
-    } finally {
-      setPartnersLoading(false)
-    }
-  }
-
-  const fetchAccessGroupsForPartner = async () => {
-    if (!form.partnerId) return
-
-    let selectedLayer = "company"
-
-    if (form.partnerId !== "company") {
-      const selectedPartner = partners.find((p) => p._id === form.partnerId)
-      if (selectedPartner) {
-        selectedLayer = (
-          selectedPartner.layer?.toLowerCase() ||
-          selectedPartner.type?.toLowerCase() ||
-          "commercial-agent"
-        )
-          .replace(/\s+/g, "-")
-          .replace("marine", "marine-agent")
-          .replace("commercial", "commercial-agent")
-          .replace("selling", "selling-agent")
-      }
-    }
-
-    try {
-      const groupedAccessGroups = {}
-
-      for (const module of modules) {
-        try {
-          setAccessGroupsLoading((prev) => ({ ...prev, [module.code]: true }))
-          const response = await usersApi.getAccessGroupsByModuleLayer(module.code, selectedLayer)
-          const accessGroups = response.data?.accessGroups || []
-          const loadedGroups = loadedAccessGroups[module.code] || []
-
-          const merged = [
-            ...loadedGroups,
-            ...accessGroups.filter((ag) => !loadedGroups.some((lg) => lg._id === ag._id)),
-          ]
-
-          groupedAccessGroups[module.code] = merged
-        } catch (err) {
-          console.error(`Error fetching access groups for ${module.code}:`, err)
-          groupedAccessGroups[module.code] = loadedAccessGroups[module.code] || []
-        } finally {
-          setAccessGroupsLoading((prev) => ({ ...prev, [module.code]: false }))
-        }
-      }
-
-      setAccessGroupsByModule(groupedAccessGroups)
-      setError(null)
-    } catch (err) {
-      console.error("Error fetching access groups:", err)
-      setError("Failed to load access groups")
-    }
-  }
-
-  const getLayerFromPartner = () => {
-    // Priority 1: Use the userLayer from API response if available
-    if (userLayer) {
-      return agentLayerMap[userLayer] || null
-    }
-
-    // Priority 2: Derive from selected partner
-    if (!form.partnerId) return null
-
-    if (form.partnerId === "company") {
-      return agentLayerMap["company"]
-    }
-
-    const selectedPartner = partners.find((p) => p._id === form.partnerId)
-    if (!selectedPartner) return null
-
-    const layer = (selectedPartner.layer?.toLowerCase() || selectedPartner.type?.toLowerCase() || "commercial-agent")
-      .replace(/\s+/g, "-")
-      .replace("marine", "marine-agent")
-      .replace("commercial", "commercial-agent")
-      .replace("selling", "selling-agent")
-
-    return agentLayerMap[layer] || null
-  }
-
-  const layerInfo = getLayerFromPartner()
-
   const onChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setForm((s) => ({ ...s, [name]: type === "checkbox" ? checked : value }))
-  }
-
-  const onSelectAccess = (moduleCode, value) => {
-    if (value) {
-      setModuleAccess((s) => ({
-        ...s,
-        [moduleCode]: [value],
-      }))
+    const { name, value } = e.target
+    // Only allow changes to fullName and position
+    if (name === "fullName" || name === "position") {
+      setForm((prev) => ({ ...prev, [name]: value }))
     }
-  }
-
-  const onRemoveAccess = (moduleCode, valueToRemove) => {
-    setModuleAccess((s) => ({
-      ...s,
-      [moduleCode]: (s[moduleCode] || []).filter((id) => id !== valueToRemove),
-    }))
   }
 
   const onSubmit = async (e) => {
@@ -981,57 +64,16 @@ export default function EditUserForm({ userId: propUserId }) {
       setLoading(true)
       setError(null)
 
-      if (form.partnerId && form.partnerId !== "company") {
-        const selectedPartner = partners.find((p) => p._id === form.partnerId)
-        if (!selectedPartner) {
-          setError("Selected partner is invalid")
-          setLoading(false)
-          return
-        }
-      } else if (!form.partnerId) {
-        setError("Partner Assignment is required")
-        setLoading(false)
-        return
+      // Only send fullName and position in the payload
+      const payload = {
+        fullName: form.fullName,
+        position: form.position,
       }
 
-      const moduleAccessArray = []
-      Object.entries(moduleAccess).forEach(([moduleCode, accessGroupIds]) => {
-        const ids = Array.isArray(accessGroupIds) ? accessGroupIds : [accessGroupIds]
-        ids.forEach((id) => {
-          if (id) {
-            moduleAccessArray.push({
-              moduleCode,
-              accessGroupId: id,
-            })
-          }
-        })
-      })
-
-      // If user is editing their own profile, only allow name and position changes
-      let payload
-      if (isUserEditingOwnProfile) {
-        payload = {
-          fullName: form.fullName,
-          position: form.position,
-        }
-      } else {
-        payload = {
-          fullName: form.fullName,
-          email: form.email,
-          position: form.position,
-          layer: layerInfo?.layer,
-          isSalesman: form.isSalesman,
-          partnerId: form.partnerId === "company" ? null : form.partnerId,
-          remarks: form.remarks,
-          moduleAccess: moduleAccessArray,
-        }
-      }
-
+      // Confirmation dialog
       const result = await Swal.fire({
         title: "Confirm Update",
-        text: isUserEditingOwnProfile 
-          ? `Are you sure you want to update your name and position?`
-          : `Are you sure you want to update user ${form.fullName}?`,
+        text: `Are you sure you want to update user ${form.fullName}?`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#2575fc",
@@ -1045,7 +87,8 @@ export default function EditUserForm({ userId: propUserId }) {
         return
       }
 
-      const response = await usersApi.updateUser(userId, payload)
+      // Update user
+      await usersApi.updateUser(userId, payload)
 
       Swal.fire({
         icon: "success",
@@ -1071,29 +114,6 @@ export default function EditUserForm({ userId: propUserId }) {
     }
   }
 
-  const partnersByLayer = useMemo(() => {
-    const grouped = {
-      company: null,
-      "marine-agent": [],
-      "commercial-agent": [],
-      "selling-agent": [],
-    }
-
-    partners.forEach((partner) => {
-      const layer = (partner.layer?.toLowerCase() || partner.type?.toLowerCase() || "commercial-agent")
-        .replace(/\s+/g, "-")
-        .replace("marine", "marine-agent")
-        .replace("commercial", "commercial-agent")
-        .replace("selling", "selling-agent")
-
-      if (grouped[layer] !== undefined && layer !== "company") {
-        grouped[layer].push(partner)
-      }
-    })
-
-    return grouped
-  }, [partners])
-
   if (initialLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
@@ -1113,288 +133,172 @@ export default function EditUserForm({ userId: propUserId }) {
         </div>
       )}
 
-      {/* Show user restriction message if user is editing their own profile */}
-      {isUserEditingOwnProfile && (
-        <div className="alert alert-info alert-dismissible fade show" role="alert">
-          <i className="bi bi-info-circle me-2"></i>
-          You can only edit your Name and Position. Other details are managed by your company administrator.
-          <button type="button" className="btn-close" onClick={() => {}}></button>
-        </div>
-      )}
+      <style>{`
+        .disabled-field {
+          background-color: #e9ecef !important;
+          cursor: not-allowed !important;
+          color: #6c757d !important;
+        }
 
-      <ul className="nav nav-tabs" id="userTabs" role="tablist">
-        <li className="nav-item" role="presentation">
-          <button
-            type="button"
-            className={`nav-link ${tab === "profile" ? "active" : ""}`}
-            onClick={() => setTab("profile")}
-            role="tab"
-            aria-selected={tab === "profile"}
-          >
-            User Profile
-          </button>
-        </li>
-        {!isUserEditingOwnProfile && (
-          <li className="nav-item" role="presentation">
-            <button
-              type="button"
-              className={`nav-link ${tab === "access" ? "active" : ""}`}
-              onClick={() => setTab("access")}
-              role="tab"
-              aria-selected={tab === "access"}
-            >
-              Module Access
-            </button>
-          </li>
-        )}
-      </ul>
+        .disabled-field:focus {
+          background-color: #e9ecef !important;
+          color: #6c757d !important;
+          border-color: #dee2e6 !important;
+          box-shadow: none !important;
+        }
 
-      <div className="tab-content mt-3" id="userTabsContent">
-        <div className={`tab-pane fade ${tab === "profile" ? "show active" : ""}`} id="profile" role="tabpanel">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label htmlFor="fullName" className="form-label">
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                className="form-control"
-                placeholder="Full Name"
-                value={form.fullName}
-                onChange={onChange}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                className="form-control"
-                placeholder="Email Address"
-                value={form.email}
-                onChange={onChange}
-                disabled={isUserEditingOwnProfile}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label htmlFor="position" className="form-label">
-                Position
-              </label>
-              <input
-                type="text"
-                id="position"
-                name="position"
-                className="form-control"
-                placeholder="Position"
-                value={form.position}
-                onChange={onChange}
-              />
-            </div>
+        .disabled-field::placeholder {
+          color: #6c757d;
+        }
 
-            <div className="col-md-6">
-              <label htmlFor="partnerId" className="form-label">
-                Partner Assignment
-              </label>
-              <select
-                id="partnerId"
-                name="partnerId"
-                className="form-select"
-                value={form.partnerId || ""}
-                onChange={onChange}
-                disabled={partnersLoading || isUserEditingOwnProfile}
-                required
-              >
-                <option value="">Select</option>
-                {!partnersLoading && (
-                  <>
-                    <optgroup label="Company">
-                      <option value="company">{currentCompany?.companyName || "Current Company"}</option>
-                    </optgroup>
+        .help-text {
+          font-size: 0.85rem;
+          color: #6c757d;
+          margin-top: 0.25rem;
+          display: block;
+        }
 
-                    {partnersByLayer["marine-agent"] && partnersByLayer["marine-agent"].length > 0 && (
-                      <optgroup label="Marine Agent">
-                        {partnersByLayer["marine-agent"].map((partner) => (
-                          <option key={partner._id} value={partner._id}>
-                            {partner.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
+        .editable-indicator {
+          font-size: 0.75rem;
+          color: #2575fc;
+          font-weight: 600;
+          margin-top: 0.25rem;
+          display: block;
+        }
+      `}</style>
 
-                    {partnersByLayer["commercial-agent"] && partnersByLayer["commercial-agent"].length > 0 && (
-                      <optgroup label="Commercial Agent">
-                        {partnersByLayer["commercial-agent"].map((partner) => (
-                          <option key={partner._id} value={partner._id}>
-                            {partner.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-
-                    {partnersByLayer["selling-agent"] && partnersByLayer["selling-agent"].length > 0 && (
-                      <optgroup label="Selling Agent">
-                        {partnersByLayer["selling-agent"].map((partner) => (
-                          <option key={partner._id} value={partner._id}>
-                            {partner.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </>
-                )}
-              </select>
-
-              {layerInfo && (
-                <div className={`agent-info mt-3`}>
-                  <div>
-                    <strong>Agent Type:</strong> <span id="agentType">{layerInfo.type}</span>
-                  </div>
-                  <div>
-                    <strong>Organizational Layer:</strong> <span id="agentLayer">{layerInfo.layer}</span>
-                  </div>
-                  {userPartnerName && (
-                    <div>
-                      <strong>Agent:</strong> <span id="agentName">{userPartnerName}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="col-md-6">
-              <label className="form-label">Is Salesman</label>
-              <div>
-                <label
-                  className="status-toggle"
-                  style={{ position: "relative", display: "inline-block", width: 50, height: 24, opacity: isUserEditingOwnProfile ? 0.5 : 1, cursor: isUserEditingOwnProfile ? "not-allowed" : "pointer" }}
-                >
-                  <input
-                    type="checkbox"
-                    name="isSalesman"
-                    checked={form.isSalesman}
-                    onChange={onChange}
-                    disabled={isUserEditingOwnProfile}
-                    style={{ opacity: 0, width: 0, height: 0 }}
-                  />
-                  <span
-                    className="slider"
-                    style={{
-                      position: "absolute",
-                      cursor: "pointer",
-                      inset: 0,
-                      backgroundColor: form.isSalesman ? "#2575fc" : "#ccc",
-                      transition: ".4s",
-                      borderRadius: 24,
-                    }}
-                  />
-                  <span
-                    style={{
-                      position: "absolute",
-                      height: 16,
-                      width: 16,
-                      left: form.isSalesman ? 30 : 4,
-                      bottom: 4,
-                      backgroundColor: "#fff",
-                      transition: ".4s",
-                      borderRadius: "50%",
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="col-md-12">
-              <label htmlFor="remarks" className="form-label">
-                Remarks
-              </label>
-              <textarea
-                id="remarks"
-                name="remarks"
-                rows="3"
-                className="form-control"
-                placeholder="Additional remarks"
-                value={form.remarks}
-                onChange={onChange}
-                disabled={isUserEditingOwnProfile}
-              />
-            </div>
-          </div>
+      <div className="row g-3">
+        {/* Full Name - EDITABLE */}
+        <div className="col-md-6">
+          <label htmlFor="fullName" className="form-label">
+            Full Name
+          </label>
+          <input
+            type="text"
+            id="fullName"
+            name="fullName"
+            className="form-control"
+            placeholder="Full Name"
+            value={form.fullName}
+            onChange={onChange}
+            required
+          />
+          <span className="editable-indicator">
+            <i className="bi bi-pencil"></i> Editable
+          </span>
         </div>
 
-        <div className={`tab-pane fade ${tab === "access" ? "show active" : ""}`} id="access" role="tabpanel">
-          {!layerInfo ? (
-            <div id="moduleAccessContainer" className="mt-3 text-center text-muted">
-              <i className="bi bi-shield-lock fs-1 mb-3"></i>
-              <p>Select a Partner Assignment in User Profile to configure Module Access</p>
-            </div>
-          ) : (
-            <div className="table-responsive mt-2">
-              <table className="table table-bordered">
-                <thead>
-                  <tr style={{ backgroundColor: "#001f4d", color: "#fff" }}>
-                    <th style={{ color: "#fff" }}>Module</th>
-                    <th style={{ color: "#fff" }}>Access Rights Group</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modules.map((module) => {
-                    const accessGroups = accessGroupsByModule[module.code] || []
-                    const isLoading = accessGroupsLoading[module.code]
-                    const selectedValues = moduleAccess[module.code] || []
+        {/* Email - READ-ONLY */}
+        <div className="col-md-6">
+          <label htmlFor="email" className="form-label">
+            Email Address
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            className="form-control disabled-field"
+            placeholder="Email Address"
+            value={form.email}
+            disabled
+            readOnly
+          />
+          <span className="help-text">Only Name and Position can be edited</span>
+        </div>
 
-                    return (
-                      <tr key={module.code}>
-                        <td>{module.name}</td>
-                        <td>
-                          <select
-                            className="form-select"
-                            value={selectedValues[0] || ""}
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                onSelectAccess(module.code, e.target.value)
-                              }
-                            }}
-                            disabled={isLoading}
-                          >
-                            <option value="">Select Role</option>
-                            {accessGroups.length > 0 ? (
-                              accessGroups.map((group) => (
-                                <option key={group._id} value={group._id}>
-                                  {group.groupName}
-                                </option>
-                              ))
-                            ) : (
-                              <option value="" disabled>
-                                {isLoading ? "Loading..." : "No Groups Available"}
-                              </option>
-                            )}
-                          </select>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* Position - EDITABLE */}
+        <div className="col-md-6">
+          <label htmlFor="position" className="form-label">
+            Position
+          </label>
+          <input
+            type="text"
+            id="position"
+            name="position"
+            className="form-control"
+            placeholder="Position"
+            value={form.position}
+            onChange={onChange}
+          />
+          <span className="editable-indicator">
+            <i className="bi bi-pencil"></i> Editable
+          </span>
+        </div>
+
+        {/* Layer - READ-ONLY */}
+        <div className="col-md-6">
+          <label htmlFor="layer" className="form-label">
+            Layer
+          </label>
+          <input
+            type="text"
+            id="layer"
+            name="layer"
+            className="form-control disabled-field"
+            placeholder="Layer"
+            value={form.layer}
+            disabled
+            readOnly
+          />
+          <span className="help-text">Only Name and Position can be edited</span>
+        </div>
+
+        {/* Status - READ-ONLY */}
+        <div className="col-md-6">
+          <label htmlFor="status" className="form-label">
+            Status
+          </label>
+          <input
+            type="text"
+            id="status"
+            name="status"
+            className="form-control disabled-field"
+            placeholder="Status"
+            value={form.status}
+            disabled
+            readOnly
+          />
+          <span className="help-text">Only Name and Position can be edited</span>
+        </div>
+
+        {/* Created Date - READ-ONLY */}
+        <div className="col-md-6">
+          <label htmlFor="createdAt" className="form-label">
+            Created Date
+          </label>
+          <input
+            type="text"
+            id="createdAt"
+            name="createdAt"
+            className="form-control disabled-field"
+            placeholder="Created Date"
+            value={form.createdAt ? new Date(form.createdAt).toLocaleDateString() : ""}
+            disabled
+            readOnly
+          />
+          <span className="help-text">Only Name and Position can be edited</span>
         </div>
       </div>
 
-      {/* UPDATE permission gate for submit button */}
-      <Can action="update" path="/admin/administration/user">
-        <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
-          {loading ? "Updating User..." : "Update User"}
+      {/* Submit Button */}
+      <div className="mt-4">
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Updating...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-check-circle me-2"></i>
+              Update User
+            </>
+          )}
         </button>
-      </Can>
+        <a href="/admin/administration/user-list" className="btn btn-secondary ms-2">
+          Cancel
+        </a>
+      </div>
     </form>
   )
 }
-
-

@@ -22,11 +22,29 @@ export default function SalesmenList({ onEdit, onDelete }) {
   const [status, setStatus] = useState("Active")
   const [sortBy, setSortBy] = useState("createdAt")
   const [sortOrder, setSortOrder] = useState("desc")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filteredSalesmen, setFilteredSalesmen] = useState([])
   const tableRef = useRef(null)
 
   useEffect(() => {
     fetchSalesmen()
   }, [currentPage, pageSize, status, sortBy, sortOrder])
+
+  // Handle search filtering
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredSalesmen(salesmen)
+    } else {
+      const term = searchTerm.toLowerCase()
+      const filtered = salesmen.filter(
+        (salesman) =>
+          salesman.fullName?.toLowerCase().includes(term) ||
+          salesman.email?.toLowerCase().includes(term) ||
+          salesman.position?.toLowerCase().includes(term)
+      )
+      setFilteredSalesmen(filtered)
+    }
+  }, [searchTerm, salesmen])
 
   const fetchSalesmen = async () => {
     try {
@@ -166,7 +184,15 @@ export default function SalesmenList({ onEdit, onDelete }) {
         `}</style>
 
         {/* Filter Controls */}
-        <div className="mb-3 d-flex gap-2 align-items-center">
+        <div className="mb-3 d-flex gap-2 align-items-center flex-wrap">
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            style={{ maxWidth: "250px" }}
+            placeholder="Search by name, email, or position..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           <select
             className="form-select form-select-sm"
             style={{ maxWidth: "150px" }}
@@ -213,8 +239,8 @@ export default function SalesmenList({ onEdit, onDelete }) {
             </thead>
 
             <tbody>
-              {salesmen.length > 0 ? (
-                salesmen.map((salesman) => (
+              {filteredSalesmen.length > 0 ? (
+                filteredSalesmen.map((salesman) => (
                   <tr key={salesman._id}>
                     <td>
                       <strong>{salesman.fullName || "N/A"}</strong>
@@ -253,7 +279,7 @@ export default function SalesmenList({ onEdit, onDelete }) {
               ) : (
                 <tr>
                   <td colSpan="8" className="text-center py-4 text-muted">
-                    No salesmen found
+                    {searchTerm ? "No salesmen match your search" : "No salesmen found"}
                   </td>
                 </tr>
               )}
@@ -262,43 +288,41 @@ export default function SalesmenList({ onEdit, onDelete }) {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-3">
-            <small className="text-muted">
-              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of{" "}
-              {totalCount} salesmen
-            </small>
-            <nav>
-              <ul className="pagination pagination-sm mb-0">
-                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
+        <div className="d-flex justify-content-between align-items-center mt-3">
+          <small className="text-muted">
+            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of{" "}
+            {totalCount} salesmen
+          </small>
+          <nav>
+            <ul className="pagination pagination-sm mb-0">
+              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+              </li>
+              {[...Array(totalPages)].map((_, i) => (
+                <li key={i + 1} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                    {i + 1}
                   </button>
                 </li>
-                {[...Array(totalPages)].map((_, i) => (
-                  <li key={i + 1} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
-                      {i + 1}
-                    </button>
-                  </li>
-                ))}
-                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        )}
+              ))}
+              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
     </div>
   )
