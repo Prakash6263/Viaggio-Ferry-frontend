@@ -32,10 +32,16 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
     classificationSociety: "",
     status: "Active",
     remarks: "",
-    technical: {},
-    passengerCapacity: [{ cabinId: "", quantity: 0 }],
-    cargoCapacity: [{ cabinId: "", quantity: 0 }],
-    vehicleCapacity: [{ cabinId: "", quantity: 0 }],
+    technical: {
+      grossTonnage: 0,
+      netTonnage: 0,
+      loa: 0,
+      beam: 0,
+      draft: 0,
+    },
+    passengerCapacity: [{ cabinId: "", totalWeightKg: 0, seats: 0 }],
+    cargoCapacity: [{ cabinId: "", totalWeightTons: 0, spots: 0 }],
+    vehicleCapacity: [{ cabinId: "", totalWeightTons: 0, spots: 0 }],
   });
 
   // Load initial ship data if editing
@@ -52,10 +58,16 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
         classificationSociety: initialData.classificationSociety || "",
         status: initialData.status || "Active",
         remarks: initialData.remarks || "",
-        technical: initialData.technical || {},
-        passengerCapacity: initialData.passengerCapacity || [{ cabinId: "", quantity: 0 }],
-        cargoCapacity: initialData.cargoCapacity || [{ cabinId: "", quantity: 0 }],
-        vehicleCapacity: initialData.vehicleCapacity || [{ cabinId: "", quantity: 0 }],
+        technical: initialData.technical || {
+          grossTonnage: 0,
+          netTonnage: 0,
+          loa: 0,
+          beam: 0,
+          draft: 0,
+        },
+        passengerCapacity: initialData.passengerCapacity || [{ cabinId: "", totalWeightKg: 0, seats: 0 }],
+        cargoCapacity: initialData.cargoCapacity || [{ cabinId: "", totalWeightTons: 0, spots: 0 }],
+        vehicleCapacity: initialData.vehicleCapacity || [{ cabinId: "", totalWeightTons: 0, spots: 0 }],
       });
     }
   }, [shipId, initialData]);
@@ -152,9 +164,15 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
       return;
     }
 
-    // Validate capacity rows
+    // Validate capacity rows - check for cabinId and appropriate weight/quantity fields
     const validateCapacity = (type) => {
-      return formData[type].every((row) => row.cabinId && row.quantity > 0);
+      return formData[type].every((row) => {
+        if (!row.cabinId) return false;
+        if (type === "passengerCapacity") return row.totalWeightKg > 0 && row.seats > 0;
+        if (type === "cargoCapacity") return row.totalWeightTons > 0 && row.spots > 0;
+        if (type === "vehicleCapacity") return row.totalWeightTons > 0 && row.spots > 0;
+        return false;
+      });
     };
 
     if (formData.passengerCapacity.length > 0 && !validateCapacity("passengerCapacity")) {
@@ -437,6 +455,26 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
 }
 
 function CapacitySection({ title, type, rows, cabins, onRowChange, onAddRow, onRemoveRow, cabinsLoading }) {
+  // Determine column headers and fields based on capacity type
+  const getColumnHeaders = () => {
+    if (type === "passengerCapacity") {
+      return ["Cabin Type", "Weight (kg)", "Seats"];
+    } else {
+      return ["Cabin Type", "Weight (tons)", "Spots"];
+    }
+  };
+
+  const getFieldNames = () => {
+    if (type === "passengerCapacity") {
+      return { weight: "totalWeightKg", quantity: "seats" };
+    } else {
+      return { weight: "totalWeightTons", quantity: "spots" };
+    }
+  };
+
+  const fieldNames = getFieldNames();
+  const headers = getColumnHeaders();
+
   return (
     <div className="mb-3">
       <h6 className="mb-2">{title}</h6>
@@ -444,8 +482,9 @@ function CapacitySection({ title, type, rows, cabins, onRowChange, onAddRow, onR
         <table className="table table-sm table-bordered mb-0">
           <thead className="table-light">
             <tr>
-              <th>Cabin Type</th>
-              <th>Quantity</th>
+              <th>{headers[0]}</th>
+              <th>{headers[1]}</th>
+              <th>{headers[2]}</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -474,8 +513,18 @@ function CapacitySection({ title, type, rows, cabins, onRowChange, onAddRow, onR
                     type="number"
                     className="form-control form-control-sm"
                     min="0"
-                    value={row.quantity}
-                    onChange={(e) => onRowChange(type, index, "quantity", e.target.value)}
+                    value={row[fieldNames.weight] || 0}
+                    onChange={(e) => onRowChange(type, index, fieldNames.weight, e.target.value)}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    min="0"
+                    value={row[fieldNames.quantity] || 0}
+                    onChange={(e) => onRowChange(type, index, fieldNames.quantity, e.target.value)}
                     placeholder="0"
                   />
                 </td>
