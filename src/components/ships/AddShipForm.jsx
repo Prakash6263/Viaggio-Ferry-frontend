@@ -257,140 +257,133 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
   return (
     <form className="needs-validation" noValidate onSubmit={handleSubmit}>
       {/* General Info Section */}
-      <div className="card mb-3">
-        <div className="card-header bg-light">
-          <h6 className="mb-0">General Information</h6>
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">
+            Ship Name <span style={{ color: "red" }}>*</span>
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            name="name"
+            placeholder="Enter ship name"
+            value={formData.name}
+            onChange={handleInputChange}
+            required
+          />
         </div>
-        <div className="card-body">
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">
-                Ship Name <span style={{ color: "red" }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                name="name"
-                placeholder="Enter ship name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">
-                IMO Number <span style={{ color: "red" }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                name="imoNumber"
-                placeholder="e.g., IMO1234567"
-                value={formData.imoNumber}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">MMSI Number</label>
-              <input
-                type="text"
-                className="form-control"
-                name="mmsiNumber"
-                placeholder="Enter MMSI number"
-                value={formData.mmsiNumber}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">
-                Ship Type <span style={{ color: "red" }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                name="shipType"
-                placeholder="e.g., Passenger Ferry"
-                value={formData.shipType}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">
-                Year Built <span style={{ color: "red" }}>*</span>
-              </label>
-              <input
-                type="number"
-                className="form-control"
-                name="yearBuilt"
-                placeholder="e.g., 2015"
-                value={formData.yearBuilt}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">
-                Flag State <span style={{ color: "red" }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                name="flagState"
-                placeholder="e.g., Oman"
-                value={formData.flagState}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">Classification Society</label>
-              <input
-                type="text"
-                className="form-control"
-                name="classificationSociety"
-                placeholder="Enter classification society"
-                value={formData.classificationSociety}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Status</label>
-              <select
-                className="form-select"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Under Maintenance">Under Maintenance</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label">Remarks</label>
-            <textarea
-              className="form-control"
-              name="remarks"
-              rows="3"
-              placeholder="Add remarks about this ship"
-              value={formData.remarks}
-              onChange={handleInputChange}
-            ></textarea>
-          </div>
+        <div className="col-md-6">
+          <label className="form-label">
+            IMO Number <span style={{ color: "red" }}>*</span>
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            name="imoNumber"
+            placeholder="e.g., IMO1234567"
+            value={formData.imoNumber}
+            onChange={handleInputChange}
+            required
+          />
         </div>
+      </div>
+
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">MMSI Number</label>
+          <input
+            type="text"
+            className="form-control"
+            name="mmsiNumber"
+            placeholder="Enter MMSI number"
+            value={formData.mmsiNumber}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">
+            Ship Type <span style={{ color: "red" }}>*</span>
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            name="shipType"
+            placeholder="e.g., Passenger Ferry"
+            value={formData.shipType}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">
+            Year Built <span style={{ color: "red" }}>*</span>
+          </label>
+          <input
+            type="number"
+            className="form-control"
+            name="yearBuilt"
+            placeholder="e.g., 2015"
+            value={formData.yearBuilt}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">
+            Flag State <span style={{ color: "red" }}>*</span>
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            name="flagState"
+            placeholder="e.g., Oman"
+            value={formData.flagState}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label className="form-label">Classification Society</label>
+          <input
+            type="text"
+            className="form-control"
+            name="classificationSociety"
+            placeholder="Enter classification society"
+            value={formData.classificationSociety}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">Status</label>
+          <select
+            className="form-select"
+            name="status"
+            value={formData.status}
+            onChange={handleInputChange}
+          >
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Under Maintenance">Under Maintenance</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Remarks</label>
+        <textarea
+          className="form-control"
+          name="remarks"
+          rows="3"
+          placeholder="Add remarks about this ship"
+          value={formData.remarks}
+          onChange={handleInputChange}
+        ></textarea>
       </div>
 
       {/* Passenger Capacity Section */}
@@ -430,32 +423,13 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
       />
 
       {/* Form Actions */}
-      <div className="mt-4 d-flex gap-2">
+      <div className="mt-4">
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-turquoise"
           disabled={loading}
         >
-          {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Saving...
-            </>
-          ) : (
-            <>
-              <i className="fa fa-save me-2"></i>
-              {shipId ? "Update" : "Create"} Ship
-            </>
-          )}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => navigate("/company/ship-trip/ships")}
-          disabled={loading}
-        >
-          <i className="fa fa-times me-2"></i>
-          Cancel
+          {loading ? "Saving..." : (shipId ? "Update" : "Create")} Ship
         </button>
       </div>
     </form>
@@ -464,77 +438,73 @@ export default function AddShipForm({ shipId = null, initialData = null }) {
 
 function CapacitySection({ title, type, rows, cabins, onRowChange, onAddRow, onRemoveRow, cabinsLoading }) {
   return (
-    <div className="card mb-3">
-      <div className="card-header bg-light">
-        <h6 className="mb-0">{title}</h6>
-      </div>
-      <div className="card-body">
-        <div className="table-responsive">
-          <table className="table table-sm table-bordered mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Cabin Type</th>
-                <th>Quantity</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <tr key={index}>
-                  <td>
-                    <select
-                      className="form-select form-select-sm"
-                      value={row.cabinId}
-                      onChange={(e) => onRowChange(type, index, "cabinId", e.target.value)}
-                      disabled={cabinsLoading || cabins.length === 0}
-                    >
-                      <option value="">
-                        {cabinsLoading ? "Loading..." : "Select Cabin Type"}
+    <div className="mb-3">
+      <h6 className="mb-2">{title}</h6>
+      <div className="table-responsive">
+        <table className="table table-sm table-bordered mb-0">
+          <thead className="table-light">
+            <tr>
+              <th>Cabin Type</th>
+              <th>Quantity</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={index}>
+                <td>
+                  <select
+                    className="form-select form-select-sm"
+                    value={row.cabinId}
+                    onChange={(e) => onRowChange(type, index, "cabinId", e.target.value)}
+                    disabled={cabinsLoading || cabins.length === 0}
+                  >
+                    <option value="">
+                      {cabinsLoading ? "Loading..." : "Select Cabin Type"}
+                    </option>
+                    {cabins.map((cabin) => (
+                      <option key={cabin._id} value={cabin._id}>
+                        {cabin.name}
                       </option>
-                      {cabins.map((cabin) => (
-                        <option key={cabin._id} value={cabin._id}>
-                          {cabin.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      className="form-control form-control-sm"
-                      min="0"
-                      value={row.quantity}
-                      onChange={(e) => onRowChange(type, index, "quantity", e.target.value)}
-                      placeholder="0"
-                    />
-                  </td>
-                  <td>
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => onRemoveRow(type, index)}
-                        title="Remove this row"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-primary mt-2"
-          onClick={() => onAddRow(type)}
-          disabled={cabinsLoading || cabins.length === 0}
-        >
-          <i className="fa fa-plus me-1"></i>
-          Add Line
-        </button>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    min="0"
+                    value={row.quantity}
+                    onChange={(e) => onRowChange(type, index, "quantity", e.target.value)}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  {rows.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => onRemoveRow(type, index)}
+                      title="Remove this row"
+                    >
+                      <i className="far fa-trash-alt"></i>
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-primary mt-2"
+        onClick={() => onAddRow(type)}
+        disabled={cabinsLoading || cabins.length === 0}
+      >
+        <i className="fa fa-plus me-1"></i>
+        Add Line
+      </button>
     </div>
   );
 }

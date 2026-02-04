@@ -194,6 +194,100 @@ export default function ShipsListTable() {
         </div>
       )}
 
+      <div className="row">
+        <div className="col-sm-12">
+          <div className="card-table card p-3">
+            <div className="card-body">
+              <div className="table-responsive">
+                <table
+                  ref={tableRef}
+                  id="shipsTable"
+                  className="table table-striped"
+                  style={{ width: "100%" }}
+                >
+                  <thead>
+                    <tr>
+                      <th>Ship Name</th>
+                      <th>IMO Number</th>
+                      <th>Type</th>
+                      <th>Year Built</th>
+                      <th>Flag State</th>
+                      <th>Status</th>
+                      <th>Capacity</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ships.map((ship) => (
+                      <tr key={ship._id}>
+                        <td>{ship.name}</td>
+                        <td>{ship.imoNumber}</td>
+                        <td>{ship.shipType}</td>
+                        <td>{ship.yearBuilt}</td>
+                        <td>{ship.flagState}</td>
+                        <td>
+                          <span className={`badge ${ship.status === "Active" ? "bg-success" : "bg-danger"}`}>
+                            {ship.status}
+                          </span>
+                        </td>
+                        <td>
+                          <small>
+                            {ship.passengerCapacity?.length > 0 && <div>Passenger: {ship.passengerCapacity.reduce((sum, c) => sum + (c.quantity || 0), 0)}</div>}
+                            {ship.cargoCapacity?.length > 0 && <div>Cargo: {ship.cargoCapacity.reduce((sum, c) => sum + (c.quantity || 0), 0)} tons</div>}
+                            {ship.vehicleCapacity?.length > 0 && <div>Vehicle: {ship.vehicleCapacity.reduce((sum, c) => sum + (c.quantity || 0), 0)}</div>}
+                          </small>
+                        </td>
+                        <td>
+                          <div className="action-table-data">
+                            <Can action="update">
+                              <div className="edit-delete-action">
+                                <button
+                                  type="button"
+                                  className="btn-icon"
+                                  onClick={() => handleEdit(ship._id)}
+                                  title="Edit"
+                                >
+                                  <i className="far fa-edit"></i>
+                                </button>
+                              </div>
+                            </Can>
+                            <Can action="delete">
+                              <div className="edit-delete-action">
+                                <button
+                                  type="button"
+                                  className="btn-icon delete-icon"
+                                  onClick={() => handleDelete(ship._id)}
+                                  title="Delete"
+                                >
+                                  <i className="far fa-trash-alt"></i>
+                                </button>
+                              </div>
+                            </Can>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+  }
+
+  return (
+    <>
+      {error && (
+        <div className="row mb-3">
+          <div className="col-sm-12">
+            <div className="alert alert-danger">{error}</div>
+          </div>
+        </div>
+      )}
+
       {/* View Toggle Buttons */}
       <div className="row mb-3">
         <div className="col-sm-12">
