@@ -1,253 +1,540 @@
-import React, { useState } from "react";
+'use client';
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { CirclesWithBar } from "react-loader-spinner";
+import { shipsApi } from "../../api/shipsApi";
+import { cabinsApi } from "../../api/cabinsApi";
 
-function emptyPassengerRow() {
-  return { id: Date.now() + Math.random(), cabin: "First class", weight: "", seats: "" };
-}
-function emptyCargoRow() {
-  return { id: Date.now() + Math.random(), type: "Pallet", weight: "", spots: "" };
-}
-function emptyVehicleRow() {
-  return { id: Date.now() + Math.random(), type: "Car", weight: "", spots: "" };
-}
-
-export default function AddShipForm() {
+export default function AddShipForm({ shipId = null, initialData = null }) {
   const navigate = useNavigate();
-
-  // general info
-  const [form, setForm] = useState({
-    name: "",
-    imo: "",
-    mmsi: "",
-    flag: "",
-    type: "",
-    year: "",
-    classification: "",
-    status: "Active",
-    remarks: "",
-    gt: "",
-    nt: "",
-    loa: "",
-    beam: "",
-    draft: "",
+  const [loading, setLoading] = useState(false);
+  const [cabinsLoading, setCabinsLoading] = useState(false);
+  const [cabins, setCabins] = useState({
+    passenger: [],
+    cargo: [],
+    vehicle: [],
+  });
+  const [cabinsCache, setCabinsCache] = useState({
+    passenger: false,
+    cargo: false,
+    vehicle: false,
   });
 
-  const [passengers, setPassengers] = useState([emptyPassengerRow()]);
-  const [cargo, setCargo] = useState([emptyCargoRow()]);
-  const [vehicles, setVehicles] = useState([emptyVehicleRow()]);
+  const [formData, setFormData] = useState({
+    name: "",
+    imoNumber: "",
+    mmsiNumber: "",
+    shipType: "",
+    yearBuilt: "",
+    flagState: "",
+    classificationSociety: "",
+    status: "Active",
+    remarks: "",
+    technical: {},
+    passengerCapacity: [{ cabinId: "", quantity: 0 }],
+    cargoCapacity: [{ cabinId: "", quantity: 0 }],
+    vehicleCapacity: [{ cabinId: "", quantity: 0 }],
+  });
 
-  const onChange = (e) => {
+  // Load initial ship data if editing
+  useEffect(() => {
+    if (shipId && initialData) {
+      console.log("[v0] Loading initial ship data:", initialData);
+      setFormData({
+        name: initialData.name || "",
+        imoNumber: initialData.imoNumber || "",
+        mmsiNumber: initialData.mmsiNumber || "",
+        shipType: initialData.shipType || "",
+        yearBuilt: initialData.yearBuilt || "",
+        flagState: initialData.flagState || "",
+        classificationSociety: initialData.classificationSociety || "",
+        status: initialData.status || "Active",
+        remarks: initialData.remarks || "",
+        technical: initialData.technical || {},
+        passengerCapacity: initialData.passengerCapacity || [{ cabinId: "", quantity: 0 }],
+        cargoCapacity: initialData.cargoCapacity || [{ cabinId: "", quantity: 0 }],
+        vehicleCapacity: initialData.vehicleCapacity || [{ cabinId: "", quantity: 0 }],
+      });
+    }
+  }, [shipId, initialData]);
+
+  // Fetch cabins for a specific type with caching
+  const fetchCabinsByType = async (type) => {
+    if (cabinsCache[type]) return; // Already cached
+
+    try {
+      setCabinsLoading(true);
+      const response = await cabinsApi.getCabinsByType(type);
+
+      let cabinsList = [];
+      if (response?.data?.cabins && Array.isArray(response.data.cabins)) {
+        cabinsList = response.data.cabins;
+      } else if (response?.cabins && Array.isArray(response.cabins)) {
+        cabinsList = response.cabins;
+      }
+
+      console.log(`[v0] Loaded ${type} cabins:`, cabinsList);
+
+      setCabins((prev) => ({
+        ...prev,
+        [type]: cabinsList,
+      }));
+
+      setCabinsCache((prev) => ({
+        ...prev,
+        [type]: true,
+      }));
+    } catch (error) {
+      console.error(`[v0] Error fetching ${type} cabins:`, error);
+      Swal.fire({
+        icon: "warning",
+        title: "Warning",
+        text: `Failed to load ${type} cabin options`,
+      });
+    } finally {
+      setCabinsLoading(false);
+    }
+  };
+
+  // Fetch cabins when component mounts
+  useEffect(() => {
+    fetchCabinsByType("passenger");
+    fetchCabinsByType("cargo");
+    fetchCabinsByType("vehicle");
+  }, []);
+
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const addPassenger = () => setPassengers((a) => [...a, emptyPassengerRow()]);
-  const removePassenger = (id) => setPassengers((a) => a.filter((r) => r.id !== id));
-  const updatePassenger = (id, key, value) => setPassengers((a) => a.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
+  const handleCapacityRowChange = (type, index, field, value) => {
+    const rows = [...formData[type]];
+    rows[index] = {
+      ...rows[index],
+      [field]: field === "quantity" ? parseInt(value) || 0 : value,
+    };
+    setFormData((prev) => ({
+      ...prev,
+      [type]: rows,
+    }));
+  };
 
-  const addCargo = () => setCargo((a) => [...a, emptyCargoRow()]);
-  const removeCargo = (id) => setCargo((a) => a.filter((r) => r.id !== id));
-  const updateCargo = (id, key, value) => setCargo((a) => a.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
+  const addCapacityRow = (type) => {
+    setFormData((prev) => ({
+      ...prev,
+      [type]: [...prev[type], { cabinId: "", quantity: 0 }],
+    }));
+  };
 
-  const addVehicle = () => setVehicles((a) => [...a, emptyVehicleRow()]);
-  const removeVehicle = (id) => setVehicles((a) => a.filter((r) => r.id !== id));
-  const updateVehicle = (id, key, value) => setVehicles((a) => a.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
+  const removeCapacityRow = (type, index) => {
+    setFormData((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }));
+  };
 
-  const onSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = { ...form, passengers, cargo, vehicles };
-    console.log("Save Ship payload:", payload);
-    // TODO: replace with API call
-    // simulate save and navigate back
-    alert("Ship saved (mock). Check console.");
-    navigate("/company/ship-trip/ships");
+
+    // Validation
+    if (!formData.name || !formData.imoNumber || !formData.shipType || !formData.yearBuilt || !formData.flagState) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Fields",
+        text: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    // Validate capacity rows
+    const validateCapacity = (type) => {
+      return formData[type].every((row) => row.cabinId && row.quantity > 0);
+    };
+
+    if (formData.passengerCapacity.length > 0 && !validateCapacity("passengerCapacity")) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Passenger Capacity",
+        text: "Please fill all passenger capacity fields",
+      });
+      return;
+    }
+
+    if (formData.cargoCapacity.length > 0 && !validateCapacity("cargoCapacity")) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Cargo Capacity",
+        text: "Please fill all cargo capacity fields",
+      });
+      return;
+    }
+
+    if (formData.vehicleCapacity.length > 0 && !validateCapacity("vehicleCapacity")) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Vehicle Capacity",
+        text: "Please fill all vehicle capacity fields",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const payload = {
+        name: formData.name,
+        imoNumber: formData.imoNumber,
+        mmsiNumber: formData.mmsiNumber,
+        shipType: formData.shipType,
+        yearBuilt: formData.yearBuilt,
+        flagState: formData.flagState,
+        classificationSociety: formData.classificationSociety,
+        status: formData.status,
+        remarks: formData.remarks,
+        technical: formData.technical,
+        passengerCapacity: formData.passengerCapacity,
+        cargoCapacity: formData.cargoCapacity,
+        vehicleCapacity: formData.vehicleCapacity,
+      };
+
+      if (shipId) {
+        await shipsApi.updateShip(shipId, payload);
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Ship updated successfully",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        await shipsApi.createShip(payload);
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Ship created successfully",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
+
+      setTimeout(() => {
+        navigate("/company/ship-trip/ships");
+      }, 2000);
+    } catch (error) {
+      console.error("[v0] Error submitting form:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to save ship",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading && shipId) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+        <CirclesWithBar
+          height="80"
+          width="80"
+          color="#05468f"
+          outerCircleColor="#05468f"
+          innerCircleColor="#05468f"
+          barColor="#05468f"
+          ariaLabel="circles-with-bar-loading"
+          visible={true}
+        />
+      </div>
+    );
+  }
 
   return (
-    <form onSubmit={onSubmit}>
-      {/* General Information */}
-      <div className="section-box" style={{border:"none"}}>
-        <h6>General Information</h6>
-        <div className="row mb-3">
-          <div className="col-md-6">
-            <label>Ship Name</label>
-            <input type="text" className="form-control" name="name" value={form.name} onChange={onChange} />
-          </div>
-          <div className="col-md-6">
-            <label>Ship IMO Number</label>
-            <input type="text" className="form-control" name="imo" value={form.imo} onChange={onChange} />
-          </div>
+    <form className="needs-validation" noValidate onSubmit={handleSubmit}>
+      {/* General Info Section */}
+      <div className="card mb-3">
+        <div className="card-header bg-light">
+          <h6 className="mb-0">General Information</h6>
         </div>
-
-        <div className="row mb-3">
-          <div className="col-md-6">
-            <label>Ship MMSI Number</label>
-            <input type="text" className="form-control" name="mmsi" value={form.mmsi} onChange={onChange} />
-          </div>
-          <div className="col-md-6">
-            <label>Flag State / Registration Country</label>
-            <input type="text" className="form-control" name="flag" value={form.flag} onChange={onChange} />
-          </div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-md-6">
-            <label>Ship Type</label>
-            <input type="text" className="form-control" name="type" value={form.type} onChange={onChange} />
-          </div>
-          <div className="col-md-6">
-            <label>Year Built</label>
-            <input type="text" className="form-control" name="year" value={form.year} onChange={onChange} />
-          </div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-md-6">
-            <label>Classification Society</label>
-            <input type="text" className="form-control" name="classification" value={form.classification} onChange={onChange} />
-          </div>
-          <div className="col-md-6">
-            <label>Active/Inactive Status</label>
-            <select className="form-select" name="status" value={form.status} onChange={onChange}>
-              <option>Active</option>
-              <option>Inactive</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <label>Remarks/Notes</label>
-          <textarea className="form-control" rows="3" name="remarks" value={form.remarks} onChange={onChange} />
-        </div>
-      </div>
-
-      {/* Technical Specifications */}
-      <div className="section-box mb-3" style={{border:"none"}}>
-        <h6>Technical Specifications</h6>
-        <div className="row mb-3">
-          <div className="col-md-4">
-            <label>Gross Tonnage (GT)</label>
-            <input type="text" className="form-control" name="gt" value={form.gt} onChange={onChange} />
-          </div>
-          <div className="col-md-4">
-            <label>Net Tonnage (NT)</label>
-            <input type="text" className="form-control" name="nt" value={form.nt} onChange={onChange} />
-          </div>
-          <div className="col-md-4">
-            <label>Length Overall (LOA) (in meters)</label>
-            <input type="text" className="form-control" name="loa" value={form.loa} onChange={onChange} />
-          </div>
-        </div>
-        <div className="row mb-3">
-          <div className="col-md-6">
-            <label>Beam (in meters)</label>
-            <input type="text" className="form-control" name="beam" value={form.beam} onChange={onChange} />
-          </div>
-          <div className="col-md-6">
-            <label>Draft (in meters)</label>
-            <input type="text" className="form-control" name="draft" value={form.draft} onChange={onChange} />
-          </div>
-        </div>
-      </div>
-
-      {/* Passenger Capacity */}
-      <div className="section-box mb-3" style={{border:"none"}}>
-        <h6>Passenger Capacity</h6>
-        <div id="passengerContainer">
-          {passengers.map((r) => (
-            <div className="row mb-2 passenger-row" key={r.id}>
-              <div className="col-md-3">
-                <label>Cabin</label>
-                <select className="form-select" value={r.cabin} onChange={(e) => updatePassenger(r.id, "cabin", e.target.value)}>
-                  <option>First class</option>
-                  <option>Business</option>
-                  <option>Economy</option>
-                </select>
-              </div>
-              <div className="col-md-3">
-                <label>Total Weight kg (Calculated)</label>
-                <input type="text" className="form-control" value={r.weight} onChange={(e) => updatePassenger(r.id, "weight", e.target.value)} />
-              </div>
-              <div className="col-md-3">
-                <label>Number of Seats</label>
-                <input type="text" className="form-control" value={r.seats} onChange={(e) => updatePassenger(r.id, "seats", e.target.value)} />
-              </div>
-              <div className="col-md-1 d-flex align-items-end">
-                <button type="button" className="btn btn-danger btn-sm remove-line" onClick={() => removePassenger(r.id)}>Remove</button>
-              </div>
+        <div className="card-body">
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">
+                Ship Name <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                name="name"
+                placeholder="Enter ship name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
             </div>
-          ))}
-        </div>
-        <button type="button" className="btn btn-outline-primary btn-sm" id="addPassenger" onClick={addPassenger}>Add Line</button>
-      </div>
-
-      {/* Cargo Capacity */}
-      <div className="section-box mb-3" style={{border:"none"}}>
-        <h6>Cargo Capacity</h6>
-        <div id="cargoContainer">
-          {cargo.map((r) => (
-            <div className="row mb-2 cargo-row" key={r.id}>
-              <div className="col-md-3">
-                <label>Type</label>
-                <select className="form-select" value={r.type} onChange={(e) => updateCargo(r.id, "type", e.target.value)}>
-                  <option>Pallet</option>
-                  <option>Container</option>
-                  <option>Bulk</option>
-                </select>
-              </div>
-              <div className="col-md-3">
-                <label>Total Weight (metric tons)</label>
-                <input type="text" className="form-control" value={r.weight} onChange={(e) => updateCargo(r.id, "weight", e.target.value)} />
-              </div>
-              <div className="col-md-3">
-                <label>Spots</label>
-                <input type="text" className="form-control" value={r.spots} onChange={(e) => updateCargo(r.id, "spots", e.target.value)} />
-              </div>
-              <div className="col-md-1 d-flex align-items-end">
-                <button type="button" className="btn btn-danger btn-sm remove-line" onClick={() => removeCargo(r.id)}>Remove</button>
-              </div>
+            <div className="col-md-6">
+              <label className="form-label">
+                IMO Number <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                name="imoNumber"
+                placeholder="e.g., IMO1234567"
+                value={formData.imoNumber}
+                onChange={handleInputChange}
+                required
+              />
             </div>
-          ))}
-        </div>
-        <button type="button" className="btn btn-outline-primary btn-sm" id="addCargo" onClick={addCargo}>Add Line</button>
-      </div>
+          </div>
 
-      {/* Vehicle Capacity */}
-      <div className="section-box mb-3" style={{border:"none"}}>
-        <h6>Vehicle Capacity</h6>
-        <div id="vehicleContainer">
-          {vehicles.map((r) => (
-            <div className="row mb-2 vehicle-row" key={r.id}>
-              <div className="col-md-3">
-                <label>Type</label>
-                <select className="form-select" value={r.type} onChange={(e) => updateVehicle(r.id, "type", e.target.value)}>
-                  <option>Car</option>
-                  <option>Bus</option>
-                  <option>Truck</option>
-                </select>
-              </div>
-              <div className="col-md-3">
-                <label>Total Weight (metric tons)</label>
-                <input type="text" className="form-control" value={r.weight} onChange={(e) => updateVehicle(r.id, "weight", e.target.value)} />
-              </div>
-              <div className="col-md-3">
-                <label>Spots</label>
-                <input type="text" className="form-control" value={r.spots} onChange={(e) => updateVehicle(r.id, "spots", e.target.value)} />
-              </div>
-              <div className="col-md-1 d-flex align-items-end">
-                <button type="button" className="btn btn-danger btn-sm remove-line" onClick={() => removeVehicle(r.id)}>Remove</button>
-              </div>
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">MMSI Number</label>
+              <input
+                type="text"
+                className="form-control"
+                name="mmsiNumber"
+                placeholder="Enter MMSI number"
+                value={formData.mmsiNumber}
+                onChange={handleInputChange}
+              />
             </div>
-          ))}
+            <div className="col-md-6">
+              <label className="form-label">
+                Ship Type <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                name="shipType"
+                placeholder="e.g., Passenger Ferry"
+                value={formData.shipType}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">
+                Year Built <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="number"
+                className="form-control"
+                name="yearBuilt"
+                placeholder="e.g., 2015"
+                value={formData.yearBuilt}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">
+                Flag State <span style={{ color: "red" }}>*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                name="flagState"
+                placeholder="e.g., Oman"
+                value={formData.flagState}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">Classification Society</label>
+              <input
+                type="text"
+                className="form-control"
+                name="classificationSociety"
+                placeholder="Enter classification society"
+                value={formData.classificationSociety}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">Status</label>
+              <select
+                className="form-select"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Under Maintenance">Under Maintenance</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Remarks</label>
+            <textarea
+              className="form-control"
+              name="remarks"
+              rows="3"
+              placeholder="Add remarks about this ship"
+              value={formData.remarks}
+              onChange={handleInputChange}
+            ></textarea>
+          </div>
         </div>
-        <button type="button" className="btn btn-outline-primary btn-sm" id="addVehicle" onClick={addVehicle}>Add Line</button>
       </div>
 
-      {/* Buttons */}
-      <div className="d-flex justify-content-start mt-4">
-        <button type="button" className="btn btn-secondary me-2" onClick={() => navigate(-1)}>Back</button>
-        <button type="submit" className="btn btn-turquoise">Save Ship</button>
+      {/* Passenger Capacity Section */}
+      <CapacitySection
+        title="Passenger Capacity"
+        type="passengerCapacity"
+        rows={formData.passengerCapacity}
+        cabins={cabins.passenger}
+        onRowChange={handleCapacityRowChange}
+        onAddRow={addCapacityRow}
+        onRemoveRow={removeCapacityRow}
+        cabinsLoading={cabinsLoading}
+      />
+
+      {/* Cargo Capacity Section */}
+      <CapacitySection
+        title="Cargo Capacity (tons)"
+        type="cargoCapacity"
+        rows={formData.cargoCapacity}
+        cabins={cabins.cargo}
+        onRowChange={handleCapacityRowChange}
+        onAddRow={addCapacityRow}
+        onRemoveRow={removeCapacityRow}
+        cabinsLoading={cabinsLoading}
+      />
+
+      {/* Vehicle Capacity Section */}
+      <CapacitySection
+        title="Vehicle Capacity"
+        type="vehicleCapacity"
+        rows={formData.vehicleCapacity}
+        cabins={cabins.vehicle}
+        onRowChange={handleCapacityRowChange}
+        onAddRow={addCapacityRow}
+        onRemoveRow={removeCapacityRow}
+        cabinsLoading={cabinsLoading}
+      />
+
+      {/* Form Actions */}
+      <div className="mt-4 d-flex gap-2">
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Saving...
+            </>
+          ) : (
+            <>
+              <i className="fa fa-save me-2"></i>
+              {shipId ? "Update" : "Create"} Ship
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => navigate("/company/ship-trip/ships")}
+          disabled={loading}
+        >
+          <i className="fa fa-times me-2"></i>
+          Cancel
+        </button>
       </div>
     </form>
+  );
+}
+
+function CapacitySection({ title, type, rows, cabins, onRowChange, onAddRow, onRemoveRow, cabinsLoading }) {
+  return (
+    <div className="card mb-3">
+      <div className="card-header bg-light">
+        <h6 className="mb-0">{title}</h6>
+      </div>
+      <div className="card-body">
+        <div className="table-responsive">
+          <table className="table table-sm table-bordered mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>Cabin Type</th>
+                <th>Quantity</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={index}>
+                  <td>
+                    <select
+                      className="form-select form-select-sm"
+                      value={row.cabinId}
+                      onChange={(e) => onRowChange(type, index, "cabinId", e.target.value)}
+                      disabled={cabinsLoading || cabins.length === 0}
+                    >
+                      <option value="">
+                        {cabinsLoading ? "Loading..." : "Select Cabin Type"}
+                      </option>
+                      {cabins.map((cabin) => (
+                        <option key={cabin._id} value={cabin._id}>
+                          {cabin.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm"
+                      min="0"
+                      value={row.quantity}
+                      onChange={(e) => onRowChange(type, index, "quantity", e.target.value)}
+                      placeholder="0"
+                    />
+                  </td>
+                  <td>
+                    {rows.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => onRemoveRow(type, index)}
+                        title="Remove this row"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-primary mt-2"
+          onClick={() => onAddRow(type)}
+          disabled={cabinsLoading || cabins.length === 0}
+        >
+          <i className="fa fa-plus me-1"></i>
+          Add Line
+        </button>
+      </div>
+    </div>
   );
 }

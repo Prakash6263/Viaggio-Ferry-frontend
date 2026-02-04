@@ -1,210 +1,62 @@
-// import React, { useEffect, useRef, useState } from "react";
-// import { Link } from "react-router-dom";
-
-// export default function ShipsListTable() {
-//   const tableRef = useRef(null);
-//   const [view, setView] = useState("table"); // "table" | "grid"
-
-//   useEffect(() => {
-//     const el = tableRef.current;
-//     if (!el || !window.DataTable) return;
-
-//     // destroy old instance if exists
-//     try {
-//       if (el._dt) {
-//         el._dt.destroy();
-//         el._dt = null;
-//       }
-//     } catch (err) {}
-
-//     const dt = new window.DataTable(el, {
-//       paging: true,
-//       pageLength: 10,
-//       lengthMenu: [10, 25, 50, 100],
-//       searching: true,
-//       ordering: true,
-//       info: true,
-//       layout: {
-//         topStart: "pageLength",
-//         topEnd: "search",
-//         bottomStart: "info",
-//         bottomEnd: "paging",
-//       },
-//     });
-
-//     el._dt = dt;
-//     return () => {
-//       try { dt.destroy(); } catch {}
-//       if (el) el._dt = null;
-//     };
-//   }, []); // one-time init
-
-//   // sample data (replace by API)
-//   const ships = [
-//     {
-//       id: 1,
-//       name: "Marine Star",
-//       added: "12 Aug 2023",
-//       imo: "IMO1234567",
-//       type: "Cargo",
-//       year: "2015",
-//       flag: "Oman",
-//       status: "Active",
-//       capacity: { passenger: 200, cargo: "5000 tons", vehicle: 100 },
-//     },
-//     {
-//       id: 2,
-//       name: "Ocean Pearl",
-//       added: "05 Aug 2023",
-//       imo: "IMO7654321",
-//       type: "Passenger",
-//       year: "2010",
-//       flag: "UAE",
-//       status: "Inactive",
-//       capacity: { passenger: 500, cargo: "2000 tons", vehicle: 50 },
-//     },
-//   ];
-
-//   return (
-//     <>
-//       <div className="page-header">
-//         <div className="content-page-header">
-//           <h5>Ships</h5>
-//           <div className="list-btn" style={{ justifySelf: "end" }}>
-//             <ul className="filter-list">
-//               <li>
-//                 <Link className="btn btn-turquoise" to="/company/ship-trip/add-ship">
-//                   <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Ship
-//                 </Link>
-//               </li>
-//               <li>
-//                 <div>
-//                   <button
-//                     className="btn btn-sm btn-outline-secondary"
-//                     id="showTable"
-//                     onClick={() => setView("table")}
-//                     title="Table view"
-//                   >
-//                     <i className="fa-solid fa-th-large fa-lg"></i>
-//                   </button>
-//                   <button
-//                     className="btn btn-sm btn-outline-secondary ms-2"
-//                     id="showGrid"
-//                     onClick={() => setView("grid")}
-//                     title="Grid view"
-//                   >
-//                     <i className="fa-solid fa-bars fa-lg"></i>
-//                   </button>
-//                 </div>
-//               </li>
-//             </ul>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Table View */}
-//       <div id="tableView" style={{ display: view === "table" ? "block" : "none" }} className="row">
-//         <div className="col-sm-12">
-//           <div className="card-table card p-3">
-//             <div className="card-body">
-//               <div className="table-responsive">
-//                 <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
-//                   <thead>
-//                     <tr>
-//                       <th><input type="checkbox" /></th>
-//                       <th>Ship Name</th>
-//                       <th>IMO Number</th>
-//                       <th>Type</th>
-//                       <th>Year Built</th>
-//                       <th>Flag State</th>
-//                       <th>Status</th>
-//                       <th>Capacity</th>
-//                       <th>Actions</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {ships.map((s) => (
-//                       <tr key={s.id}>
-//                         <td><input type="checkbox" /></td>
-//                         <td>
-//                           <strong>{s.name}</strong>
-//                           <br />
-//                           <small className="text-muted">Added: {s.added}</small>
-//                         </td>
-//                         <td>{s.imo}</td>
-//                         <td>{s.type}</td>
-//                         <td>{s.year}</td>
-//                         <td>{s.flag}</td>
-//                         <td>
-//                           <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>
-//                             {s.status}
-//                           </span>
-//                         </td>
-//                         <td>
-//                           Passenger: {s.capacity.passenger} <br />
-//                           Cargo: {s.capacity.cargo} <br />
-//                           Vehicle: {s.capacity.vehicle}
-//                         </td>
-//                         <td className="action-buttons">
-//                           <button className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></button>
-//                           <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Grid View */}
-//       <div id="gridView" className="row g-3" style={{ display: view === "grid" ? "flex" : "none" }}>
-//         {ships.map((s) => (
-//           <div className="col-md-6 col-lg-4" key={s.id}>
-//             <div className="card card-purple">
-//               <div className="card-body">
-//                 <h5 className="mb-2">{s.name}</h5>
-//                 <div className="ship-details">
-//                   <p><small>IMO: {s.imo}</small></p>
-//                   <p><small>Type: {s.type}</small></p>
-//                   <p><small>Year Built: {s.year}</small></p>
-//                   <p><small>Flag State: {s.flag}</small></p>
-//                   <p><small>Status: <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>{s.status}</span></small></p>
-//                   <p><small>Capacity → Passenger: {s.capacity.passenger}, Cargo: {s.capacity.cargo}, Vehicle: {s.capacity.vehicle}</small></p>
-//                 </div>
-//                 <div className="card-actions">
-//                   <button className="btn btn-sm btn-turquoise me-1">👁 View</button>
-//                   <button className="btn btn-sm btn-primary me-1">✏ Edit</button>
-//                   <button className="btn btn-sm btn-danger">🗑 Delete</button>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </>
-//   );
-// }
-
-
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { CirclesWithBar } from "react-loader-spinner";
+import Swal from "sweetalert2";
 import Can from "../Can";
-import CanDisable from "../CanDisable";
+import { shipsApi } from "../../api/shipsApi";
 
 export default function ShipsListTable() {
   const tableRef = useRef(null);
-  const [view, setView] = useState("table"); // "table" | "grid"
+  const navigate = useNavigate();
+  const [ships, setShips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [pagination, setPagination] = useState({});
+  const [view, setView] = useState("table");
+
+  // Fetch ships data
+  const fetchShips = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await shipsApi.getShips({ page, limit, search });
+
+      console.log("[v0] Ships API Response:", response);
+
+      let data = [];
+
+      if (response?.data?.ships && Array.isArray(response.data.ships)) {
+        data = response.data.ships;
+      } else if (response?.ships && Array.isArray(response.ships)) {
+        data = response.ships;
+      }
+
+      console.log("[v0] Parsed Ships Data:", data);
+      setShips(data);
+      setPagination(response?.pagination || {});
+    } catch (err) {
+      console.error("[v0] Error fetching ships:", err);
+      setError("Failed to load ships");
+      setShips([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const el = tableRef.current;
-    if (!el || !window.DataTable) return;
+    fetchShips();
+  }, [page, limit, search]);
 
-    // destroy old instance if exists
+  // Initialize DataTable after ships are loaded
+  useEffect(() => {
+    const el = tableRef.current;
+    if (!el || !ships.length || !window.DataTable) return;
+
     try {
       if (el._dt) {
         el._dt.destroy();
@@ -213,182 +65,322 @@ export default function ShipsListTable() {
     } catch (err) {}
 
     const dt = new window.DataTable(el, {
-      paging: true,
-      pageLength: 10,
-      lengthMenu: [10, 25, 50, 100],
-      searching: true,
+      paging: false, // We manage pagination ourselves
+      searching: false, // We manage search ourselves
       ordering: true,
-      info: true,
-      layout: {
-        topStart: "pageLength",
-        topEnd: "search",
-        bottomStart: "info",
-        bottomEnd: "paging",
-      },
+      info: false,
     });
 
     el._dt = dt;
     return () => {
-      try { dt.destroy(); } catch {}
+      try {
+        dt.destroy();
+      } catch (err) {}
       if (el) el._dt = null;
     };
-  }, []); // one-time init
+  }, [ships]);
 
-  // sample data (replace by API)
-  const ships = [
-    {
-      id: 1,
-      name: "Marine Star",
-      added: "12 Aug 2023",
-      imo: "IMO1234567",
-      type: "Cargo",
-      year: "2015",
-      flag: "Oman",
-      status: "Active",
-      capacity: { passenger: 200, cargo: "5000 tons", vehicle: 100 },
-    },
-    {
-      id: 2,
-      name: "Ocean Pearl",
-      added: "05 Aug 2023",
-      imo: "IMO7654321",
-      type: "Passenger",
-      year: "2010",
-      flag: "UAE",
-      status: "Inactive",
-      capacity: { passenger: 500, cargo: "2000 tons", vehicle: 50 },
-    },
-  ];
+  const handleEdit = (shipId) => {
+    navigate(`/company/ship-trip/edit-ship/${shipId}`);
+  };
+
+  const handleDelete = async (shipId) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This ship will be removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await shipsApi.deleteShip(shipId);
+
+        // Reload fresh data from backend
+        await fetchShips();
+
+        // Show success message
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "Ship has been deleted successfully.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (err) {
+        console.error("[v0] Error deleting ship:", err);
+
+        // Handle 403 Forbidden
+        if (err.message && err.message.includes("403")) {
+          Swal.fire({
+            icon: "error",
+            title: "You don't have permission",
+            didClose: () => {
+              navigate("/company/dashboard");
+            },
+          });
+        } else if (err.message && err.message.includes("401")) {
+          // Handle 401 Unauthorized
+          Swal.fire({
+            icon: "error",
+            title: "Session expired",
+            didClose: () => {
+              navigate("/company-login");
+            },
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Something went wrong",
+            text: err.message || "Failed to delete ship",
+          });
+        }
+      }
+    }
+  };
+
+  const formatCapacity = (ship) => {
+    const passenger = ship.passengerCapacity
+      ?.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      || 0;
+    const cargo = ship.cargoCapacity
+      ?.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      || 0;
+    const vehicle = ship.vehicleCapacity
+      ?.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      || 0;
+
+    return {
+      passenger,
+      cargo: `${cargo} tons`,
+      vehicle,
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="row">
+        <div className="col-sm-12">
+          <div className="card-table card p-3">
+            <div className="card-body d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+              <CirclesWithBar
+                height="80"
+                width="80"
+                color="#05468f"
+                outerCircleColor="#05468f"
+                innerCircleColor="#05468f"
+                barColor="#05468f"
+                ariaLabel="circles-with-bar-loading"
+                visible={true}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="page-header">
-        <div className="content-page-header">
-          <h5>Ships</h5>
-          <div className="list-btn" style={{ justifySelf: "end" }}>
-            <ul className="filter-list">
-              <li>
-                <Can action="create">
-                  <Link className="btn btn-turquoise" to="/company/ship-trip/add-ship">
-                    <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Ship
-                  </Link>
-                </Can>
-              </li>
-              <li>
-                <div>
-                  <button
-                    className="btn btn-sm btn-outline-secondary"
-                    id="showTable"
-                    onClick={() => setView("table")}
-                    title="Table view"
-                  >
-                    <i className="fa-solid fa-th-large fa-lg"></i>
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-secondary ms-2"
-                    id="showGrid"
-                    onClick={() => setView("grid")}
-                    title="Grid view"
-                  >
-                    <i className="fa-solid fa-bars fa-lg"></i>
-                  </button>
-                </div>
-              </li>
-            </ul>
+      {error && (
+        <div className="row mb-3">
+          <div className="col-sm-12">
+            <div className="alert alert-danger">{error}</div>
+          </div>
+        </div>
+      )}
+
+      {/* View Toggle Buttons */}
+      <div className="row mb-3">
+        <div className="col-sm-12">
+          <div className="d-flex gap-2 justify-content-end">
+            <button
+              className={`btn btn-sm ${view === "table" ? "btn-primary" : "btn-outline-secondary"}`}
+              onClick={() => setView("table")}
+              title="Table view"
+            >
+              <i className="fa-solid fa-table me-1"></i> Table
+            </button>
+            <button
+              className={`btn btn-sm ${view === "grid" ? "btn-primary" : "btn-outline-secondary"}`}
+              onClick={() => setView("grid")}
+              title="Grid view"
+            >
+              <i className="fa-solid fa-grip me-1"></i> Grid
+            </button>
           </div>
         </div>
       </div>
 
       {/* Table View */}
-      <div id="tableView" style={{ display: view === "table" ? "block" : "none" }} className="row">
-        <div className="col-sm-12">
-          <div className="card-table card p-3">
-            <div className="card-body">
-              <div className="table-responsive">
-                <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
-                  <thead>
-                    <tr>
-                      <th><input type="checkbox" /></th>
-                      <th>Ship Name</th>
-                      <th>IMO Number</th>
-                      <th>Type</th>
-                      <th>Year Built</th>
-                      <th>Flag State</th>
-                      <th>Status</th>
-                      <th>Capacity</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ships.map((s) => (
-                      <tr key={s.id}>
-                        <td><input type="checkbox" /></td>
-                        <td>
-                          <strong>{s.name}</strong>
-                          <br />
-                          <small className="text-muted">Added: {s.added}</small>
-                        </td>
-                        <td>{s.imo}</td>
-                        <td>{s.type}</td>
-                        <td>{s.year}</td>
-                        <td>{s.flag}</td>
-                        <td>
-                          <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>
-                            {s.status}
-                          </span>
-                        </td>
-                        <td>
-                          Passenger: {s.capacity.passenger} <br />
-                          Cargo: {s.capacity.cargo} <br />
-                          Vehicle: {s.capacity.vehicle}
-                        </td>
-                        <td className="action-buttons">
-                          <CanDisable action="update">
-                            <button className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></button>
-                          </CanDisable>
-                          <CanDisable action="delete">
-                            <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
-                          </CanDisable>
-                        </td>
+      {view === "table" && (
+        <div className="row">
+          <div className="col-sm-12">
+            <div className="card-table card p-3">
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table
+                    ref={tableRef}
+                    id="shipsTable"
+                    className="table table-striped"
+                    style={{ width: "100%" }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>Ship Name</th>
+                        <th>IMO Number</th>
+                        <th>Type</th>
+                        <th>Year Built</th>
+                        <th>Flag State</th>
+                        <th>Status</th>
+                        <th>Capacity</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {ships.length > 0 ? (
+                        ships.map((ship) => {
+                          const capacity = formatCapacity(ship);
+                          return (
+                            <tr key={ship._id}>
+                              <td>
+                                <strong>{ship.name}</strong>
+                              </td>
+                              <td>{ship.imoNumber}</td>
+                              <td>{ship.shipType}</td>
+                              <td>{ship.yearBuilt}</td>
+                              <td>{ship.flagState}</td>
+                              <td>
+                                <span
+                                  className={`badge ${
+                                    ship.status === "Active"
+                                      ? "badge-success"
+                                      : "badge-secondary"
+                                  }`}
+                                >
+                                  {ship.status || "Active"}
+                                </span>
+                              </td>
+                              <td>
+                                <small>
+                                  Passenger: {capacity.passenger}
+                                  <br />
+                                  Cargo: {capacity.cargo}
+                                  <br />
+                                  Vehicle: {capacity.vehicle}
+                                </small>
+                              </td>
+                              <td className="action-buttons">
+                                <Can action="update" path="/company/ship-trip/ships">
+                                  <button
+                                    className="btn btn-sm btn-outline-primary me-1"
+                                    title="Edit Ship"
+                                    onClick={() => handleEdit(ship._id)}
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </button>
+                                </Can>
+                                <Can action="delete" path="/company/ship-trip/ships">
+                                  <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    title="Delete Ship"
+                                    onClick={() => handleDelete(ship._id)}
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                  </button>
+                                </Can>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan="8" className="text-center text-muted">
+                            No ships found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Grid View */}
-      <div id="gridView" className="row g-3" style={{ display: view === "grid" ? "flex" : "none" }}>
-        {ships.map((s) => (
-          <div className="col-md-6 col-lg-4" key={s.id}>
-            <div className="card card-purple">
-              <div className="card-body">
-                <h5 className="mb-2">{s.name}</h5>
-                <div className="ship-details">
-                  <p><small>IMO: {s.imo}</small></p>
-                  <p><small>Type: {s.type}</small></p>
-                  <p><small>Year Built: {s.year}</small></p>
-                  <p><small>Flag State: {s.flag}</small></p>
-                  <p><small>Status: <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>{s.status}</span></small></p>
-                  <p><small>Capacity → Passenger: {s.capacity.passenger}, Cargo: {s.capacity.cargo}, Vehicle: {s.capacity.vehicle}</small></p>
+      {view === "grid" && (
+        <div className="row g-3">
+          {ships.length > 0 ? (
+            ships.map((ship) => {
+              const capacity = formatCapacity(ship);
+              return (
+                <div className="col-md-6 col-lg-4" key={ship._id}>
+                  <div className="card">
+                    <div className="card-body">
+                      <h5 className="card-title">{ship.name}</h5>
+                      <p className="card-text">
+                        <small className="d-block">IMO: {ship.imoNumber}</small>
+                        <small className="d-block">Type: {ship.shipType}</small>
+                        <small className="d-block">Year Built: {ship.yearBuilt}</small>
+                        <small className="d-block">Flag State: {ship.flagState}</small>
+                        <small className="d-block">
+                          Status:{" "}
+                          <span
+                            className={`badge ${
+                              ship.status === "Active"
+                                ? "badge-success"
+                                : "badge-secondary"
+                            }`}
+                          >
+                            {ship.status || "Active"}
+                          </span>
+                        </small>
+                        <small className="d-block mt-2">
+                          <strong>Capacity:</strong>
+                          <br />
+                          Passenger: {capacity.passenger}
+                          <br />
+                          Cargo: {capacity.cargo}
+                          <br />
+                          Vehicle: {capacity.vehicle}
+                        </small>
+                      </p>
+                      <div className="card-actions d-flex gap-2 mt-3">
+                        <Can action="update" path="/company/ship-trip/ships">
+                          <button
+                            className="btn btn-sm btn-primary flex-grow-1"
+                            onClick={() => handleEdit(ship._id)}
+                          >
+                            <i className="bi bi-pencil me-1"></i> Edit
+                          </button>
+                        </Can>
+                        <Can action="delete" path="/company/ship-trip/ships">
+                          <button
+                            className="btn btn-sm btn-danger flex-grow-1"
+                            onClick={() => handleDelete(ship._id)}
+                          >
+                            <i className="bi bi-trash me-1"></i> Delete
+                          </button>
+                        </Can>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="card-actions">
-                  <button className="btn btn-sm btn-turquoise me-1">👁 View</button>
-                  <CanDisable action="update">
-                    <button className="btn btn-sm btn-primary me-1">✏ Edit</button>
-                  </CanDisable>
-                  <CanDisable action="delete">
-                    <button className="btn btn-sm btn-danger">🗑 Delete</button>
-                  </CanDisable>
-                </div>
-              </div>
+              );
+            })
+          ) : (
+            <div className="col-12">
+              <div className="alert alert-info text-center">No ships found</div>
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

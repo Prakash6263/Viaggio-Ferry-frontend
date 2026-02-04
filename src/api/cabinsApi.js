@@ -6,6 +6,36 @@ const BASE_URL = "/api/cabins"
 
 export const cabinsApi = {
   /**
+   * Fetch cabins by type (for ship capacity selection)
+   */
+  getCabinsByType: async (type) => {
+    try {
+      if (!type) {
+        throw new Error("Type parameter is required")
+      }
+
+      const params = new URLSearchParams()
+      params.append("type", type)
+      params.append("limit", 1000) // Get all cabins for dropdown
+
+      const response = await apiFetch(`${BASE_URL}?${params.toString()}`, {
+        method: "GET",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch cabins by type")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Get Cabins By Type Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
    * Fetch all cabins with pagination and search
    */
   getCabins: async (page = 1, limit = 10, search = "", type = "") => {

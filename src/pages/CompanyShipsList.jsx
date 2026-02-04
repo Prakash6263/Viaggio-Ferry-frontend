@@ -22,8 +22,8 @@ export default function CompanyShipsList() {
                 <ul className="filter-list">
                   <li>
                     {/* CREATE action - uses LIST route path */}
-                    <Can action="create" path="/company/fleet-management/ships">
-                      <Link className="btn btn-turquoise" to="/company/fleet-management/add-ship">
+                    <Can action="create" path="/company/ship-trip/ships">
+                      <Link className="btn btn-turquoise" to="/company/ship-trip/add-ship">
                         <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>
                         Add New Ship
                       </Link>
