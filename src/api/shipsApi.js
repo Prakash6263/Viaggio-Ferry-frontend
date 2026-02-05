@@ -1,174 +1,137 @@
-/**
- * Ships API Service
- * Handles all API calls for ship management
- */
+import { apiFetch, API_BASE_URL } from "./apiClient"
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+export { API_BASE_URL }
 
-/**
- * Get the authorization token from localStorage
- */
-const getAuthToken = () => {
-  return localStorage.getItem("token");
-};
+const BASE_URL = "/api/ships"
 
-/**
- * Get default headers for all requests
- */
-const getHeaders = () => {
-  const token = getAuthToken();
-  return {
-    "Authorization": `Bearer ${token}`,
-    "Content-Type": "application/json"
-  };
-};
+export const shipsApi = {
+  /**
+   * Fetch all ships with pagination and search
+   */
+  getShips: async (page = 1, limit = 10, search = "") => {
+    try {
+      const params = new URLSearchParams()
+      if (page) params.append("page", page)
+      if (limit) params.append("limit", limit)
+      if (search) params.append("search", search)
 
-/**
- * Handle API errors
- */
-const handleError = (response) => {
-  if (response.status === 401) {
-    throw { code: 401, message: "Session expired" };
-  }
-  if (response.status === 403) {
-    throw { code: 403, message: "Access denied" };
-  }
-  if (response.status >= 500) {
-    throw { code: 500, message: "Server error" };
-  }
-  // For other errors, try to parse JSON response
-  return response.json().then(data => {
-    throw { 
-      code: response.status, 
-      message: data.message || "An error occurred",
-      data 
-    };
-  });
-};
+      const response = await apiFetch(`${BASE_URL}?${params.toString()}`, {
+        method: "GET",
+      })
 
-/**
- * GET /api/ships?page=&limit=&search=
- * Fetch list of ships with pagination and search
- */
-export const getShips = async ({ page = 1, limit = 10, search = "" } = {}) => {
-  try {
-    const queryParams = new URLSearchParams();
-    if (page) queryParams.append("page", page);
-    if (limit) queryParams.append("limit", limit);
-    if (search) queryParams.append("search", search);
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch ships")
+      }
 
-    const url = `${BASE_URL}/api/ships${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
-    
-    const response = await fetch(url, {
-      method: "GET",
-      headers: getHeaders()
-    });
-
-    if (!response.ok) {
-      return handleError(response);
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Get Ships Error:", error.message)
+      throw error
     }
+  },
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
+  /**
+   * Fetch a single ship by ID
+   */
+  getShipById: async (id) => {
+    try {
+      if (!id || id === "undefined") {
+        throw new Error("Invalid ship ID")
+      }
 
-/**
- * GET /api/ships/:id
- * Fetch a single ship by ID
- */
-export const getShipById = async (id) => {
-  try {
-    const url = `${BASE_URL}/api/ships/${id}`;
-    
-    const response = await fetch(url, {
-      method: "GET",
-      headers: getHeaders()
-    });
+      const response = await apiFetch(`${BASE_URL}/${id}`, {
+        method: "GET",
+      })
 
-    if (!response.ok) {
-      return handleError(response);
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch ship")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Get Ship By ID Error:", error.message)
+      throw error
     }
+  },
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
+  /**
+   * Create a new ship
+   */
+  createShip: async (payload) => {
+    try {
+      const response = await apiFetch(BASE_URL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      })
 
-/**
- * POST /api/ships
- * Create a new ship
- */
-export const createShip = async (payload) => {
-  try {
-    const url = `${BASE_URL}/api/ships`;
-    
-    const response = await fetch(url, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify(payload)
-    });
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to create ship")
+      }
 
-    if (!response.ok) {
-      return handleError(response);
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Create Ship Error:", error.message)
+      throw error
     }
+  },
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
+  /**
+   * Update an existing ship
+   */
+  updateShip: async (id, payload) => {
+    try {
+      if (!id || id === "undefined") {
+        throw new Error("Invalid ship ID")
+      }
 
-/**
- * PUT /api/ships/:id
- * Update an existing ship
- */
-export const updateShip = async (id, payload) => {
-  try {
-    const url = `${BASE_URL}/api/ships/${id}`;
-    
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: getHeaders(),
-      body: JSON.stringify(payload)
-    });
+      const response = await apiFetch(`${BASE_URL}/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      })
 
-    if (!response.ok) {
-      return handleError(response);
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update ship")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Update Ship Error:", error.message)
+      throw error
     }
+  },
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
+  /**
+   * Delete a ship
+   */
+  deleteShip: async (id) => {
+    try {
+      if (!id || id === "undefined") {
+        throw new Error("Invalid ship ID")
+      }
 
-/**
- * DELETE /api/ships/:id
- * Delete a ship
- */
-export const deleteShip = async (id) => {
-  try {
-    const url = `${BASE_URL}/api/ships/${id}`;
-    
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: getHeaders()
-    });
+      const response = await apiFetch(`${BASE_URL}/${id}`, {
+        method: "DELETE",
+      })
 
-    if (!response.ok) {
-      return handleError(response);
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to delete ship")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Delete Ship Error:", error.message)
+      throw error
     }
+  },
+}
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
