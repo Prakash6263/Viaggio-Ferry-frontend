@@ -14,7 +14,7 @@ export default function AdminAddUser() {
       <PageWrapper>
         {/* Back Button */}
         <div className="mb-3">
-          <Link to="/admin/administration/user-list" className="btn btn-turquoise">
+          <Link to="/company/administration/user-list" className="btn btn-turquoise">
             <i className="bi bi-arrow-left"></i> Back to List
           </Link>
         </div>

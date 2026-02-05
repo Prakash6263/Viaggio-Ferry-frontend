@@ -1,210 +1,61 @@
-// import React, { useEffect, useRef, useState } from "react";
-// import { Link } from "react-router-dom";
-
-// export default function ShipsListTable() {
-//   const tableRef = useRef(null);
-//   const [view, setView] = useState("table"); // "table" | "grid"
-
-//   useEffect(() => {
-//     const el = tableRef.current;
-//     if (!el || !window.DataTable) return;
-
-//     // destroy old instance if exists
-//     try {
-//       if (el._dt) {
-//         el._dt.destroy();
-//         el._dt = null;
-//       }
-//     } catch (err) {}
-
-//     const dt = new window.DataTable(el, {
-//       paging: true,
-//       pageLength: 10,
-//       lengthMenu: [10, 25, 50, 100],
-//       searching: true,
-//       ordering: true,
-//       info: true,
-//       layout: {
-//         topStart: "pageLength",
-//         topEnd: "search",
-//         bottomStart: "info",
-//         bottomEnd: "paging",
-//       },
-//     });
-
-//     el._dt = dt;
-//     return () => {
-//       try { dt.destroy(); } catch {}
-//       if (el) el._dt = null;
-//     };
-//   }, []); // one-time init
-
-//   // sample data (replace by API)
-//   const ships = [
-//     {
-//       id: 1,
-//       name: "Marine Star",
-//       added: "12 Aug 2023",
-//       imo: "IMO1234567",
-//       type: "Cargo",
-//       year: "2015",
-//       flag: "Oman",
-//       status: "Active",
-//       capacity: { passenger: 200, cargo: "5000 tons", vehicle: 100 },
-//     },
-//     {
-//       id: 2,
-//       name: "Ocean Pearl",
-//       added: "05 Aug 2023",
-//       imo: "IMO7654321",
-//       type: "Passenger",
-//       year: "2010",
-//       flag: "UAE",
-//       status: "Inactive",
-//       capacity: { passenger: 500, cargo: "2000 tons", vehicle: 50 },
-//     },
-//   ];
-
-//   return (
-//     <>
-//       <div className="page-header">
-//         <div className="content-page-header">
-//           <h5>Ships</h5>
-//           <div className="list-btn" style={{ justifySelf: "end" }}>
-//             <ul className="filter-list">
-//               <li>
-//                 <Link className="btn btn-turquoise" to="/company/ship-trip/add-ship">
-//                   <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Ship
-//                 </Link>
-//               </li>
-//               <li>
-//                 <div>
-//                   <button
-//                     className="btn btn-sm btn-outline-secondary"
-//                     id="showTable"
-//                     onClick={() => setView("table")}
-//                     title="Table view"
-//                   >
-//                     <i className="fa-solid fa-th-large fa-lg"></i>
-//                   </button>
-//                   <button
-//                     className="btn btn-sm btn-outline-secondary ms-2"
-//                     id="showGrid"
-//                     onClick={() => setView("grid")}
-//                     title="Grid view"
-//                   >
-//                     <i className="fa-solid fa-bars fa-lg"></i>
-//                   </button>
-//                 </div>
-//               </li>
-//             </ul>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Table View */}
-//       <div id="tableView" style={{ display: view === "table" ? "block" : "none" }} className="row">
-//         <div className="col-sm-12">
-//           <div className="card-table card p-3">
-//             <div className="card-body">
-//               <div className="table-responsive">
-//                 <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
-//                   <thead>
-//                     <tr>
-//                       <th><input type="checkbox" /></th>
-//                       <th>Ship Name</th>
-//                       <th>IMO Number</th>
-//                       <th>Type</th>
-//                       <th>Year Built</th>
-//                       <th>Flag State</th>
-//                       <th>Status</th>
-//                       <th>Capacity</th>
-//                       <th>Actions</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {ships.map((s) => (
-//                       <tr key={s.id}>
-//                         <td><input type="checkbox" /></td>
-//                         <td>
-//                           <strong>{s.name}</strong>
-//                           <br />
-//                           <small className="text-muted">Added: {s.added}</small>
-//                         </td>
-//                         <td>{s.imo}</td>
-//                         <td>{s.type}</td>
-//                         <td>{s.year}</td>
-//                         <td>{s.flag}</td>
-//                         <td>
-//                           <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>
-//                             {s.status}
-//                           </span>
-//                         </td>
-//                         <td>
-//                           Passenger: {s.capacity.passenger} <br />
-//                           Cargo: {s.capacity.cargo} <br />
-//                           Vehicle: {s.capacity.vehicle}
-//                         </td>
-//                         <td className="action-buttons">
-//                           <button className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></button>
-//                           <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Grid View */}
-//       <div id="gridView" className="row g-3" style={{ display: view === "grid" ? "flex" : "none" }}>
-//         {ships.map((s) => (
-//           <div className="col-md-6 col-lg-4" key={s.id}>
-//             <div className="card card-purple">
-//               <div className="card-body">
-//                 <h5 className="mb-2">{s.name}</h5>
-//                 <div className="ship-details">
-//                   <p><small>IMO: {s.imo}</small></p>
-//                   <p><small>Type: {s.type}</small></p>
-//                   <p><small>Year Built: {s.year}</small></p>
-//                   <p><small>Flag State: {s.flag}</small></p>
-//                   <p><small>Status: <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>{s.status}</span></small></p>
-//                   <p><small>Capacity → Passenger: {s.capacity.passenger}, Cargo: {s.capacity.cargo}, Vehicle: {s.capacity.vehicle}</small></p>
-//                 </div>
-//                 <div className="card-actions">
-//                   <button className="btn btn-sm btn-turquoise me-1">👁 View</button>
-//                   <button className="btn btn-sm btn-primary me-1">✏ Edit</button>
-//                   <button className="btn btn-sm btn-danger">🗑 Delete</button>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </>
-//   );
-// }
-
-
-'use client';
-
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import Can from "../Can";
 import CanDisable from "../CanDisable";
+import { apiFetch } from "../../api/apiClient";
 
 export default function ShipsListTable() {
   const tableRef = useRef(null);
-  const [view, setView] = useState("table"); // "table" | "grid"
+  const navigate = useNavigate();
+  const [view, setView] = useState("table");
+  const [ships, setShips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch ships
+  const fetchShips = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await apiFetch("/api/ships?page=1&limit=100&search=", {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch ships");
+      }
+
+      const data = await response.json();
+      console.log("[v0] Ships API Response:", data);
+
+      let shipsList = [];
+      if (data?.data?.ships && Array.isArray(data.data.ships)) {
+        shipsList = data.data.ships;
+      } else if (Array.isArray(data?.data)) {
+        shipsList = data.data;
+      }
+
+      setShips(shipsList);
+    } catch (err) {
+      console.error("[v0] Error fetching ships:", err);
+      setError("Failed to load ships");
+      setShips([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchShips();
+  }, []);
 
   useEffect(() => {
     const el = tableRef.current;
-    if (!el || !window.DataTable) return;
+    if (!el || !ships.length || !window.DataTable) return;
 
-    // destroy old instance if exists
     try {
       if (el._dt) {
         el._dt.destroy();
@@ -232,33 +83,47 @@ export default function ShipsListTable() {
       try { dt.destroy(); } catch {}
       if (el) el._dt = null;
     };
-  }, []); // one-time init
+  }, [ships]);
 
-  // sample data (replace by API)
-  const ships = [
-    {
-      id: 1,
-      name: "Marine Star",
-      added: "12 Aug 2023",
-      imo: "IMO1234567",
-      type: "Cargo",
-      year: "2015",
-      flag: "Oman",
-      status: "Active",
-      capacity: { passenger: 200, cargo: "5000 tons", vehicle: 100 },
-    },
-    {
-      id: 2,
-      name: "Ocean Pearl",
-      added: "05 Aug 2023",
-      imo: "IMO7654321",
-      type: "Passenger",
-      year: "2010",
-      flag: "UAE",
-      status: "Inactive",
-      capacity: { passenger: 500, cargo: "2000 tons", vehicle: 50 },
-    },
-  ];
+  const handleEdit = (shipId) => {
+    navigate(`/company/ship-trip/edit-ship/${shipId}`);
+  };
+
+  const handleDelete = async (shipId) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This ship will be removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await apiFetch(`/api/ships/${shipId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete ship");
+        }
+
+        await fetchShips();
+
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "Ship has been deleted successfully.",
+          timer: 2000,
+        });
+      } catch (err) {
+        console.error("[v0] Error deleting ship:", err);
+        Swal.fire({ icon: "error", title: "Error", text: "Failed to delete ship" });
+      }
+    }
+  };
 
   return (
     <>
@@ -299,96 +164,155 @@ export default function ShipsListTable() {
         </div>
       </div>
 
-      {/* Table View */}
-      <div id="tableView" style={{ display: view === "table" ? "block" : "none" }} className="row">
-        <div className="col-sm-12">
-          <div className="card-table card p-3">
-            <div className="card-body">
-              <div className="table-responsive">
-                <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
-                  <thead>
-                    <tr>
-                      <th><input type="checkbox" /></th>
-                      <th>Ship Name</th>
-                      <th>IMO Number</th>
-                      <th>Type</th>
-                      <th>Year Built</th>
-                      <th>Flag State</th>
-                      <th>Status</th>
-                      <th>Capacity</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ships.map((s) => (
-                      <tr key={s.id}>
-                        <td><input type="checkbox" /></td>
-                        <td>
-                          <strong>{s.name}</strong>
-                          <br />
-                          <small className="text-muted">Added: {s.added}</small>
-                        </td>
-                        <td>{s.imo}</td>
-                        <td>{s.type}</td>
-                        <td>{s.year}</td>
-                        <td>{s.flag}</td>
-                        <td>
-                          <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>
-                            {s.status}
-                          </span>
-                        </td>
-                        <td>
-                          Passenger: {s.capacity.passenger} <br />
-                          Cargo: {s.capacity.cargo} <br />
-                          Vehicle: {s.capacity.vehicle}
-                        </td>
-                        <td className="action-buttons">
-                          <CanDisable action="update">
-                            <button className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></button>
-                          </CanDisable>
-                          <CanDisable action="delete">
-                            <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
-                          </CanDisable>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      {error && (
+        <div className="row mb-3">
+          <div className="col-sm-12">
+            <div className="alert alert-danger">{error}</div>
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="row">
+          <div className="col-sm-12">
+            <div className="card-table card p-3">
+              <div className="card-body d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Grid View */}
-      <div id="gridView" className="row g-3" style={{ display: view === "grid" ? "flex" : "none" }}>
-        {ships.map((s) => (
-          <div className="col-md-6 col-lg-4" key={s.id}>
-            <div className="card card-purple">
+      {/* Table View */}
+      {!loading && (
+        <div id="tableView" style={{ display: view === "table" ? "block" : "none" }} className="row">
+          <div className="col-sm-12">
+            <div className="card-table card p-3">
               <div className="card-body">
-                <h5 className="mb-2">{s.name}</h5>
-                <div className="ship-details">
-                  <p><small>IMO: {s.imo}</small></p>
-                  <p><small>Type: {s.type}</small></p>
-                  <p><small>Year Built: {s.year}</small></p>
-                  <p><small>Flag State: {s.flag}</small></p>
-                  <p><small>Status: <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>{s.status}</span></small></p>
-                  <p><small>Capacity → Passenger: {s.capacity.passenger}, Cargo: {s.capacity.cargo}, Vehicle: {s.capacity.vehicle}</small></p>
-                </div>
-                <div className="card-actions">
-                  <button className="btn btn-sm btn-turquoise me-1">👁 View</button>
-                  <CanDisable action="update">
-                    <button className="btn btn-sm btn-primary me-1">✏ Edit</button>
-                  </CanDisable>
-                  <CanDisable action="delete">
-                    <button className="btn btn-sm btn-danger">🗑 Delete</button>
-                  </CanDisable>
+                <div className="table-responsive">
+                  <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
+                    <thead>
+                      <tr>
+                        <th><input type="checkbox" /></th>
+                        <th>Ship Name</th>
+                        <th>IMO Number</th>
+                        <th>Type</th>
+                        <th>Year Built</th>
+                        <th>Flag State</th>
+                        <th>Status</th>
+                        <th>Capacity</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ships.length > 0 ? (
+                        ships.map((s) => (
+                          <tr key={s._id}>
+                            <td><input type="checkbox" /></td>
+                            <td>
+                              <strong>{s.name}</strong>
+                            </td>
+                            <td>{s.imoNumber || "—"}</td>
+                            <td>{s.shipType || "—"}</td>
+                            <td>{s.yearBuilt || "—"}</td>
+                            <td>{s.flagState || "—"}</td>
+                            <td>
+                              <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>
+                                {s.status || "Active"}
+                              </span>
+                            </td>
+                            <td>
+                              <small>
+                                Passenger: {s.passengerCapacity?.reduce((sum, p) => sum + (p.seats || 0), 0) || 0} seats<br />
+                                Cargo: {s.cargoCapacity?.reduce((sum, c) => sum + (c.totalWeightTons || 0), 0) || 0} tons<br />
+                                Vehicle: {s.vehicleCapacity?.reduce((sum, v) => sum + (v.totalWeightTons || 0), 0) || 0} tons
+                              </small>
+                            </td>
+                            <td className="action-buttons">
+                              <CanDisable action="update">
+                                <button 
+                                  className="btn btn-sm btn-outline-primary me-1"
+                                  onClick={() => handleEdit(s._id)}
+                                >
+                                  <i className="bi bi-pencil" />
+                                </button>
+                              </CanDisable>
+                              <CanDisable action="delete">
+                                <button 
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDelete(s._id)}
+                                >
+                                  <i className="bi bi-trash" />
+                                </button>
+                              </CanDisable>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="9" className="text-center text-muted">
+                            No ships found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Grid View */}
+      {!loading && (
+        <div id="gridView" className="row g-3" style={{ display: view === "grid" ? "flex" : "none" }}>
+          {ships.length > 0 ? (
+            ships.map((s) => (
+              <div className="col-md-6 col-lg-4" key={s._id}>
+                <div className="card card-purple">
+                  <div className="card-body">
+                    <h5 className="mb-2">{s.name}</h5>
+                    <div className="ship-details">
+                      <p><small>IMO: {s.imoNumber || "—"}</small></p>
+                      <p><small>Type: {s.shipType || "—"}</small></p>
+                      <p><small>Year Built: {s.yearBuilt || "—"}</small></p>
+                      <p><small>Flag State: {s.flagState || "—"}</small></p>
+                      <p><small>Status: <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>{s.status || "Active"}</span></small></p>
+                      <p><small>Capacity → Passenger: {s.passengerCapacity?.reduce((sum, p) => sum + (p.seats || 0), 0) || 0} seats, Cargo: {s.cargoCapacity?.reduce((sum, c) => sum + (c.totalWeightTons || 0), 0) || 0} tons, Vehicle: {s.vehicleCapacity?.reduce((sum, v) => sum + (v.totalWeightTons || 0), 0) || 0} tons</small></p>
+                    </div>
+                    <div className="card-actions">
+                      <CanDisable action="update">
+                        <button 
+                          className="btn btn-sm btn-primary me-1"
+                          onClick={() => handleEdit(s._id)}
+                        >
+                          ✏ Edit
+                        </button>
+                      </CanDisable>
+                      <CanDisable action="delete">
+                        <button 
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDelete(s._id)}
+                        >
+                          🗑 Delete
+                        </button>
+                      </CanDisable>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-12 text-center text-muted">
+              No ships found
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

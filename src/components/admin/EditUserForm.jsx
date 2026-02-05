@@ -1,24 +1,39 @@
 'use client';
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { usersApi } from "../../api/usersApi"
 import { useParams } from "react-router-dom"
 import Swal from "sweetalert2"
 
 export default function EditUserForm() {
   const { userId } = useParams()
+  const [tab, setTab] = useState("profile")
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     position: "",
     layer: "",
-    status: "",
-    createdAt: "",
+    isSalesman: false,
+    remarks: "",
   })
 
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [moduleAccess, setModuleAccess] = useState({})
+
+  const modules = useMemo(
+    () => [
+      { code: "settings", name: "Settings" },
+      { code: "administration", name: "Administration" },
+      { code: "ship-trips", name: "Ship & Trips" },
+      { code: "partners-management", name: "Partners Management" },
+      { code: "sales-bookings", name: "Sales & Bookings" },
+      { code: "checkin-boardings", name: "Check-in & Boardings" },
+      { code: "finance", name: "Finance" },
+    ],
+    [],
+  )
 
   // Fetch user data on mount
   useEffect(() => {
@@ -36,9 +51,26 @@ export default function EditUserForm() {
           email: user.email || "",
           position: user.position || "",
           layer: user.layer || "",
-          status: user.status || "",
-          createdAt: user.createdAt || "",
+          isSalesman: user.isSalesman || false,
+          remarks: user.remarks || "",
         })
+
+        // Process module access from API response
+        // moduleAccess comes as array: [{moduleCode, accessGroupId: {groupName, ...}}, ...]
+        if (user.moduleAccess && Array.isArray(user.moduleAccess)) {
+          const moduleAccessMap = {}
+          
+          user.moduleAccess.forEach((access) => {
+            if (access.moduleCode && access.accessGroupId) {
+              // Store the group name directly from the accessGroupId object
+              moduleAccessMap[access.moduleCode] = access.accessGroupId.groupName || "No Access"
+            }
+          })
+          
+          setModuleAccess(moduleAccessMap)
+        } else {
+          setModuleAccess({})
+        }
         setError(null)
       }
     } catch (err) {
@@ -99,7 +131,7 @@ export default function EditUserForm() {
       })
 
       setTimeout(() => {
-        window.location.href = "/admin/administration/user-list"
+        window.location.href = "/company/administration/user-list"
       }, 2000)
     } catch (err) {
       console.error("Error updating user:", err)
@@ -133,172 +165,205 @@ export default function EditUserForm() {
         </div>
       )}
 
-      <style>{`
-        .disabled-field {
-          background-color: #e9ecef !important;
-          cursor: not-allowed !important;
-          color: #6c757d !important;
-        }
+      <ul className="nav nav-tabs" id="userTabs" role="tablist">
+        <li className="nav-item" role="presentation">
+          <button
+            type="button"
+            className={`nav-link ${tab === "profile" ? "active" : ""}`}
+            onClick={() => setTab("profile")}
+            role="tab"
+            aria-selected={tab === "profile"}
+          >
+            User Profile
+          </button>
+        </li>
+        <li className="nav-item" role="presentation">
+          <button
+            type="button"
+            className={`nav-link ${tab === "access" ? "active" : ""}`}
+            onClick={() => setTab("access")}
+            role="tab"
+            aria-selected={tab === "access"}
+          >
+            Module Access
+          </button>
+        </li>
+      </ul>
 
-        .disabled-field:focus {
-          background-color: #e9ecef !important;
-          color: #6c757d !important;
-          border-color: #dee2e6 !important;
-          box-shadow: none !important;
-        }
+      <div className="tab-content mt-3" id="userTabsContent">
+        {/* User Profile Tab */}
+        <div className={`tab-pane fade ${tab === "profile" ? "show active" : ""}`} id="profile" role="tabpanel">
+          <div className="row g-3">
+            {/* Full Name - EDITABLE */}
+            <div className="col-md-6">
+              <label htmlFor="fullName" className="form-label">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                className="form-control"
+                placeholder="Full Name"
+                value={form.fullName}
+                onChange={onChange}
+                required
+              />
+            </div>
 
-        .disabled-field::placeholder {
-          color: #6c757d;
-        }
+            {/* Email - READ-ONLY */}
+            <div className="col-md-6">
+              <label htmlFor="email" className="form-label">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="form-control"
+                placeholder="Email Address"
+                value={form.email}
+                disabled
+                readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
+              />
+            </div>
 
-        .help-text {
-          font-size: 0.85rem;
-          color: #6c757d;
-          margin-top: 0.25rem;
-          display: block;
-        }
+            {/* Position - EDITABLE */}
+            <div className="col-md-6">
+              <label htmlFor="position" className="form-label">
+                Position
+              </label>
+              <input
+                type="text"
+                id="position"
+                name="position"
+                className="form-control"
+                placeholder="Position"
+                value={form.position}
+                onChange={onChange}
+              />
+            </div>
 
-        .editable-indicator {
-          font-size: 0.75rem;
-          color: #2575fc;
-          font-weight: 600;
-          margin-top: 0.25rem;
-          display: block;
-        }
-      `}</style>
+            {/* Layer - READ-ONLY */}
+            <div className="col-md-6">
+              <label htmlFor="layer" className="form-label">
+                Layer
+              </label>
+              <input
+                type="text"
+                id="layer"
+                name="layer"
+                className="form-control"
+                placeholder="Layer"
+                value={form.layer}
+                disabled
+                readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
+              />
+            </div>
 
-      <div className="row g-3">
-        {/* Full Name - EDITABLE */}
-        <div className="col-md-6">
-          <label htmlFor="fullName" className="form-label">
-            Full Name
-          </label>
-          <input
-            type="text"
-            id="fullName"
-            name="fullName"
-            className="form-control"
-            placeholder="Full Name"
-            value={form.fullName}
-            onChange={onChange}
-            required
-          />
-          <span className="editable-indicator">
-            <i className="bi bi-pencil"></i> Editable
-          </span>
+            {/* Is Salesman - READ-ONLY */}
+            <div className="col-md-6">
+              <label className="form-label">Is Salesman</label>
+              <div>
+                <label
+                  className="status-toggle"
+                  style={{ position: "relative", display: "inline-block", width: 50, height: 24, opacity: 0.6, cursor: "not-allowed" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.isSalesman}
+                    disabled
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span
+                    className="slider"
+                    style={{
+                      position: "absolute",
+                      cursor: "not-allowed",
+                      inset: 0,
+                      backgroundColor: form.isSalesman ? "#2575fc" : "#ccc",
+                      transition: ".4s",
+                      borderRadius: 24,
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: "absolute",
+                      height: 16,
+                      width: 16,
+                      left: form.isSalesman ? 30 : 4,
+                      bottom: 4,
+                      backgroundColor: "#fff",
+                      transition: ".4s",
+                      borderRadius: "50%",
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Remarks - READ-ONLY */}
+            <div className="col-md-12">
+              <label htmlFor="remarks" className="form-label">
+                Remarks
+              </label>
+              <textarea
+                id="remarks"
+                name="remarks"
+                rows="3"
+                className="form-control"
+                placeholder="Additional remarks"
+                value={form.remarks}
+                disabled
+                readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Email - READ-ONLY */}
-        <div className="col-md-6">
-          <label htmlFor="email" className="form-label">
-            Email Address
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            className="form-control disabled-field"
-            placeholder="Email Address"
-            value={form.email}
-            disabled
-            readOnly
-          />
-          <span className="help-text">Only Name and Position can be edited</span>
-        </div>
+        {/* Module Access Tab */}
+        <div className={`tab-pane fade ${tab === "access" ? "show active" : ""}`} id="access" role="tabpanel">
+          <div className="table-responsive mt-2">
+            <table className="table table-bordered">
+              <thead>
+                <tr style={{ backgroundColor: "#001f4d", color: "#fff" }}>
+                  <th style={{ color: "#fff" }}>Module</th>
+                  <th style={{ color: "#fff" }}>Access Rights Group</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modules.map((module) => {
+                  const displayValue = moduleAccess[module.code] || "No Access"
 
-        {/* Position - EDITABLE */}
-        <div className="col-md-6">
-          <label htmlFor="position" className="form-label">
-            Position
-          </label>
-          <input
-            type="text"
-            id="position"
-            name="position"
-            className="form-control"
-            placeholder="Position"
-            value={form.position}
-            onChange={onChange}
-          />
-          <span className="editable-indicator">
-            <i className="bi bi-pencil"></i> Editable
-          </span>
-        </div>
-
-        {/* Layer - READ-ONLY */}
-        <div className="col-md-6">
-          <label htmlFor="layer" className="form-label">
-            Layer
-          </label>
-          <input
-            type="text"
-            id="layer"
-            name="layer"
-            className="form-control disabled-field"
-            placeholder="Layer"
-            value={form.layer}
-            disabled
-            readOnly
-          />
-          <span className="help-text">Only Name and Position can be edited</span>
-        </div>
-
-        {/* Status - READ-ONLY */}
-        <div className="col-md-6">
-          <label htmlFor="status" className="form-label">
-            Status
-          </label>
-          <input
-            type="text"
-            id="status"
-            name="status"
-            className="form-control disabled-field"
-            placeholder="Status"
-            value={form.status}
-            disabled
-            readOnly
-          />
-          <span className="help-text">Only Name and Position can be edited</span>
-        </div>
-
-        {/* Created Date - READ-ONLY */}
-        <div className="col-md-6">
-          <label htmlFor="createdAt" className="form-label">
-            Created Date
-          </label>
-          <input
-            type="text"
-            id="createdAt"
-            name="createdAt"
-            className="form-control disabled-field"
-            placeholder="Created Date"
-            value={form.createdAt ? new Date(form.createdAt).toLocaleDateString() : ""}
-            disabled
-            readOnly
-          />
-          <span className="help-text">Only Name and Position can be edited</span>
+                  return (
+                    <tr key={module.code}>
+                      <td>{module.name}</td>
+                      <td>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={displayValue}
+                          disabled
+                          readOnly
+                          style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="mt-4">
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Updating...
-            </>
-          ) : (
-            <>
-              <i className="bi bi-check-circle me-2"></i>
-              Update User
-            </>
-          )}
-        </button>
-        <a href="/admin/administration/user-list" className="btn btn-secondary ms-2">
-          Cancel
-        </a>
-      </div>
+      <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
+        {loading ? "Updating User..." : "Update User"}
+      </button>
     </form>
   )
 }
