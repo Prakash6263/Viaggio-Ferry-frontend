@@ -100,16 +100,32 @@ export default function Header() {
   }
 
   const handleVisitSite = (e) => {
+    e.preventDefault()
     const token = loginApi.getToken()
-    if (companyProfile?.website && token) {
-      const separator = companyProfile.website.includes("?") ? "&" : "?"
-      const urlWithToken = `${companyProfile.website}${separator}token=${encodeURIComponent(token)}`
+    
+    if (!token) {
+      console.error("[v0] No token found")
+      return
+    }
+
+    let websiteUrl = null
+
+    // Determine website URL based on user role
+    if (isUserLogin && userProfile?.company?.website) {
+      // For user login: Get website from company object within userProfile
+      websiteUrl = userProfile.company.website
+    } else if (isCompanyLogin && companyData?.website) {
+      // For company login: Get website directly from companyData
+      websiteUrl = companyData.website
+    }
+
+    if (websiteUrl) {
+      // Add token as query parameter
+      const separator = websiteUrl.includes("?") ? "&" : "?"
+      const urlWithToken = `${websiteUrl}${separator}token=${encodeURIComponent(token)}`
       window.open(urlWithToken, "_blank")
-      e.preventDefault()
-    } else if (companyProfile?.website) {
-      // Fallback if no token
-      window.open(companyProfile.website, "_blank")
-      e.preventDefault()
+    } else {
+      console.warn("[v0] No website URL found for this user/company")
     }
   }
 
