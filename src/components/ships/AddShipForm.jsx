@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { apiFetch } from "../../api/apiClient";
 import { cabinsApi } from "../../api/cabinsApi";
+import { shipsApi } from "../../api/shipsApi";
 import Can from "../Can";
 
 function emptyPassengerRow() {
@@ -71,17 +72,28 @@ export default function AddShipForm() {
   const fetchShip = async () => {
     try {
       setLoading(true);
-      const response = await apiFetch(`/api/ships/${shipId}`, { method: "GET" });
+      console.log("[v0] Fetching ship with ID:", shipId);
+      
+      // Use shipsApi.getShipById
+      const data = await shipsApi.getShipById(shipId);
+      console.log("[v0] Ship API Response:", data);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch ship");
+      // Handle multiple response formats
+      let ship = null;
+      if (data?.data?.ship) {
+        ship = data.data.ship;
+      } else if (data?.ship) {
+        ship = data.ship;
+      } else if (data?.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+        ship = data.data;
+      } else if (data && typeof data === 'object' && data.name) {
+        // Direct ship object
+        ship = data;
       }
 
-      const data = await response.json();
-      console.log("[v0] Ship data loaded:", data);
+      console.log("[v0] Extracted ship object:", ship);
 
-      if (data?.data?.ship) {
-        const ship = data.data.ship;
+      if (ship) {
         setForm({
           name: ship.name || "",
           imoNumber: ship.imoNumber || "",
@@ -133,10 +145,15 @@ export default function AddShipForm() {
             }))
           : [emptyVehicleRow()]
         );
+
+        console.log("[v0] Form data populated successfully");
+      } else {
+        console.error("[v0] Could not extract ship data from response");
+        Swal.fire({ icon: "error", title: "Error", text: "Unable to load ship data - invalid response format" });
       }
     } catch (err) {
       console.error("[v0] Error fetching ship:", err);
-      Swal.fire({ icon: "error", title: "Error", text: "Failed to load ship data" });
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to load ship data: " + err.message });
     } finally {
       setLoading(false);
     }
