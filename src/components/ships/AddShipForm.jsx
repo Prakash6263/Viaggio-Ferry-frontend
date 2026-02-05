@@ -61,6 +61,87 @@ export default function AddShipForm() {
     fetchCabins();
   }, []);
 
+  // Fetch ship data if editing
+  useEffect(() => {
+    if (isEditMode && shipId) {
+      fetchShip();
+    }
+  }, [shipId, isEditMode]);
+
+  const fetchShip = async () => {
+    try {
+      setLoading(true);
+      const response = await apiFetch(`/api/ships/${shipId}`, { method: "GET" });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch ship");
+      }
+
+      const data = await response.json();
+      console.log("[v0] Ship data loaded:", data);
+
+      if (data?.data?.ship) {
+        const ship = data.data.ship;
+        setForm({
+          name: ship.name || "",
+          imoNumber: ship.imoNumber || "",
+          mmsiNumber: ship.mmsiNumber || "",
+          flagState: ship.flagState || "",
+          shipType: ship.shipType || "",
+          yearBuilt: ship.yearBuilt || "",
+          classificationSociety: ship.classificationSociety || "",
+          status: ship.status || "Active",
+          remarks: ship.remarks || "",
+          technical: ship.technical || {
+            grossTonnage: "",
+            netTonnage: "",
+            loa: "",
+            beam: "",
+            draft: "",
+          },
+        });
+
+        setPassengers(ship.passengerCapacity && ship.passengerCapacity.length > 0 
+          ? ship.passengerCapacity.map((p, idx) => ({ 
+              id: idx, 
+              cabinId: p.cabinId, 
+              cabinName: p.cabinName, 
+              totalWeightKg: p.totalWeightKg, 
+              seats: p.seats 
+            }))
+          : [emptyPassengerRow()]
+        );
+
+        setCargo(ship.cargoCapacity && ship.cargoCapacity.length > 0 
+          ? ship.cargoCapacity.map((c, idx) => ({ 
+              id: idx, 
+              cabinId: c.cabinId, 
+              cabinName: c.cabinName, 
+              totalWeightTons: c.totalWeightTons, 
+              spots: c.spots 
+            }))
+          : [emptyCargoRow()]
+        );
+
+        setVehicles(ship.vehicleCapacity && ship.vehicleCapacity.length > 0 
+          ? ship.vehicleCapacity.map((v, idx) => ({ 
+              id: idx, 
+              cabinId: v.cabinId, 
+              cabinName: v.cabinName, 
+              totalWeightTons: v.totalWeightTons, 
+              spots: v.spots 
+            }))
+          : [emptyVehicleRow()]
+        );
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching ship:", err);
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to load ship data" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchCabins = async () => {
     try {
       setLoadingCabins(true);
@@ -208,6 +289,16 @@ export default function AddShipForm() {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit}>
