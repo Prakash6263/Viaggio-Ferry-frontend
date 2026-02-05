@@ -72,28 +72,15 @@ export default function AddShipForm() {
   const fetchShip = async () => {
     try {
       setLoading(true);
-      console.log("[v0] Fetching ship with ID:", shipId);
       
       // Use shipsApi.getShipById
-      const data = await shipsApi.getShipById(shipId);
-      console.log("[v0] Ship API Response:", data);
+      const response = await shipsApi.getShipById(shipId);
 
-      // Handle multiple response formats
-      let ship = null;
-      if (data?.data?.ship) {
-        ship = data.data.ship;
-      } else if (data?.ship) {
-        ship = data.ship;
-      } else if (data?.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
-        ship = data.data;
-      } else if (data && typeof data === 'object' && data.name) {
-        // Direct ship object
-        ship = data;
-      }
+      // API returns { success, message, data: { ship object } }
+      // Extract the ship object from data property
+      const ship = response?.data;
 
-      console.log("[v0] Extracted ship object:", ship);
-
-      if (ship) {
+      if (ship && ship.name) {
         setForm({
           name: ship.name || "",
           imoNumber: ship.imoNumber || "",
@@ -149,7 +136,7 @@ export default function AddShipForm() {
         console.log("[v0] Form data populated successfully");
       } else {
         console.error("[v0] Could not extract ship data from response");
-        Swal.fire({ icon: "error", title: "Error", text: "Unable to load ship data - invalid response format" });
+        Swal.fire({ icon: "error", title: "Error", text: "Unable to load ship data" });
       }
     } catch (err) {
       console.error("[v0] Error fetching ship:", err);
