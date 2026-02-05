@@ -47,6 +47,7 @@ export default function EditUserForm() {
       setAccessGroupsLoading((prev) => ({ ...prev, [moduleCode]: true }))
       const { accessGroupApi } = await import("../../api/accessGroupApi")
       const response = await accessGroupApi.getAccessGroupsByModule(moduleCode)
+      console.log(`[v0] Fetched access groups for ${moduleCode}:`, response.data)
       if (response.data) {
         setAccessGroupsByModule((prev) => ({
           ...prev,
@@ -73,6 +74,9 @@ export default function EditUserForm() {
       const response = await usersApi.getUserById(userId)
       if (response.data) {
         const user = response.data
+        console.log("[v0] User data received:", user)
+        console.log("[v0] Module access raw data:", user.moduleAccess)
+        
         setForm({
           fullName: user.fullName || "",
           email: user.email || "",
@@ -86,9 +90,12 @@ export default function EditUserForm() {
         if (user.moduleAccess) {
           const moduleAccessMap = {}
           
+          console.log("[v0] Processing moduleAccess, type:", typeof user.moduleAccess, "is array:", Array.isArray(user.moduleAccess))
+          
           // Convert array format to object format for display
           if (Array.isArray(user.moduleAccess)) {
             user.moduleAccess.forEach((access) => {
+              console.log("[v0] Processing access item:", access)
               if (access.moduleCode && access.accessGroupId) {
                 if (!moduleAccessMap[access.moduleCode]) {
                   moduleAccessMap[access.moduleCode] = []
@@ -100,7 +107,10 @@ export default function EditUserForm() {
             Object.assign(moduleAccessMap, user.moduleAccess)
           }
           
+          console.log("[v0] Final moduleAccessMap:", moduleAccessMap)
           setModuleAccess(moduleAccessMap)
+        } else {
+          console.log("[v0] No moduleAccess found in user data")
         }
         setError(null)
       }
@@ -374,6 +384,8 @@ export default function EditUserForm() {
                   // Find the access group name for the selected ID
                   const selectedAccessGroup = accessGroups.find((group) => group._id === selectedAccessGroupId)
                   const displayValue = selectedAccessGroup ? selectedAccessGroup.groupName : "No Access"
+
+                  console.log(`[v0] Module ${module.code}: selectedId=${selectedAccessGroupId}, groups=${accessGroups.length}, displayValue=${displayValue}`)
 
                   return (
                     <tr key={module.code}>
