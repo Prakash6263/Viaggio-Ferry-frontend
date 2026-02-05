@@ -13,14 +13,16 @@ export default function EditUserForm() {
     email: "",
     position: "",
     layer: "",
-    status: "",
-    createdAt: "",
+    isSalesman: false,
+    remarks: "",
   })
 
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState(null)
   const [moduleAccess, setModuleAccess] = useState({})
+  const [accessGroupsByModule, setAccessGroupsByModule] = useState({})
+  const [accessGroupsLoading, setAccessGroupsLoading] = useState({})
 
   const modules = useMemo(
     () => [
@@ -40,6 +42,31 @@ export default function EditUserForm() {
     fetchUserData()
   }, [userId])
 
+  const fetchAccessGroups = async (moduleCode) => {
+    try {
+      setAccessGroupsLoading((prev) => ({ ...prev, [moduleCode]: true }))
+      const { accessGroupApi } = await import("../../api/accessGroupApi")
+      const response = await accessGroupApi.getAccessGroupsByModule(moduleCode)
+      if (response.data) {
+        setAccessGroupsByModule((prev) => ({
+          ...prev,
+          [moduleCode]: response.data,
+        }))
+      }
+    } catch (err) {
+      console.error(`[v0] Error fetching access groups for ${moduleCode}:`, err)
+    } finally {
+      setAccessGroupsLoading((prev) => ({ ...prev, [moduleCode]: false }))
+    }
+  }
+
+  // Fetch access groups for all modules when component loads
+  useEffect(() => {
+    modules.forEach((module) => {
+      fetchAccessGroups(module.code)
+    })
+  }, [modules])
+
   const fetchUserData = async () => {
     try {
       setInitialLoading(true)
@@ -51,13 +78,29 @@ export default function EditUserForm() {
           email: user.email || "",
           position: user.position || "",
           layer: user.layer || "",
-          status: user.status || "",
-          createdAt: user.createdAt || "",
+          isSalesman: user.isSalesman || false,
+          remarks: user.remarks || "",
         })
 
-        // Fetch module access for display
+        // Process module access from API response
         if (user.moduleAccess) {
-          setModuleAccess(user.moduleAccess)
+          const moduleAccessMap = {}
+          
+          // Convert array format to object format for display
+          if (Array.isArray(user.moduleAccess)) {
+            user.moduleAccess.forEach((access) => {
+              if (access.moduleCode && access.accessGroupId) {
+                if (!moduleAccessMap[access.moduleCode]) {
+                  moduleAccessMap[access.moduleCode] = []
+                }
+                moduleAccessMap[access.moduleCode].push(access.accessGroupId)
+              }
+            })
+          } else {
+            Object.assign(moduleAccessMap, user.moduleAccess)
+          }
+          
+          setModuleAccess(moduleAccessMap)
         }
         setError(null)
       }
@@ -251,36 +294,59 @@ export default function EditUserForm() {
               />
             </div>
 
-            {/* Status - READ-ONLY */}
+            {/* Is Salesman - READ-ONLY */}
             <div className="col-md-6">
-              <label htmlFor="status" className="form-label">
-                Status
-              </label>
-              <input
-                type="text"
-                id="status"
-                name="status"
-                className="form-control"
-                placeholder="Status"
-                value={form.status}
-                disabled
-                readOnly
-                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
-              />
+              <label className="form-label">Is Salesman</label>
+              <div>
+                <label
+                  className="status-toggle"
+                  style={{ position: "relative", display: "inline-block", width: 50, height: 24, opacity: 0.6, cursor: "not-allowed" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.isSalesman}
+                    disabled
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span
+                    className="slider"
+                    style={{
+                      position: "absolute",
+                      cursor: "not-allowed",
+                      inset: 0,
+                      backgroundColor: form.isSalesman ? "#2575fc" : "#ccc",
+                      transition: ".4s",
+                      borderRadius: 24,
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: "absolute",
+                      height: 16,
+                      width: 16,
+                      left: form.isSalesman ? 30 : 4,
+                      bottom: 4,
+                      backgroundColor: "#fff",
+                      transition: ".4s",
+                      borderRadius: "50%",
+                    }}
+                  />
+                </label>
+              </div>
             </div>
 
-            {/* Created At - READ-ONLY */}
-            <div className="col-md-6">
-              <label htmlFor="createdAt" className="form-label">
-                Created Date
+            {/* Remarks - READ-ONLY */}
+            <div className="col-md-12">
+              <label htmlFor="remarks" className="form-label">
+                Remarks
               </label>
-              <input
-                type="text"
-                id="createdAt"
-                name="createdAt"
+              <textarea
+                id="remarks"
+                name="remarks"
+                rows="3"
                 className="form-control"
-                placeholder="Created Date"
-                value={form.createdAt ? new Date(form.createdAt).toLocaleDateString() : ""}
+                placeholder="Additional remarks"
+                value={form.remarks}
                 disabled
                 readOnly
                 style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
@@ -301,8 +367,13 @@ export default function EditUserForm() {
               </thead>
               <tbody>
                 {modules.map((module) => {
+                  const accessGroups = accessGroupsByModule[module.code] || []
                   const selectedValues = moduleAccess[module.code] || []
-                  const displayValue = Array.isArray(selectedValues) ? selectedValues[0] : selectedValues
+                  const selectedAccessGroupId = Array.isArray(selectedValues) ? selectedValues[0] : selectedValues
+
+                  // Find the access group name for the selected ID
+                  const selectedAccessGroup = accessGroups.find((group) => group._id === selectedAccessGroupId)
+                  const displayValue = selectedAccessGroup ? selectedAccessGroup.groupName : "No Access"
 
                   return (
                     <tr key={module.code}>
@@ -311,7 +382,7 @@ export default function EditUserForm() {
                         <input
                           type="text"
                           className="form-control"
-                          value={displayValue || "No Access"}
+                          value={displayValue}
                           disabled
                           readOnly
                           style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
