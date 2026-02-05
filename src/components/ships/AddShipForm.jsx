@@ -365,14 +365,17 @@ export default function AddShipForm() {
         <div className="row mb-3">
           <div className="col-md-6">
             <label>Ship Type <span className="text-danger">*</span></label>
-            <input 
-              type="text" 
-              className={`form-control ${errors.shipType ? 'is-invalid' : ''}`}
+            <select 
+              className={`form-select ${errors.shipType ? 'is-invalid' : ''}`}
               name="shipType" 
               value={form.shipType} 
               onChange={onChange}
-              placeholder="e.g., Cargo, Passenger"
-            />
+            >
+              <option value="">Select Ship Type</option>
+              <option value="passenger">Passenger</option>
+              <option value="vehicle">Vehicle</option>
+              <option value="cargo">Cargo</option>
+            </select>
             {errors.shipType && <div className="invalid-feedback d-block">{errors.shipType}</div>}
           </div>
           <div className="col-md-6">
