@@ -15,7 +15,6 @@ export default function EditUserForm() {
     layer: "",
     status: "",
     createdAt: "",
-    partnerId: "",
   })
 
   const [loading, setLoading] = useState(false)
@@ -54,7 +53,6 @@ export default function EditUserForm() {
           layer: user.layer || "",
           status: user.status || "",
           createdAt: user.createdAt || "",
-          partnerId: user.partnerId || "",
         })
 
         // Fetch module access for display
@@ -155,41 +153,6 @@ export default function EditUserForm() {
         </div>
       )}
 
-      <style>{`
-        .disabled-field {
-          background-color: #e9ecef !important;
-          cursor: not-allowed !important;
-          color: #6c757d !important;
-        }
-
-        .disabled-field:focus {
-          background-color: #e9ecef !important;
-          color: #6c757d !important;
-          border-color: #dee2e6 !important;
-          box-shadow: none !important;
-        }
-
-        .disabled-field::placeholder {
-          color: #6c757d;
-        }
-
-        .help-text {
-          font-size: 0.85rem;
-          color: #6c757d;
-          margin-top: 0.25rem;
-          display: block;
-        }
-
-        .editable-indicator {
-          font-size: 0.75rem;
-          color: #2575fc;
-          font-weight: 600;
-          margin-top: 0.25rem;
-          display: block;
-        }
-      `}</style>
-
-      {/* Tabs Navigation */}
       <ul className="nav nav-tabs" id="userTabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button
@@ -234,9 +197,6 @@ export default function EditUserForm() {
                 onChange={onChange}
                 required
               />
-              <span className="editable-indicator">
-                <i className="bi bi-pencil"></i> Editable
-              </span>
             </div>
 
             {/* Email - READ-ONLY */}
@@ -248,13 +208,13 @@ export default function EditUserForm() {
                 type="email"
                 id="email"
                 name="email"
-                className="form-control disabled-field"
+                className="form-control"
                 placeholder="Email Address"
                 value={form.email}
                 disabled
                 readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-              <span className="help-text">Read Only</span>
             </div>
 
             {/* Position - EDITABLE */}
@@ -271,9 +231,6 @@ export default function EditUserForm() {
                 value={form.position}
                 onChange={onChange}
               />
-              <span className="editable-indicator">
-                <i className="bi bi-pencil"></i> Editable
-              </span>
             </div>
 
             {/* Layer - READ-ONLY */}
@@ -285,13 +242,13 @@ export default function EditUserForm() {
                 type="text"
                 id="layer"
                 name="layer"
-                className="form-control disabled-field"
+                className="form-control"
                 placeholder="Layer"
                 value={form.layer}
                 disabled
                 readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-              <span className="help-text">Read Only</span>
             </div>
 
             {/* Status - READ-ONLY */}
@@ -303,13 +260,13 @@ export default function EditUserForm() {
                 type="text"
                 id="status"
                 name="status"
-                className="form-control disabled-field"
+                className="form-control"
                 placeholder="Status"
                 value={form.status}
                 disabled
                 readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-              <span className="help-text">Read Only</span>
             </div>
 
             {/* Created At - READ-ONLY */}
@@ -321,63 +278,58 @@ export default function EditUserForm() {
                 type="text"
                 id="createdAt"
                 name="createdAt"
-                className="form-control disabled-field"
+                className="form-control"
                 placeholder="Created Date"
                 value={form.createdAt ? new Date(form.createdAt).toLocaleDateString() : ""}
                 disabled
                 readOnly
+                style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-              <span className="help-text">Read Only</span>
             </div>
           </div>
         </div>
 
         {/* Module Access Tab */}
         <div className={`tab-pane fade ${tab === "access" ? "show active" : ""}`} id="access" role="tabpanel">
-          <div className="row g-3">
-            {modules.map((module) => (
-              <div className="col-md-6" key={module.code}>
-                <div className="card">
-                  <div className="card-body">
-                    <h6 className="card-title">{module.name}</h6>
-                    <div>
-                      {moduleAccess[module.code] && moduleAccess[module.code].length > 0 ? (
-                        <ul className="list-unstyled">
-                          {moduleAccess[module.code].map((access, idx) => (
-                            <li key={idx}>
-                              <span className="badge bg-info">{access}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="text-muted">No access</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="table-responsive mt-2">
+            <table className="table table-bordered">
+              <thead>
+                <tr style={{ backgroundColor: "#001f4d", color: "#fff" }}>
+                  <th style={{ color: "#fff" }}>Module</th>
+                  <th style={{ color: "#fff" }}>Access Rights Group</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modules.map((module) => {
+                  const selectedValues = moduleAccess[module.code] || []
+                  const displayValue = Array.isArray(selectedValues) ? selectedValues[0] : selectedValues
+
+                  return (
+                    <tr key={module.code}>
+                      <td>{module.name}</td>
+                      <td>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={displayValue || "No Access"}
+                          disabled
+                          readOnly
+                          style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="mt-4">
-        <button
-          type="submit"
-          className="btn btn-turquoise"
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Updating...
-            </>
-          ) : (
-            "Update User"
-          )}
-        </button>
-      </div>
+      <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
+        {loading ? "Updating User..." : "Update User"}
+      </button>
     </form>
   )
 }
