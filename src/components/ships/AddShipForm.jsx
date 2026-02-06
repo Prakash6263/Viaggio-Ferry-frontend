@@ -188,7 +188,18 @@ export default function AddShipForm() {
     }
     setPassengers((a) => a.filter((r) => r.id !== id));
   };
-  const updatePassenger = (id, key, value) => setPassengers((a) => a.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
+  const updatePassenger = (id, key, value) => setPassengers((a) => a.map((r) => {
+    if (r.id === id) {
+      const updated = { ...r, [key]: value };
+      // When seats are updated, automatically calculate totalWeightKg
+      if (key === "seats" && value) {
+        const seats = parseFloat(value) || 0;
+        updated.totalWeightKg = (seats * 84).toString(); // 84 kg per passenger
+      }
+      return updated;
+    }
+    return r;
+  }));
 
   const addCargo = () => setCargo((a) => [...a, emptyCargoRow()]);
   const removeCargo = (id) => {
