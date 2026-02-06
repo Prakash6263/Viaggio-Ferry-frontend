@@ -59,7 +59,7 @@ export default function EditUserForm() {
       if (response.data) {
         setAccessGroupsByModule((prev) => ({
           ...prev,
-          [moduleCode]: response.data,
+          [moduleCode]: response.data.accessGroups || [],
         }))
       }
     } catch (err) {
