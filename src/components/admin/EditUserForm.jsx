@@ -276,7 +276,7 @@ export default function EditUserForm() {
               <div className="col-md-12">
                 <div className="agent-info" style={{ paddingTop: "8px" }}>
                   <div>
-                    <strong>Agent Type:</strong> <span>{form.layer}</span>
+                    <strong>Agent Type:</strong> <span>{form.layer.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
                   </div>
                   <div>
                     <strong>Organizational Layer:</strong> <span>{form.layer}</span>
