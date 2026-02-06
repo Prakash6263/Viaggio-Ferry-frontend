@@ -13,6 +13,7 @@ export default function EditUserForm() {
     email: "",
     position: "",
     layer: "",
+    agentName: "",
     isSalesman: false,
     remarks: "",
   })
@@ -46,11 +47,21 @@ export default function EditUserForm() {
       const response = await usersApi.getUserById(userId)
       if (response.data) {
         const user = response.data
+        
+        // Determine agent/partner name
+        let agentName = ""
+        if (user.agent && user.agent.name) {
+          agentName = user.agent.name
+        } else if (user.layer === "company") {
+          agentName = "company"
+        }
+        
         setForm({
           fullName: user.fullName || "",
           email: user.email || "",
           position: user.position || "",
           layer: user.layer || "",
+          agentName: agentName,
           isSalesman: user.isSalesman || false,
           remarks: user.remarks || "",
         })
@@ -245,23 +256,32 @@ export default function EditUserForm() {
               />
             </div>
 
-            {/* Layer - READ-ONLY */}
+            {/* Partner Assignment - READ-ONLY */}
             <div className="col-md-6">
-              <label htmlFor="layer" className="form-label">
-                Layer
-              </label>
+              <label className="form-label">Partner Assignment</label>
               <input
                 type="text"
-                id="layer"
-                name="layer"
                 className="form-control"
-                placeholder="Layer"
-                value={form.layer}
+                value={form.agentName}
                 disabled
                 readOnly
                 style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
+              {form.agentName && form.layer && (
+                <div className="agent-info mt-2" style={{ paddingTop: "8px" }}>
+                  <div>
+                    <strong>Agent Type:</strong> <span>{form.layer.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
+                  </div>
+                  <div>
+                    <strong>Organizational Layer:</strong> <span>{form.layer}</span>
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Additional Fields Row */}
+          <div className="row g-3 mt-2">
 
             {/* Is Salesman - READ-ONLY */}
             <div className="col-md-6">
