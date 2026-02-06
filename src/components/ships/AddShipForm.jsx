@@ -372,9 +372,15 @@ export default function AddShipForm() {
               onChange={onChange}
             >
               <option value="">Select Ship Type</option>
-              <option value="passenger">Passenger</option>
-              <option value="vehicle">Vehicle</option>
-              <option value="cargo">Cargo</option>
+              <option value="Container Ships">Container Ships</option>
+              <option value="Bulk Carriers">Bulk Carriers</option>
+              <option value="Tankers">Tankers</option>
+              <option value="Ro-Ro Ships (Roll-on/Roll-off)">Ro-Ro Ships (Roll-on/Roll-off)</option>
+              <option value="General Cargo Vessels">General Cargo Vessels</option>
+              <option value="Refrigerated Ships (Reefers)">Refrigerated Ships (Reefers)</option>
+              <option value="Cruise Ships (Passengers)">Cruise Ships (Passengers)</option>
+              <option value="Ferries (Passengers)">Ferries (Passengers)</option>
+              <option value="Ocean Liners (Passengers)">Ocean Liners (Passengers)</option>
             </select>
             {errors.shipType && <div className="invalid-feedback d-block">{errors.shipType}</div>}
           </div>
