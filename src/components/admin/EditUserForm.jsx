@@ -257,7 +257,7 @@ export default function EditUserForm() {
             </div>
 
             {/* Partner Assignment - READ-ONLY */}
-            <div className="col-md-12">
+            <div className="col-md-6">
               <label className="form-label">Partner Assignment</label>
               <input
                 type="text"
@@ -267,8 +267,14 @@ export default function EditUserForm() {
                 readOnly
                 style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-              {form.agentName && form.layer && (
-                <div className="agent-info mt-2" style={{ paddingTop: "8px" }}>
+            </div>
+          </div>
+
+          {/* Agent Info and Additional Fields */}
+          <div className="row g-3 mt-2">
+            {form.agentName && form.layer && (
+              <div className="col-md-12">
+                <div className="agent-info" style={{ paddingTop: "8px" }}>
                   <div>
                     <strong>Agent Type:</strong> <span>{form.layer}</span>
                   </div>
@@ -276,8 +282,8 @@ export default function EditUserForm() {
                     <strong>Organizational Layer:</strong> <span>{form.layer}</span>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Is Salesman - READ-ONLY */}
             <div className="col-md-6">
