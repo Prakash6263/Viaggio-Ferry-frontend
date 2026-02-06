@@ -43,18 +43,19 @@ export default function EditUserForm() {
     fetchUserData()
   }, [userId])
 
-  // Fetch access groups for all modules
+  // Fetch access groups for all modules after user data is loaded
   useEffect(() => {
-    modules.forEach((module) => {
-      fetchAccessGroups(module.code)
-    })
-  }, [modules])
+    if (form.layer) {
+      modules.forEach((module) => {
+        fetchAccessGroups(module.code, form.layer)
+      })
+    }
+  }, [form.layer, modules])
 
-  const fetchAccessGroups = async (moduleCode) => {
+  const fetchAccessGroups = async (moduleCode, layer) => {
     try {
       setAccessGroupsLoading((prev) => ({ ...prev, [moduleCode]: true }))
-      const { accessGroupApi } = await import("../../api/accessGroupApi")
-      const response = await accessGroupApi.getAccessGroupsByModule(moduleCode)
+      const response = await usersApi.getAccessGroupsByModuleLayer(moduleCode, layer)
       if (response.data) {
         setAccessGroupsByModule((prev) => ({
           ...prev,
