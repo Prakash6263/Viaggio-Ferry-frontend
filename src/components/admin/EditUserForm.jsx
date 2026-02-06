@@ -91,21 +91,6 @@ export default function EditUserForm() {
       setInitialLoading(false)
     }
   }
-          })
-          
-          setModuleAccess(moduleAccessMap)
-        } else {
-          setModuleAccess({})
-        }
-        setError(null)
-      }
-    } catch (err) {
-      console.error("Error fetching user:", err)
-      setError(err.message || "Failed to load user data")
-    } finally {
-      setInitialLoading(false)
-    }
-  }
 
   const onChange = (e) => {
     const { name, value } = e.target
