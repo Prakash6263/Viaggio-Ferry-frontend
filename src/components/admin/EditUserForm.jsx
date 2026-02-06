@@ -49,6 +49,10 @@ export default function EditUserForm() {
       const response = await usersApi.getUserById(userId)
       if (response.data) {
         const user = response.data
+        console.log("[v0] User data partnerId:", user.partnerId)
+        console.log("[v0] User data agentType:", user.agentType)
+        console.log("[v0] User data layer:", user.layer)
+        
         setForm({
           fullName: user.fullName || "",
           email: user.email || "",
@@ -56,7 +60,7 @@ export default function EditUserForm() {
           layer: user.layer || "",
           agentType: user.agentType || "",
           partnerId: user.partnerId || "",
-          partnerName: user.partnerId?.name || "",
+          partnerName: user.partnerId?.name || user.partnerId?._id || "",
           isSalesman: user.isSalesman || false,
           remarks: user.remarks || "",
         })
