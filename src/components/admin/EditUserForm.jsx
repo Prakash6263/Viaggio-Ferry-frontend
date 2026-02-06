@@ -22,6 +22,8 @@ export default function EditUserForm() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState(null)
   const [moduleAccess, setModuleAccess] = useState({})
+  const [accessGroupsByModule, setAccessGroupsByModule] = useState({})
+  const [accessGroupsLoading, setAccessGroupsLoading] = useState({})
 
   const modules = useMemo(
     () => [
@@ -40,6 +42,32 @@ export default function EditUserForm() {
   useEffect(() => {
     fetchUserData()
   }, [userId])
+
+  // Fetch access groups for all modules after user data is loaded
+  useEffect(() => {
+    if (form.layer) {
+      modules.forEach((module) => {
+        fetchAccessGroups(module.code, form.layer)
+      })
+    }
+  }, [form.layer, modules])
+
+  const fetchAccessGroups = async (moduleCode, layer) => {
+    try {
+      setAccessGroupsLoading((prev) => ({ ...prev, [moduleCode]: true }))
+      const response = await usersApi.getAccessGroupsByModuleLayer(moduleCode, layer)
+      if (response.data) {
+        setAccessGroupsByModule((prev) => ({
+          ...prev,
+          [moduleCode]: response.data.accessGroups || [],
+        }))
+      }
+    } catch (err) {
+      console.error(`Error fetching access groups for ${moduleCode}:`, err)
+    } finally {
+      setAccessGroupsLoading((prev) => ({ ...prev, [moduleCode]: false }))
+    }
+  }
 
   const fetchUserData = async () => {
     try {
@@ -67,14 +95,18 @@ export default function EditUserForm() {
         })
 
         // Process module access from API response
-        // moduleAccess comes as array: [{moduleCode, accessGroupId: {groupName, ...}}, ...]
+        // moduleAccess comes as array: [{moduleCode, accessGroupId: {_id, groupName, ...}}, ...]
+        // Convert to object format: {moduleCode: [accessGroupId._id], ...}
         if (user.moduleAccess && Array.isArray(user.moduleAccess)) {
           const moduleAccessMap = {}
           
           user.moduleAccess.forEach((access) => {
             if (access.moduleCode && access.accessGroupId) {
-              // Store the group name directly from the accessGroupId object
-              moduleAccessMap[access.moduleCode] = access.accessGroupId.groupName || "No Access"
+              // Store the access group ID (not the full object)
+              if (!moduleAccessMap[access.moduleCode]) {
+                moduleAccessMap[access.moduleCode] = []
+              }
+              moduleAccessMap[access.moduleCode].push(access.accessGroupId._id || access.accessGroupId)
             }
           })
           
@@ -100,6 +132,13 @@ export default function EditUserForm() {
     }
   }
 
+  const onSelectAccess = (moduleCode, accessGroupId) => {
+    setModuleAccess((prev) => ({
+      ...prev,
+      [moduleCode]: accessGroupId ? [accessGroupId] : [],
+    }))
+  }
+
   const onSubmit = async (e) => {
     e.preventDefault()
 
@@ -107,10 +146,24 @@ export default function EditUserForm() {
       setLoading(true)
       setError(null)
 
-      // Only send fullName and position in the payload
+      // Only send fullName, position, and moduleAccess in the payload
+      const moduleAccessArray = []
+      Object.entries(moduleAccess).forEach(([moduleCode, accessGroupIds]) => {
+        const ids = Array.isArray(accessGroupIds) ? accessGroupIds : [accessGroupIds]
+        ids.forEach((id) => {
+          if (id) {
+            moduleAccessArray.push({
+              moduleCode,
+              accessGroupId: id,
+            })
+          }
+        })
+      })
+
       const payload = {
         fullName: form.fullName,
         position: form.position,
+        moduleAccess: moduleAccessArray,
       }
 
       // Confirmation dialog
@@ -356,20 +409,39 @@ export default function EditUserForm() {
               </thead>
               <tbody>
                 {modules.map((module) => {
-                  const displayValue = moduleAccess[module.code] || "No Access"
+                  const accessGroups = accessGroupsByModule[module.code] || []
+                  const isLoading = accessGroupsLoading[module.code]
+                  const selectedValues = moduleAccess[module.code] || []
 
                   return (
                     <tr key={module.code}>
                       <td>{module.name}</td>
                       <td>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={displayValue}
-                          disabled
-                          readOnly
-                          style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
-                        />
+                        <select
+                          className="form-select"
+                          value={selectedValues[0] || ""}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              onSelectAccess(module.code, e.target.value)
+                            } else {
+                              onSelectAccess(module.code, "")
+                            }
+                          }}
+                          disabled={isLoading}
+                        >
+                          <option value="">Select Role</option>
+                          {accessGroups.length > 0 ? (
+                            accessGroups.map((group) => (
+                              <option key={group._id} value={group._id}>
+                                {group.groupName}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>
+                              {isLoading ? "Loading..." : "No Groups Available"}
+                            </option>
+                          )}
+                        </select>
                       </td>
                     </tr>
                   )
