@@ -13,9 +13,7 @@ export default function EditUserForm() {
     email: "",
     position: "",
     layer: "",
-    agentType: "",
-    partnerId: "",
-    partnerName: "",
+    agentName: "",
     isSalesman: false,
     remarks: "",
   })
@@ -49,18 +47,21 @@ export default function EditUserForm() {
       const response = await usersApi.getUserById(userId)
       if (response.data) {
         const user = response.data
-        console.log("[v0] User data partnerId:", user.partnerId)
-        console.log("[v0] User data agentType:", user.agentType)
-        console.log("[v0] User data layer:", user.layer)
+        
+        // Determine agent/partner name
+        let agentName = ""
+        if (user.agent && user.agent.name) {
+          agentName = user.agent.name
+        } else if (user.layer === "company") {
+          agentName = "company"
+        }
         
         setForm({
           fullName: user.fullName || "",
           email: user.email || "",
           position: user.position || "",
           layer: user.layer || "",
-          agentType: user.agentType || "",
-          partnerId: user.partnerId || "",
-          partnerName: user.partnerId?.name || user.partnerId?._id || "",
+          agentName: agentName,
           isSalesman: user.isSalesman || false,
           remarks: user.remarks || "",
         })
@@ -75,6 +76,21 @@ export default function EditUserForm() {
               // Store the group name directly from the accessGroupId object
               moduleAccessMap[access.moduleCode] = access.accessGroupId.groupName || "No Access"
             }
+          })
+          
+          setModuleAccess(moduleAccessMap)
+        } else {
+          setModuleAccess({})
+        }
+        setError(null)
+      }
+    } catch (err) {
+      console.error("Error fetching user:", err)
+      setError(err.message || "Failed to load user data")
+    } finally {
+      setInitialLoading(false)
+    }
+  }
           })
           
           setModuleAccess(moduleAccessMap)
@@ -261,15 +277,15 @@ export default function EditUserForm() {
               <input
                 type="text"
                 className="form-control"
-                value={form.partnerName}
+                value={form.agentName}
                 disabled
                 readOnly
                 style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-              {form.agentType && (
+              {form.agentName && form.layer && (
                 <div className="agent-info mt-2" style={{ paddingTop: "8px" }}>
                   <div>
-                    <strong>Agent Type:</strong> <span>{form.agentType}</span>
+                    <strong>Agent Type:</strong> <span>{form.layer}</span>
                   </div>
                   <div>
                     <strong>Organizational Layer:</strong> <span>{form.layer}</span>
