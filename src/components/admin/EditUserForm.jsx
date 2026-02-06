@@ -267,14 +267,8 @@ export default function EditUserForm() {
                 readOnly
                 style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
-            </div>
-          </div>
-
-          {/* Agent Info and Additional Fields */}
-          <div className="row g-3 mt-2">
-            {form.agentName && form.layer && (
-              <div className="col-md-12">
-                <div className="agent-info" style={{ paddingTop: "8px" }}>
+              {form.agentName && form.layer && (
+                <div className="agent-info mt-2" style={{ paddingTop: "8px" }}>
                   <div>
                     <strong>Agent Type:</strong> <span>{form.layer.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
                   </div>
@@ -282,8 +276,12 @@ export default function EditUserForm() {
                     <strong>Organizational Layer:</strong> <span>{form.layer}</span>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+
+          {/* Additional Fields Row */}
+          <div className="row g-3 mt-2">
 
             {/* Is Salesman - READ-ONLY */}
             <div className="col-md-6">
