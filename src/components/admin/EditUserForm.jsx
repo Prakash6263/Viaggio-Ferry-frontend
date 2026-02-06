@@ -13,6 +13,9 @@ export default function EditUserForm() {
     email: "",
     position: "",
     layer: "",
+    agentType: "",
+    partnerId: "",
+    partnerName: "",
     isSalesman: false,
     remarks: "",
   })
@@ -51,6 +54,9 @@ export default function EditUserForm() {
           email: user.email || "",
           position: user.position || "",
           layer: user.layer || "",
+          agentType: user.agentType || "",
+          partnerId: user.partnerId || "",
+          partnerName: user.partnerId?.name || "",
           isSalesman: user.isSalesman || false,
           remarks: user.remarks || "",
         })
@@ -245,22 +251,27 @@ export default function EditUserForm() {
               />
             </div>
 
-            {/* Layer - READ-ONLY */}
-            <div className="col-md-6">
-              <label htmlFor="layer" className="form-label">
-                Layer
-              </label>
+            {/* Partner Assignment - READ-ONLY */}
+            <div className="col-md-12">
+              <label className="form-label">Partner Assignment</label>
               <input
                 type="text"
-                id="layer"
-                name="layer"
                 className="form-control"
-                placeholder="Layer"
-                value={form.layer}
+                value={form.partnerName}
                 disabled
                 readOnly
                 style={{ backgroundColor: "#e9ecef", color: "#6c757d" }}
               />
+              {form.agentType && (
+                <div className="agent-info mt-2" style={{ paddingTop: "8px" }}>
+                  <div>
+                    <strong>Agent Type:</strong> <span>{form.agentType}</span>
+                  </div>
+                  <div>
+                    <strong>Organizational Layer:</strong> <span>{form.layer}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Is Salesman - READ-ONLY */}
