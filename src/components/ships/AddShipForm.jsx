@@ -3,10 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
-import { apiFetch } from "../../api/apiClient";
+import { apiFetch, API_BASE_URL } from "../../api/apiClient";
 import { cabinsApi } from "../../api/cabinsApi";
 import { shipsApi } from "../../api/shipsApi";
+import { getFullImageUrl } from "../../utils/imageUrl";
 import Can from "../Can";
+
+// Placeholder image for failed loads
+const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='%23999' text-anchor='middle' dy='.3em'%3E?%3C/text%3E%3C/svg%3E";
 
 function emptyPassengerRow() {
   return { id: Date.now() + Math.random(), cabinId: "", cabinName: "", totalWeightKg: "", seats: "" };
@@ -56,6 +60,10 @@ export default function AddShipForm() {
   const [loading, setLoading] = useState(false);
   const [loadingCabins, setLoadingCabins] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Document state
+  const [documents, setDocuments] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
 
   // Fetch cabins on mount
   useEffect(() => {
@@ -133,7 +141,10 @@ export default function AddShipForm() {
           : [emptyVehicleRow()]
         );
 
-        console.log("[v0] Form data populated successfully");
+        // Set existing documents
+        if (ship.documents && ship.documents.length > 0) {
+          setExistingDocuments(ship.documents);
+        }
       } else {
         console.error("[v0] Could not extract ship data from response");
         Swal.fire({ icon: "error", title: "Error", text: "Unable to load ship data" });
@@ -221,6 +232,10 @@ export default function AddShipForm() {
   };
   const updateVehicle = (id, key, value) => setVehicles((a) => a.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
 
+  const handleFileChange = (e) => {
+    setDocuments([...e.target.files]);
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!form.name) newErrors.name = "Ship name is required";
@@ -243,50 +258,69 @@ export default function AddShipForm() {
     try {
       setLoading(true);
 
-      const payload = {
-        name: form.name,
-        imoNumber: form.imoNumber,
-        mmsiNumber: form.mmsiNumber,
-        shipType: form.shipType,
-        yearBuilt: form.yearBuilt,
-        flagState: form.flagState,
-        classificationSociety: form.classificationSociety,
-        status: form.status,
-        remarks: form.remarks,
-        technical: form.technical,
-        passengerCapacity: passengers.map(p => ({
+      const formData = new FormData();
+
+      // Append all existing fields
+      formData.append("name", form.name);
+      formData.append("imoNumber", form.imoNumber);
+      formData.append("mmsiNumber", form.mmsiNumber);
+      formData.append("shipType", form.shipType);
+      formData.append("yearBuilt", form.yearBuilt);
+      formData.append("flagState", form.flagState);
+      formData.append("classificationSociety", form.classificationSociety);
+      formData.append("status", form.status);
+      formData.append("remarks", form.remarks);
+
+      // Append capacity arrays as JSON strings
+      formData.append("passengerCapacity", JSON.stringify(
+        passengers.map(p => ({
           cabinId: p.cabinId,
           cabinName: p.cabinName,
           totalWeightKg: parseFloat(p.totalWeightKg) || 0,
           seats: parseInt(p.seats) || 0,
-        })),
-        cargoCapacity: cargo.map(c => ({
+        }))
+      ));
+      formData.append("cargoCapacity", JSON.stringify(
+        cargo.map(c => ({
           cabinId: c.cabinId,
           cabinName: c.cabinName,
           totalWeightTons: parseFloat(c.totalWeightTons) || 0,
           spots: parseInt(c.spots) || 0,
-        })),
-        vehicleCapacity: vehicles.map(v => ({
+        }))
+      ));
+      formData.append("vehicleCapacity", JSON.stringify(
+        vehicles.map(v => ({
           cabinId: v.cabinId,
           cabinName: v.cabinName,
           totalWeightTons: parseFloat(v.totalWeightTons) || 0,
           spots: parseInt(v.spots) || 0,
-        })),
-      };
+        }))
+      ));
 
-      console.log("[v0] Ship payload:", payload);
+      // Append technical specs as JSON string with numeric values
+      formData.append("technical", JSON.stringify({
+        grossTonnage: parseFloat(form.technical.grossTonnage) || 0,
+        netTonnage: parseFloat(form.technical.netTonnage) || 0,
+        loa: parseFloat(form.technical.loa) || 0,
+        beam: parseFloat(form.technical.beam) || 0,
+        draft: parseFloat(form.technical.draft) || 0,
+      }));
 
-      const method = isEditMode ? "PUT" : "POST";
-      const endpoint = isEditMode ? `/api/ships/${shipId}` : "/api/ships";
-
-      const response = await apiFetch(endpoint, {
-        method,
-        body: JSON.stringify(payload),
+      // Append files
+      documents.forEach((file) => {
+        formData.append("documents", file);
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save ship");
+      // Use the appropriate API method for FormData
+      let response;
+      if (isEditMode) {
+        response = await shipsApi.updateShipWithFiles(shipId, formData);
+      } else {
+        response = await shipsApi.createShipWithFiles(formData);
+      }
+
+      if (!response || !response.success) {
+        throw new Error(response?.message || "Failed to save ship");
       }
 
       Swal.fire({
@@ -440,6 +474,85 @@ export default function AddShipForm() {
             placeholder="Enter any additional remarks"
           />
         </div>
+      </div>
+
+      {/* Upload Documents */}
+      <div className="section-box mb-3" style={{border:"none"}}>
+        <h6>Upload Documents (Images / PDF)</h6>
+        <div className="mb-3">
+          <label>Select Files</label>
+          <input 
+            type="file" 
+            className="form-control" 
+            name="documents"
+            multiple
+            accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+            onChange={handleFileChange}
+          />
+          <small className="form-text text-muted mt-2">
+            Accepted formats: PNG, JPEG, JPG, WebP, PDF (Max 10 files)
+          </small>
+        </div>
+
+        {/* Show selected files */}
+        {documents.length > 0 && (
+          <div className="mb-3">
+            <h6 className="mb-2">Selected Files:</h6>
+            <div className="row">
+              {Array.from(documents).map((file, idx) => (
+                <div key={idx} className="col-md-3 mb-2">
+                  <div className="border p-2 rounded">
+                    <small className="text-truncate d-block">{file.name}</small>
+                    <small className="text-muted">{(file.size / 1024).toFixed(2)} KB</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Show existing documents if editing */}
+        {isEditMode && existingDocuments.length > 0 && (
+          <div className="mb-3">
+            <h6 className="mb-2">Existing Documents:</h6>
+            <div className="row">
+                      {existingDocuments.map((doc, idx) => (
+                        <div key={idx} className="col-md-3 mb-2">
+                          <div className="border p-2 rounded">
+                            {doc.fileType === "image" ? (
+                              <>
+                                <img 
+                                  src={getFullImageUrl(doc.fileUrl)} 
+                                  alt={doc.fileName} 
+                                  crossOrigin="anonymous"
+                                  onError={(e) => {
+                                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                                  }}
+                                  style={{ maxWidth: "100%", maxHeight: "100px", marginBottom: "8px" }}
+                                />
+                                <br />
+                              </>
+                            ) : doc.fileType === "pdf" ? (
+                              <>
+                                <i className="bi bi-file-pdf" style={{ fontSize: "24px", color: "red" }}></i>
+                                <br />
+                              </>
+                            ) : null}
+                            <small className="text-truncate d-block mb-2">{doc.fileName}</small>
+                            <a 
+                              href={getFullImageUrl(doc.fileUrl)} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="btn btn-sm btn-outline-primary"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Technical Specifications */}

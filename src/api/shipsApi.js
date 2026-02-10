@@ -109,6 +109,76 @@ export const shipsApi = {
   },
 
   /**
+   * Create a new ship with file uploads (FormData)
+   */
+  createShipWithFiles: async (formData) => {
+    try {
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      // Use fetch directly for FormData (multipart/form-data)
+      const response = await fetch(`${API_BASE_URL || ""}${BASE_URL}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type - browser will set it with boundary for FormData
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to create ship")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Create Ship With Files Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Update an existing ship with file uploads (FormData)
+   */
+  updateShipWithFiles: async (id, formData) => {
+    try {
+      if (!id || id === "undefined") {
+        throw new Error("Invalid ship ID")
+      }
+
+      const token = localStorage.getItem("authToken")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      // Use fetch directly for FormData (multipart/form-data)
+      const response = await fetch(`${API_BASE_URL || ""}${BASE_URL}/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type - browser will set it with boundary for FormData
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update ship")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Update Ship With Files Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
    * Delete a ship
    */
   deleteShip: async (id) => {

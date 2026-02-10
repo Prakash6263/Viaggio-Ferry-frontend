@@ -3,7 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import Can from "../Can";
 import CanDisable from "../CanDisable";
-import { apiFetch } from "../../api/apiClient";
+import { apiFetch, API_BASE_URL } from "../../api/apiClient";
+import { getFullImageUrl } from "../../utils/imageUrl";
+
+// Placeholder image for failed loads
+const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect fill='%23f0f0f0' width='40' height='40'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%23999' text-anchor='middle' dy='.3em'%3E?%3C/text%3E%3C/svg%3E";
 
 export default function ShipsListTable() {
   const tableRef = useRef(null);
@@ -204,6 +208,7 @@ export default function ShipsListTable() {
                         <th>Flag State</th>
                         <th>Status</th>
                         <th>Capacity</th>
+                        <th>Documents</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -231,6 +236,61 @@ export default function ShipsListTable() {
                                 Vehicle: {s.vehicleCapacity?.reduce((sum, v) => sum + (v.totalWeightTons || 0), 0) || 0} tons
                               </small>
                             </td>
+                            <td>
+                              {s.documents && s.documents.length > 0 ? (
+                                <div className="d-flex gap-1 flex-wrap" style={{ alignItems: "center" }}>
+                                  {s.documents.slice(0, 3).map((doc, idx) => (
+                                    <div key={idx} style={{ position: "relative" }}>
+                                      {doc.fileType === "image" ? (
+                                        <img 
+                                          src={getFullImageUrl(doc.fileUrl)} 
+                                          alt={doc.fileName}
+                                          crossOrigin="anonymous"
+                                          onError={(e) => {
+                                            e.currentTarget.src = PLACEHOLDER_IMAGE;
+                                          }}
+                                          style={{
+                                            width: "40px",
+                                            height: "40px",
+                                            borderRadius: "4px",
+                                            objectFit: "cover",
+                                            cursor: "pointer",
+                                            border: "1px solid #ddd"
+                                          }}
+                                          title={doc.fileName}
+                                          onClick={() => window.open(getFullImageUrl(doc.fileUrl), '_blank')}
+                                        />
+                                      ) : doc.fileType === "pdf" ? (
+                                        <div 
+                                          style={{
+                                            width: "40px",
+                                            height: "40px",
+                                            borderRadius: "4px",
+                                            backgroundColor: "#f8d7da",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            cursor: "pointer",
+                                            border: "1px solid #ddd"
+                                          }}
+                                          title={doc.fileName}
+                                          onClick={() => window.open(getFullImageUrl(doc.fileUrl), '_blank')}
+                                        >
+                                          <i className="bi bi-file-pdf" style={{ fontSize: "20px", color: "#dc3545" }}></i>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                  {s.documents.length > 3 && (
+                                    <span className="badge bg-secondary" style={{ fontSize: "12px" }}>
+                                      +{s.documents.length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted">No docs</span>
+                              )}
+                            </td>
                             <td className="action-buttons">
                               <CanDisable action="update">
                                 <button 
@@ -253,7 +313,7 @@ export default function ShipsListTable() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="9" className="text-center text-muted">
+                          <td colSpan="10" className="text-center text-muted">
                             No ships found
                           </td>
                         </tr>
@@ -283,6 +343,57 @@ export default function ShipsListTable() {
                       <p><small>Flag State: {s.flagState || "—"}</small></p>
                       <p><small>Status: <span className={`status-badge ${s.status === "Active" ? "status-active" : "status-inactive"}`}>{s.status || "Active"}</span></small></p>
                       <p><small>Capacity → Passenger: {s.passengerCapacity?.reduce((sum, p) => sum + (p.seats || 0), 0) || 0} seats, Cargo: {s.cargoCapacity?.reduce((sum, c) => sum + (c.totalWeightTons || 0), 0) || 0} tons, Vehicle: {s.vehicleCapacity?.reduce((sum, v) => sum + (v.totalWeightTons || 0), 0) || 0} tons</small></p>
+                      
+                      {/* Documents Section */}
+                      {s.documents && s.documents.length > 0 && (
+                        <div className="mt-3 pt-3" style={{ borderTop: "1px solid #e0e0e0" }}>
+                          <p><small><strong>Documents ({s.documents.length}):</strong></small></p>
+                          <div className="d-flex gap-2 flex-wrap">
+                            {s.documents.map((doc, idx) => (
+                              <div key={idx} style={{ position: "relative" }}>
+                                {doc.fileType === "image" ? (
+                                  <img 
+                                    src={getFullImageUrl(doc.fileUrl)} 
+                                    alt={doc.fileName}
+                                    crossOrigin="anonymous"
+                                    onError={(e) => {
+                                      e.currentTarget.src = PLACEHOLDER_IMAGE;
+                                    }}
+                                    style={{
+                                      width: "50px",
+                                      height: "50px",
+                                      borderRadius: "4px",
+                                      objectFit: "cover",
+                                      cursor: "pointer",
+                                      border: "1px solid #ddd"
+                                    }}
+                                    title={doc.fileName}
+                                    onClick={() => window.open(getFullImageUrl(doc.fileUrl), '_blank')}
+                                  />
+                                ) : doc.fileType === "pdf" ? (
+                                  <div 
+                                    style={{
+                                      width: "50px",
+                                      height: "50px",
+                                      borderRadius: "4px",
+                                      backgroundColor: "#f8d7da",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      cursor: "pointer",
+                                      border: "1px solid #ddd"
+                                    }}
+                                    title={doc.fileName}
+                                    onClick={() => window.open(getFullImageUrl(doc.fileUrl), '_blank')}
+                                  >
+                                    <i className="bi bi-file-pdf" style={{ fontSize: "24px", color: "#dc3545" }}></i>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="card-actions">
                       <CanDisable action="update">
