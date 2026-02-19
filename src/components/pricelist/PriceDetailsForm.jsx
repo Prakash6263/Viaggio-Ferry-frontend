@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { partnerApi } from "../../api/partnerApi";
 import { currencyApi } from "../../api/currencyApi";
 import { payloadTypesApi } from "../../api/payloadTypesApi";
@@ -7,6 +7,7 @@ import { portsApi } from "../../api/portsApi";
 import { taxApi } from "../../api/taxApi";
 import { priceListApi } from "../../api/priceListApi";
 import Swal from "sweetalert2";
+import { CirclesWithBar } from "react-loader-spinner";
 
 /**
  * PriceDetailsForm
@@ -34,6 +35,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   const [isEditMode, setIsEditMode] = useState(false);
   const [existingPriceList, setExistingPriceList] = useState(null);
   const [priceListLoading, setPriceListLoading] = useState(false);
+  const [isDisablingDetail, setIsDisablingDetail] = useState(false);
 
   // Load existing price list if in edit mode
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   useEffect(() => {
     if (existingPriceList && existingPriceList.header && currencies.length > 0) {
       const header = existingPriceList.header;
-      
+
       // Prefill header fields
       const nameInput = document.getElementById(`${idPrefix}-name`);
       const dateInput = document.getElementById(`${idPrefix}-effective-date`);
@@ -106,7 +108,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           // partnerObj is an object with _id and name from API response
           const partnerId = partnerObj._id;
           const partnerName = partnerObj.name;
-          
+
           if (partnerId && partnerName) {
             const tag = document.createElement('div');
             tag.className = 'tag';
@@ -164,7 +166,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       try {
         setPayloadTypesLoading(true);
         const response = await payloadTypesApi.getPayloadTypes(1, 100, idPrefix);
-        
+
         // Handle different response formats
         let data = [];
         if (Array.isArray(response)) {
@@ -196,7 +198,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       try {
         setCabinsLoading(true);
         const response = await cabinsApi.getCabins(1, 100, "", idPrefix);
-        
+
         // Handle different response formats
         let data = [];
         if (Array.isArray(response)) {
@@ -228,7 +230,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       try {
         setPortsLoading(true);
         const response = await portsApi.getPorts(1, 100, "");
-        
+
         // Handle different response formats
         let data = [];
         if (Array.isArray(response)) {
@@ -260,7 +262,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       try {
         setTaxesLoading(true);
         const response = await taxApi.getCompanyTaxes();
-        
+        console.log("[v0] Tax API response:", response);
+
         // Handle different response formats
         let data = [];
         if (Array.isArray(response)) {
@@ -275,6 +278,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           data = response.list;
         }
 
+        console.log("[v0] Taxes loaded:", data);
         setTaxes(data);
       } catch (error) {
         console.error("[v0] Error fetching taxes:", error);
@@ -319,10 +323,13 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           const val = e.target.getAttribute('data-value');
           itemsSet.delete(val);
           tag.remove();
+          calculateTotalPrice(); // Recalculate when tax is removed
         };
         btn.addEventListener('click', btnHandler);
         // store cleanup
         handlers.push(() => btn.removeEventListener('click', btnHandler));
+
+        calculateTotalPrice(); // Calculate when tax is added
       };
 
       select.addEventListener('change', changeHandler);
@@ -335,19 +342,27 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   }, []);
 
   // Calculate total price based on basic price, selected taxes, and tax base
-  const calculateTotalPrice = () => {
+  const calculateTotalPrice = useCallback(() => {
     const basicPriceInput = document.getElementById('new-basic-price');
     const totalPriceInput = document.getElementById('new-total-price');
-    const taxBaseSelect = document.getElementById(`${idPrefix}-tax-base`);
-    const selectedTagsContainer = document.querySelector('.selected-tags');
+    const selectedTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
 
-    if (!basicPriceInput || !totalPriceInput || !taxBaseSelect || !selectedTagsContainer) {
+    console.log("[v0] calculateTotalPrice called - elements found:", {
+      basicPriceInput: !!basicPriceInput,
+      totalPriceInput: !!totalPriceInput,
+      selectedTagsContainer: !!selectedTagsContainer
+    });
+
+    if (!basicPriceInput || !totalPriceInput || !selectedTagsContainer) {
+      console.log("[v0] Missing required elements, returning early");
       return;
     }
 
     const basicPrice = parseFloat(basicPriceInput.value) || 0;
+    console.log("[v0] Basic price:", basicPrice);
 
-    if (basicPrice <= 0) {
+    // Allow zero price - only block negative
+    if (basicPrice < 0) {
       totalPriceInput.value = '';
       return;
     }
@@ -359,74 +374,165 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       return btn?.getAttribute('data-value');
     }).filter(Boolean);
 
+    console.log("[v0] Selected tax IDs:", selectedTaxIds);
+
     if (selectedTaxIds.length === 0) {
       totalPriceInput.value = basicPrice.toFixed(2);
       return;
     }
 
-    const taxBase = taxBaseSelect.value;
+    // Get tax base from either edit mode or create mode dropdown
+    let taxBase = 'fare_only';
+    if (isEditMode && existingPriceList?.header?.taxBase) {
+      taxBase = existingPriceList.header.taxBase;
+    } else {
+      const taxBaseSelect = document.getElementById(`${idPrefix}-tax-base`);
+      taxBase = taxBaseSelect?.value || 'fare_only';
+    }
 
-    // Get tax details for selected tax IDs
-    const selectedTaxDetails = taxes.filter(tax => selectedTaxIds.includes(tax._id));
+    console.log("[v0] Tax calculation - taxBase:", taxBase, "basicPrice:", basicPrice, "taxes:", selectedTaxIds.length);
+    console.log("[v0] Available taxes in state:", taxes);
+
+    // Get tax details for selected tax IDs - preserving order for compound calculation
+    const selectedTaxDetails = selectedTaxIds
+      .map(id => taxes.find(tax => tax._id === id))
+      .filter(Boolean);
+    console.log("[v0] Selected tax details:", selectedTaxDetails);
 
     let totalPrice = basicPrice;
 
     if (taxBase === 'fare_only') {
-      // Fare Only: Add each tax as percentage of base price only
+      // Fare Only: Each tax calculated on base price only
       selectedTaxDetails.forEach(tax => {
-        if (tax.type === '%') {
-          // Percentage tax: apply as percentage of base price
+        const type = tax.type?.toLowerCase();
+        if (type === '%' || type === 'percentage') {
           const taxAmount = (basicPrice * tax.value) / 100;
           totalPrice += taxAmount;
-        } else {
-          // Fixed amount tax
+          totalPrice = Math.round(totalPrice * 100) / 100;
+          console.log("[v0] Fare only - Tax:", tax.name, "Type: %", "Amount:", taxAmount.toFixed(2), "Running total:", totalPrice.toFixed(2));
+        } else if (type === 'fixed') {
           totalPrice += parseFloat(tax.value) || 0;
+          totalPrice = Math.round(totalPrice * 100) / 100;
+          console.log("[v0] Fare only - Tax:", tax.name, "Type: fixed", "Amount:", tax.value, "Running total:", totalPrice.toFixed(2));
         }
       });
-    } else if (taxBase === 'fare_plus_tax') {
-      // Fare+Tax: Apply taxes compounding (each tax on cumulative total)
+    } else if (taxBase === 'fare_and_taxes' || taxBase === 'fare_plus_tax') {
+      // Fare+Tax: Each tax calculated on cumulative total (compounding)
       selectedTaxDetails.forEach(tax => {
-        if (tax.type === '%') {
-          // Percentage tax: apply as percentage of current total
+        const type = tax.type?.toLowerCase();
+        if (type === '%' || type === 'percentage') {
           const taxAmount = (totalPrice * tax.value) / 100;
           totalPrice += taxAmount;
-        } else {
-          // Fixed amount tax
+          totalPrice = Math.round(totalPrice * 100) / 100;
+          console.log("[v0] Fare+Tax - Tax:", tax.name, "Type: %", "Calculated on:", (totalPrice - taxAmount).toFixed(2), "Amount:", taxAmount.toFixed(2), "Running total:", totalPrice.toFixed(2));
+        } else if (type === 'fixed') {
           totalPrice += parseFloat(tax.value) || 0;
+          totalPrice = Math.round(totalPrice * 100) / 100;
+          console.log("[v0] Fare+Tax - Tax:", tax.name, "Type: fixed", "Amount:", tax.value, "Running total:", totalPrice.toFixed(2));
         }
       });
     }
 
+    console.log("[v0] Final total price:", totalPrice.toFixed(2));
     totalPriceInput.value = totalPrice.toFixed(2);
-  };
+  }, [taxes, idPrefix, isEditMode, existingPriceList]);
 
   // Attach event listeners for auto-calculation when inputs change
   useEffect(() => {
     const basicPriceInput = document.getElementById('new-basic-price');
     const taxBaseSelect = document.getElementById(`${idPrefix}-tax-base`);
-    const selectedTagsContainer = document.querySelector('.selected-tags');
+    const selectedTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
 
-    const handleInputChange = () => calculateTotalPrice();
+    const handleInputChange = () => {
+      calculateTotalPrice();
+    };
 
     if (basicPriceInput) {
       basicPriceInput.addEventListener('input', handleInputChange);
+      basicPriceInput.addEventListener('change', handleInputChange);
     }
+
     if (taxBaseSelect) {
       taxBaseSelect.addEventListener('change', handleInputChange);
     }
 
-    // Observe changes in selected tags
+    let observer;
+
     if (selectedTagsContainer) {
-      const observer = new MutationObserver(() => calculateTotalPrice());
+      observer = new MutationObserver(() => {
+        calculateTotalPrice();
+      });
+
       observer.observe(selectedTagsContainer, { childList: true });
-      return () => observer.disconnect();
     }
 
     return () => {
-      if (basicPriceInput) basicPriceInput.removeEventListener('input', handleInputChange);
-      if (taxBaseSelect) taxBaseSelect.removeEventListener('change', handleInputChange);
+      if (basicPriceInput) {
+        basicPriceInput.removeEventListener('input', handleInputChange);
+        basicPriceInput.removeEventListener('change', handleInputChange);
+      }
+
+      if (taxBaseSelect) {
+        taxBaseSelect.removeEventListener('change', handleInputChange);
+      }
+
+      if (observer) observer.disconnect();
     };
-  }, [taxes, idPrefix]);
+  }, [calculateTotalPrice, idPrefix]);
+
+  // Handler for disabling a detail
+  const handleDisableDetail = async (detailId) => {
+    try {
+      const result = await Swal.fire({
+        title: "Disable Detail",
+        text: "Are you sure you want to permanently disable this detail? This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, disable it!",
+        cancelButtonText: "Cancel",
+      });
+
+      if (!result.isConfirmed) return;
+
+      console.log("[v0] Disabling detail:", detailId);
+      setIsDisablingDetail(true);
+
+      const response = await priceListApi.disablePriceListDetail(detailId);
+      console.log("[v0] Disable detail response:", response);
+
+      // Update the UI by refreshing the price list data
+      if (response?.data) {
+        setExistingPriceList((prev) => ({
+          ...prev,
+          details: prev.details.map((detail) =>
+            detail._id === detailId
+              ? { ...detail, isDisabled: true }
+              : detail
+          ),
+        }));
+      }
+
+      // Show success message
+      Swal.fire({
+        icon: "success",
+        title: "Disabled!",
+        text: "Detail has been disabled successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("[v0] Error disabling detail:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to disable detail: " + (error.response?.data?.message || error.message),
+      });
+    } finally {
+      setIsDisablingDetail(false);
+    }
+  };
 
   // Handler for partners select change
   const handlePartnerChange = (e) => {
@@ -466,20 +572,25 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   // Handle form submission - Create or Add Detail
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setIsSubmitting(true);
 
       // Get all detail form values
       const basicPrice = document.getElementById('new-basic-price')?.value;
       const passengerType = document.getElementById('new-passenger-type')?.value;
+      const ticketType = document.getElementById('new-ticket-type')?.value;
       const cabin = document.getElementById('new-cabin')?.value;
       const originPort = document.getElementById('new-origin-port')?.value;
       const destinationPort = document.getElementById('new-destination-port')?.value;
+      const visaType = document.getElementById('new-visa-type')?.value;
       const taxForm = document.getElementById('new-tax-form')?.value;
+      const allowedPieces = document.getElementById('new-allowed-pieces')?.value;
+      const allowedWeight = document.getElementById('new-allowed-weight')?.value;
+      const excessPrice = document.getElementById('new-excess-price')?.value;
 
       // Get selected taxes from tags
-      const selectedTagsContainer = document.querySelector('.selected-tags');
+      const selectedTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
       const selectedTaxIds = [];
       if (selectedTagsContainer) {
         const tags = selectedTagsContainer.querySelectorAll('.tag');
@@ -489,6 +600,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           if (taxId) selectedTaxIds.push(taxId);
         });
       }
+      console.log("[v0] Selected tax IDs for submission:", selectedTaxIds);
 
       // Validate required detail fields
       if (!basicPrice || !passengerType || !cabin || !originPort || !destinationPort) {
@@ -505,18 +617,20 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       if (isEditMode && priceListId) {
         const detailPayload = {
           passengerType,
-          ticketType: 'one_way',
+          ticketType: ticketType || 'one_way',
           cabin,
           originPort,
           destinationPort,
-          visaType: 'Tourist',
+          visaType: visaType || 'Tourist',
           basicPrice: parseFloat(basicPrice),
           taxIds: selectedTaxIds,
           taxForm: taxForm || 'refundable',
-          allowedLuggagePieces: 1,
-          allowedLuggageWeight: 20,
-          excessLuggagePricePerKg: 2.5,
+          allowedLuggagePieces: parseInt(allowedPieces) || 1,
+          allowedLuggageWeight: parseInt(allowedWeight) || 20,
+          excessLuggagePricePerKg: parseFloat(excessPrice) || 2.5,
         };
+
+        console.log("[v0] Submitting edit mode detail payload:", detailPayload);
 
         const response = await priceListApi.addPriceListDetail(priceListId, detailPayload);
 
@@ -534,11 +648,11 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                 setExistingPriceList(updatedResponse.data);
                 // Clear form fields for adding another detail
                 document.getElementById('new-passenger-type').value = '';
-                document.getElementById('new-ticket-type').value = 'One Way';
+                document.getElementById('new-ticket-type').value = '';
                 document.getElementById('new-cabin').value = '';
                 document.getElementById('new-origin-port').value = '';
                 document.getElementById('new-destination-port').value = '';
-                document.getElementById('new-visa-type').value = 'Tourist';
+                document.getElementById('new-visa-type').value = '';
                 document.getElementById('new-basic-price').value = '';
                 document.getElementById('new-total-price').value = '';
                 document.getElementById('new-allowed-pieces').value = '';
@@ -546,9 +660,9 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                 document.getElementById('new-excess-price').value = '';
                 document.getElementById('new-tax-form').value = 'refundable';
                 // Clear tax tags
-                const selectedTagsContainer = document.querySelector('.selected-tags');
-                if (selectedTagsContainer) {
-                  selectedTagsContainer.innerHTML = '';
+                const selectedTaxTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
+                if (selectedTaxTagsContainer) {
+                  selectedTaxTagsContainer.innerHTML = '';
                 }
               }
             };
@@ -604,19 +718,21 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           },
           detail: {
             passengerType,
-            ticketType: 'one_way',
+            ticketType: ticketType || 'one_way',
             cabin,
             originPort,
             destinationPort,
-            visaType: 'Tourist',
+            visaType: visaType || 'Tourist',
             basicPrice: parseFloat(basicPrice),
             taxIds: selectedTaxIds,
             taxForm: taxForm || 'refundable',
-            allowedLuggagePieces: 1,
-            allowedLuggageWeight: 20,
-            excessLuggagePricePerKg: 2.5,
+            allowedLuggagePieces: parseInt(allowedPieces) || 1,
+            allowedLuggageWeight: parseInt(allowedWeight) || 20,
+            excessLuggagePricePerKg: parseFloat(excessPrice) || 2.5,
           },
         };
+
+        console.log("[v0] Create mode payload:", payload);
 
         const response = await priceListApi.createPriceList(payload);
 
@@ -649,19 +765,38 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   };
 
   // helper to render the price-details table rows exactly like HTML's sample
+  const isLoading = currenciesLoading || payloadTypesLoading || cabinsLoading || portsLoading || taxesLoading || priceListLoading || isDisablingDetail;
+
   return (
     <div ref={rootRef}>
-      <button
-        className="mb-4 btn btn-turquoise"
-        onClick={(e) => {
-          e.preventDefault();
-          onBack && onBack();
-        }}
-      >
-        &larr; Back to List
-      </button>
+      {isLoading && (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+          <CirclesWithBar
+            height="100"
+            width="100"
+            color="#05468f"
+            outerCircleColor="#05468f"
+            innerCircleColor="#05468f"
+            barColor="#05468f"
+            ariaLabel="circles-with-bar-loading"
+            visible={true}
+          />
+        </div>
+      )}
 
-      <form className="vstack gap-4" onSubmit={handleSubmit}>
+      {!isLoading && (
+        <>
+          <button
+            className="mb-4 btn btn-turquoise"
+            onClick={(e) => {
+              e.preventDefault();
+              onBack && onBack();
+            }}
+          >
+            &larr; Back to List
+          </button>
+
+          <form className="vstack gap-4" onSubmit={handleSubmit}>
         {isEditMode && priceListLoading && (
           <div className="alert alert-info">Loading price list details...</div>
         )}
@@ -721,7 +856,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                 <label className="form-label">Tax Base</label>
                 <select id={`${idPrefix}-tax-base`} className="form-select">
                   <option value="fare_only">Fare Only</option>
-                  <option value="fare_and_taxes">Fare & Taxes</option>
+                  <option value="fare_plus_tax">Fare & Taxes</option>
                 </select>
               </div>
               <div className="col-md-6 col-lg-3">
@@ -737,8 +872,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
               </div>
               <div className="col-md-6 col-lg-3">
                 <label className="form-label">Partners</label>
-                <select 
-                  id={`${idPrefix}-partners`} 
+                <select
+                  id={`${idPrefix}-partners`}
                   className="form-select"
                   onChange={(e) => {
                     const option = e.target.options[e.target.selectedIndex];
@@ -750,7 +885,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       tag.setAttribute('data-id', option.value);
                       tag.innerHTML = `<span>${option.text}</span><button type="button" data-id="${option.value}">&times;</button>`;
                       partnersContainer.appendChild(tag);
-                      
+
                       const btn = tag.querySelector('button');
                       btn.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -760,7 +895,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                         });
                         tag.remove();
                       });
-                      
+
                       // Reset dropdown
                       e.target.selectedIndex = 0;
                     }
@@ -800,6 +935,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                   <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Pieces)</th>
                   <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Weight)</th>
                   <th scope="col" className="px-2 py-3 text-start fw-semibold">Excess Luggage Price (kg)</th>
+                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Status</th>
+                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="table-group-divider">
@@ -807,14 +944,14 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                 {isEditMode && existingPriceList?.details && existingPriceList.details.length > 0 && (
                   existingPriceList.details.map((detail) => {
                     // passengerType can be either an object with name property or just an ID string
-                    const passengerTypeName = typeof detail.passengerType === 'object' 
-                      ? detail.passengerType?.name 
+                    const passengerTypeName = typeof detail.passengerType === 'object'
+                      ? detail.passengerType?.name
                       : payloadTypes.find(pt => pt._id === detail.passengerType)?.name || detail.passengerType;
                     // taxIds contains full tax objects with name field
                     const taxNames = detail.taxIds?.map(tax => tax?.name || 'N/A').join(', ') || 'N/A';
-                    
+
                     return (
-                      <tr key={detail._id} className="table-secondary">
+                      <tr key={detail._id}>
                         <td className="px-2 py-4 text-nowrap">{passengerTypeName}</td>
                         <td className="px-2 py-4 text-nowrap">{detail.ticketType || 'N/A'}</td>
                         <td className="px-2 py-4 text-nowrap">{detail.cabin?.name || 'N/A'}</td>
@@ -828,6 +965,23 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                         <td className="px-2 py-4 text-nowrap">{detail.allowedLuggagePieces || 'N/A'}</td>
                         <td className="px-2 py-4 text-nowrap">{detail.allowedLuggageWeight || 'N/A'}</td>
                         <td className="px-2 py-4 text-nowrap">{detail.excessLuggagePricePerKg || 'N/A'}</td>
+                        <td className="px-2 py-4 text-nowrap">
+                          <span className={`badge ${detail.isDisabled ? 'bg-danger' : 'bg-success'}`}>
+                            {detail.isDisabled ? 'Disabled' : 'Active'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-4">
+                          {!detail.isDisabled && (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDisableDetail(detail._id)}
+                              title="Disable this detail permanently"
+                            >
+                              Disable
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })
@@ -848,7 +1002,10 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
 
                   <td className="px-2 py-4">
                     <select id="new-ticket-type" className="form-select w-100 rounded-2 p-1">
-                      <option>One Way</option><option>Return</option>
+                      <option value="">Select Ticket Type</option>
+                      <option value="one_way">One Way</option>
+                      <option value="round_trip">Round Trip</option>
+                      <option value="return">Return</option>
                     </select>
                   </td>
 
@@ -896,15 +1053,58 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                   </td>
 
                   <td className="px-2 py-4">
-                    <select className="select-with-tags form-select rounded-2 p-1 h-24" style={{ width: 150 }} disabled={taxesLoading}>
-                      <option selected disabled>Select Tax</option>
+                    <select
+                      id={`${idPrefix}-tax-select`}
+                      className="select-with-tags form-select rounded-2 p-1 h-24"
+                      style={{ width: 150 }}
+                      disabled={taxesLoading}
+                      onChange={(e) => {
+                        const selectedValue = e.target.value;
+                        if (!selectedValue) return;
+
+                        // Get the selected option text
+                        const selectedOption = e.target.options[e.target.selectedIndex];
+                        const selectedText = selectedOption.text;
+
+                        // Check if tax already added
+                        const taxTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
+                        const existingTags = taxTagsContainer.querySelectorAll('.tag');
+                        const isDuplicate = Array.from(existingTags).some(tag =>
+                          tag.querySelector('button')?.getAttribute('data-value') === selectedValue
+                        );
+
+                        if (isDuplicate) {
+                          console.log("[v0] Tax already added:", selectedText);
+                          e.target.selectedIndex = 0;
+                          return;
+                        }
+
+                        // Add selected tax as tag
+                        const tag = document.createElement('div');
+                        tag.className = 'tag';
+                        tag.setAttribute('data-value', selectedValue);
+                        tag.innerHTML = `<span>${selectedText}</span><button type="button" data-value="${selectedValue}">&times;</button>`;
+                        taxTagsContainer.appendChild(tag);
+
+                        const btn = tag.querySelector('button');
+                        btn.addEventListener('click', (e) => {
+                          e.preventDefault();
+                          tag.remove();
+                          calculateTotalPrice();
+                        });
+
+                        // Reset dropdown
+                        e.target.selectedIndex = 0;
+                      }}
+                    >
+                      <option value="">Select Tax</option>
                       {taxes.map((tax) => (
                         <option key={tax._id} value={tax._id}>
                           {tax.name}
                         </option>
                       ))}
                     </select>
-                    <div className="selected-tags"></div>
+                    <div id={`${idPrefix}-tax-tags`} className="selected-tags"></div>
                   </td>
 
                   <td>
@@ -915,7 +1115,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                   </td>
 
                   <td className="px-2 py-4">
-                    <input type="number" step="0.01" id="new-total-price" className="form-control w-100 rounded-2 p-1" />
+                    <input type="number" step="0.01" id="new-total-price" className="form-control w-100 rounded-2 p-1" readOnly />
                   </td>
 
                   <td className="px-2 py-4">
@@ -942,6 +1142,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           </button>
         </div>
       </form>
+        </>
+      )}
     </div>
   );
 }

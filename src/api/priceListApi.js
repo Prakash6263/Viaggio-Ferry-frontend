@@ -170,4 +170,33 @@ export const priceListApi = {
       throw error
     }
   },
+
+  // Disable a price list detail
+  disablePriceListDetail: async (detailId) => {
+    try {
+      const token = localStorage.getItem("authToken")
+
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      const response = await apiFetch(`/api/price-lists/details/${detailId}/disable`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to disable price list detail")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Disable Price List Detail Error:", error.message)
+      throw error
+    }
+  },
 }

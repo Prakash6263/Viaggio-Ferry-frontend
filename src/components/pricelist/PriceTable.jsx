@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { priceListApi } from "../../api/priceListApi";
+import { CirclesWithBar } from "react-loader-spinner";
 
 /**
  * PriceTable - fetches and displays price lists from API
@@ -66,7 +67,20 @@ export default function PriceTable({ category = "passenger", onRowClick, refresh
   };
 
   if (loading) {
-    return <div className="text-center py-4">Loading price lists...</div>;
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+        <CirclesWithBar
+          height="100"
+          width="100"
+          color="#05468f"
+          outerCircleColor="#05468f"
+          innerCircleColor="#05468f"
+          barColor="#05468f"
+          ariaLabel="circles-with-bar-loading"
+          visible={true}
+        />
+      </div>
+    );
   }
 
   if (error) {
