@@ -44,4 +44,9 @@ export const partnerApi = {
   getPartnersByType: async (type) => {
     return apiRequest(`/api/partners?type=${type}`)
   },
+
+  // 7. Get marine partners
+  getMarinePartners: async (page = 1, limit = 10) => {
+    return apiRequest(`/api/partners/layer/Marine?status=Active&page=${page}&limit=${limit}`)
+  },
 }
