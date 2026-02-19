@@ -8,6 +8,7 @@ import { taxApi } from "../../api/taxApi";
 import { priceListApi } from "../../api/priceListApi";
 import Swal from "sweetalert2";
 import { CirclesWithBar } from "react-loader-spinner";
+import CanDisable from "../CanDisable";
 
 /**
  * PriceDetailsForm
@@ -972,14 +973,16 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                         </td>
                         <td className="px-2 py-4">
                           {!detail.isDisabled && (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleDisableDetail(detail._id)}
-                              title="Disable this detail permanently"
-                            >
-                              Disable
-                            </button>
+                            <CanDisable action="update" path="/company/pricing/pricelist">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDisableDetail(detail._id)}
+                                title="Disable this detail permanently"
+                              >
+                                Disable
+                              </button>
+                            </CanDisable>
                           )}
                         </td>
                       </tr>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { priceListApi } from "../../api/priceListApi";
 import { CirclesWithBar } from "react-loader-spinner";
+import Can from "../Can";
 
 /**
  * PriceTable - fetches and displays price lists from API
@@ -101,16 +102,17 @@ export default function PriceTable({ category = "passenger", onRowClick, refresh
         <tbody className="table-group-divider">
           {data.length > 0 ? (
             data.map((r) => (
-              <tr
-                key={r._id}
-                className="cursor-pointer"
-                onClick={() => onRowClick && onRowClick(r)}
-              >
-                <td className="px-4 py-4 text-nowrap">{r.priceListName}</td>
-                <td className="px-4 py-4 text-nowrap">{formatDateTime(r.effectiveDateTime)}</td>
-                <td className="px-4 py-4 text-nowrap">{formatTaxBase(r.taxBase)}</td>
-                <td className="px-4 py-4 text-nowrap">{getCurrencyCode(r.currency)}</td>
-              </tr>
+              <Can key={r._id} action="update" path="/company/pricing/pricelist">
+                <tr
+                  className="cursor-pointer"
+                  onClick={() => onRowClick && onRowClick(r)}
+                >
+                  <td className="px-4 py-4 text-nowrap">{r.priceListName}</td>
+                  <td className="px-4 py-4 text-nowrap">{formatDateTime(r.effectiveDateTime)}</td>
+                  <td className="px-4 py-4 text-nowrap">{formatTaxBase(r.taxBase)}</td>
+                  <td className="px-4 py-4 text-nowrap">{getCurrencyCode(r.currency)}</td>
+                </tr>
+              </Can>
             ))
           ) : (
             <tr>

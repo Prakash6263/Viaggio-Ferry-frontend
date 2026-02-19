@@ -51,7 +51,7 @@ export default function PriceListPage() {
     // list view
     return (
       <div id={listViewId} className="list-view">
-        <Can action="create">
+        <Can action="create" path="/company/pricing/pricelist">
           <button className={tab === "passenger" ? "mb-4 btn btn-success fw-medium" : "mb-4 btn btn-turquoise fw-medium"}
                   onClick={() => showDetails(tab)}>
             Add New Price List
@@ -73,18 +73,20 @@ export default function PriceListPage() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="content container-fluid">
-          <div className="page-header">
-            <div className="content-page-header">
-              <h5>Price List</h5>
+        {/* READ permission gate - hide entire page if no read access */}
+        <Can action="read">
+          <div className="content container-fluid">
+            <div className="page-header">
+              <div className="content-page-header">
+                <h5>Price List</h5>
+              </div>
             </div>
-          </div>
 
-          <div className="row">
-            <div className="col-sm-12">
-              <div className="card-table card p-3">
-                <div className="card-body">
-                  <ul className="nav nav-tabs mb-4" role="tablist">
+            <div className="row">
+              <div className="col-sm-12">
+                <div className="card-table card p-3">
+                  <div className="card-body">
+                    <ul className="nav nav-tabs mb-4" role="tablist">
                     <li className="nav-item" role="presentation">
                       <button
                         id="passenger-tab-btn"
@@ -151,11 +153,11 @@ export default function PriceListPage() {
                   </div>
 
                 </div>
+                </div>
               </div>
             </div>
           </div>
-
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );
