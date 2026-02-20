@@ -38,6 +38,12 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   const [priceListLoading, setPriceListLoading] = useState(false);
   const [isDisablingDetail, setIsDisablingDetail] = useState(false);
 
+  // State for price calculation (replaces DOM manipulation)
+  const [basicPrice, setBasicPrice] = useState(0);
+  const [selectedTaxIds, setSelectedTaxIds] = useState([]);
+  const [currentTaxBase, setCurrentTaxBase] = useState('fare_only');
+  const [totalPrice, setTotalPrice] = useState(0);
+
   // Load existing price list if in edit mode
   useEffect(() => {
     console.log("[v0] PriceDetailsForm received priceListId:", priceListId);
@@ -291,195 +297,73 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
     fetchTaxes();
   }, []);
 
-  useEffect(() => {
-    // Select-with-tags implementation copied from original page
-    // Works for all selects with class 'select-with-tags' inside this component
-    const selects = rootRef.current ? rootRef.current.querySelectorAll('.select-with-tags') : [];
-    const handlers = [];
+  // Pure calculation function - no DOM manipulation
+  const calculatePrice = useCallback((price, ids, base, allTaxes) => {
+    const numPrice = Number(price);
 
-    selects.forEach((select) => {
-      const selectedContainer = select.nextElementSibling; // div.selected-tags
-      const selectedItems = new Set();
+    // Handle empty price string
+    if (price === '') {
+      return 0;
+    }
 
-      const changeHandler = () => {
-        const value = select.value;
-        if (value && !selectedItems.has(value)) {
-          selectedItems.add(value);
-          // Get the selected option's text to display in the tag
-          const selectedOption = select.options[select.selectedIndex];
-          const displayText = selectedOption?.textContent || value;
-          addTag(value, displayText, selectedContainer, selectedItems);
+    // Block negative values
+    if (numPrice < 0) {
+      return 0;
+    }
+
+    // No taxes selected
+    if (!ids || ids.length === 0) {
+      return Math.round(numPrice * 100) / 100;
+    }
+
+    // Create tax map for lookup preserving order
+    const taxMap = new Map(allTaxes.map(tax => [tax._id, tax]));
+
+    // Build selected taxes array preserving order from ids array
+    const selectedTaxes = ids
+      .map(id => taxMap.get(id))
+      .filter(tax => tax !== undefined);
+
+    if (selectedTaxes.length === 0) {
+      return Math.round(numPrice * 100) / 100;
+    }
+
+    let total = numPrice;
+
+    if (base === 'fare_only') {
+      // Each tax calculated on base price only
+      selectedTaxes.forEach(tax => {
+        const taxType = (tax.type || '').toLowerCase();
+
+        if (taxType === '%' || taxType === 'percentage') {
+          const taxAmount = (numPrice * Number(tax.value)) / 100;
+          total += taxAmount;
+        } else if (taxType === 'fixed') {
+          total += Number(tax.value) || 0;
         }
-        select.selectedIndex = 0; // reset placeholder
-      };
+      });
+    } else if (base === 'fare_plus_tax') {
+      // Each tax calculated on cumulative total (compounding)
+      selectedTaxes.forEach(tax => {
+        const taxType = (tax.type || '').toLowerCase();
 
-      const addTag = (value, displayText, container, itemsSet) => {
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.innerHTML = `<span>${displayText}</span><button type="button" data-value="${value}">&times;</button>`;
-        container.appendChild(tag);
+        if (taxType === '%' || taxType === 'percentage') {
+          const taxAmount = (total * Number(tax.value)) / 100;
+          total += taxAmount;
+        } else if (taxType === 'fixed') {
+          total += Number(tax.value) || 0;
+        }
+      });
+    }
 
-        const btn = tag.querySelector('button');
-        const btnHandler = (e) => {
-          const val = e.target.getAttribute('data-value');
-          itemsSet.delete(val);
-          tag.remove();
-          calculateTotalPrice(); // Recalculate when tax is removed
-        };
-        btn.addEventListener('click', btnHandler);
-        // store cleanup
-        handlers.push(() => btn.removeEventListener('click', btnHandler));
-
-        calculateTotalPrice(); // Calculate when tax is added
-      };
-
-      select.addEventListener('change', changeHandler);
-      handlers.push(() => select.removeEventListener('change', changeHandler));
-    });
-
-    return () => {
-      handlers.forEach((h) => h && h());
-    };
+    return Math.round(total * 100) / 100;
   }, []);
 
-  // Calculate total price based on basic price, selected taxes, and tax base
-  const calculateTotalPrice = useCallback(() => {
-    const basicPriceInput = document.getElementById('new-basic-price');
-    const totalPriceInput = document.getElementById('new-total-price');
-    const selectedTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
-
-    console.log("[v0] calculateTotalPrice called - elements found:", {
-      basicPriceInput: !!basicPriceInput,
-      totalPriceInput: !!totalPriceInput,
-      selectedTagsContainer: !!selectedTagsContainer
-    });
-
-    if (!basicPriceInput || !totalPriceInput || !selectedTagsContainer) {
-      console.log("[v0] Missing required elements, returning early");
-      return;
-    }
-
-    const basicPrice = parseFloat(basicPriceInput.value) || 0;
-    console.log("[v0] Basic price:", basicPrice);
-
-    // Allow zero price - only block negative
-    if (basicPrice < 0) {
-      totalPriceInput.value = '';
-      return;
-    }
-
-    // Get selected tax IDs from the tags
-    const selectedTags = selectedTagsContainer.querySelectorAll('.tag');
-    const selectedTaxIds = Array.from(selectedTags).map(tag => {
-      const btn = tag.querySelector('button');
-      return btn?.getAttribute('data-value');
-    }).filter(Boolean);
-
-    console.log("[v0] Selected tax IDs:", selectedTaxIds);
-
-    if (selectedTaxIds.length === 0) {
-      totalPriceInput.value = basicPrice.toFixed(2);
-      return;
-    }
-
-    // Get tax base from either edit mode or create mode dropdown
-    let taxBase = 'fare_only';
-    if (isEditMode && existingPriceList?.header?.taxBase) {
-      taxBase = existingPriceList.header.taxBase;
-    } else {
-      const taxBaseSelect = document.getElementById(`${idPrefix}-tax-base`);
-      taxBase = taxBaseSelect?.value || 'fare_only';
-    }
-
-    console.log("[v0] Tax calculation - taxBase:", taxBase, "basicPrice:", basicPrice, "taxes:", selectedTaxIds.length);
-    console.log("[v0] Available taxes in state:", taxes);
-
-    // Get tax details for selected tax IDs - preserving order for compound calculation
-    const selectedTaxDetails = selectedTaxIds
-      .map(id => taxes.find(tax => tax._id === id))
-      .filter(Boolean);
-    console.log("[v0] Selected tax details:", selectedTaxDetails);
-
-    let totalPrice = basicPrice;
-
-    if (taxBase === 'fare_only') {
-      // Fare Only: Each tax calculated on base price only
-      selectedTaxDetails.forEach(tax => {
-        const type = tax.type?.toLowerCase();
-        if (type === '%' || type === 'percentage') {
-          const taxAmount = (basicPrice * tax.value) / 100;
-          totalPrice += taxAmount;
-          totalPrice = Math.round(totalPrice * 100) / 100;
-          console.log("[v0] Fare only - Tax:", tax.name, "Type: %", "Amount:", taxAmount.toFixed(2), "Running total:", totalPrice.toFixed(2));
-        } else if (type === 'fixed') {
-          totalPrice += parseFloat(tax.value) || 0;
-          totalPrice = Math.round(totalPrice * 100) / 100;
-          console.log("[v0] Fare only - Tax:", tax.name, "Type: fixed", "Amount:", tax.value, "Running total:", totalPrice.toFixed(2));
-        }
-      });
-    } else if (taxBase === 'fare_and_taxes' || taxBase === 'fare_plus_tax') {
-      // Fare+Tax: Each tax calculated on cumulative total (compounding)
-      selectedTaxDetails.forEach(tax => {
-        const type = tax.type?.toLowerCase();
-        if (type === '%' || type === 'percentage') {
-          const taxAmount = (totalPrice * tax.value) / 100;
-          totalPrice += taxAmount;
-          totalPrice = Math.round(totalPrice * 100) / 100;
-          console.log("[v0] Fare+Tax - Tax:", tax.name, "Type: %", "Calculated on:", (totalPrice - taxAmount).toFixed(2), "Amount:", taxAmount.toFixed(2), "Running total:", totalPrice.toFixed(2));
-        } else if (type === 'fixed') {
-          totalPrice += parseFloat(tax.value) || 0;
-          totalPrice = Math.round(totalPrice * 100) / 100;
-          console.log("[v0] Fare+Tax - Tax:", tax.name, "Type: fixed", "Amount:", tax.value, "Running total:", totalPrice.toFixed(2));
-        }
-      });
-    }
-
-    console.log("[v0] Final total price:", totalPrice.toFixed(2));
-    totalPriceInput.value = totalPrice.toFixed(2);
-  }, [taxes, idPrefix, isEditMode, existingPriceList]);
-
-  // Attach event listeners for auto-calculation when inputs change
+  // Auto-calculate when basicPrice, selectedTaxIds, or currentTaxBase change
   useEffect(() => {
-    const basicPriceInput = document.getElementById('new-basic-price');
-    const taxBaseSelect = document.getElementById(`${idPrefix}-tax-base`);
-    const selectedTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
-
-    const handleInputChange = () => {
-      calculateTotalPrice();
-    };
-
-    if (basicPriceInput) {
-      basicPriceInput.addEventListener('input', handleInputChange);
-      basicPriceInput.addEventListener('change', handleInputChange);
-    }
-
-    if (taxBaseSelect) {
-      taxBaseSelect.addEventListener('change', handleInputChange);
-    }
-
-    let observer;
-
-    if (selectedTagsContainer) {
-      observer = new MutationObserver(() => {
-        calculateTotalPrice();
-      });
-
-      observer.observe(selectedTagsContainer, { childList: true });
-    }
-
-    return () => {
-      if (basicPriceInput) {
-        basicPriceInput.removeEventListener('input', handleInputChange);
-        basicPriceInput.removeEventListener('change', handleInputChange);
-      }
-
-      if (taxBaseSelect) {
-        taxBaseSelect.removeEventListener('change', handleInputChange);
-      }
-
-      if (observer) observer.disconnect();
-    };
-  }, [calculateTotalPrice, idPrefix]);
+    const calculated = calculatePrice(basicPrice, selectedTaxIds, currentTaxBase, taxes);
+    setTotalPrice(calculated);
+  }, [basicPrice, selectedTaxIds, currentTaxBase, taxes, calculatePrice]);
 
   // Handler for disabling a detail
   const handleDisableDetail = async (detailId) => {
@@ -578,7 +462,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       setIsSubmitting(true);
 
       // Get all detail form values
-      const basicPrice = document.getElementById('new-basic-price')?.value;
+      const basicPriceVal = basicPrice;
       const passengerType = document.getElementById('new-passenger-type')?.value;
       const ticketType = document.getElementById('new-ticket-type')?.value;
       const cabin = document.getElementById('new-cabin')?.value;
@@ -590,25 +474,16 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       const allowedWeight = document.getElementById('new-allowed-weight')?.value;
       const excessPrice = document.getElementById('new-excess-price')?.value;
 
-      // Get selected taxes from tags
-      const selectedTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
-      const selectedTaxIds = [];
-      if (selectedTagsContainer) {
-        const tags = selectedTagsContainer.querySelectorAll('.tag');
-        tags.forEach(tag => {
-          const btn = tag.querySelector('button');
-          const taxId = btn?.getAttribute('data-value');
-          if (taxId) selectedTaxIds.push(taxId);
-        });
-      }
+      // Get selected taxes from state (not from DOM)
+      const selectedTaxIdsList = selectedTaxIds;
       console.log("[v0] Selected tax IDs for submission:", selectedTaxIds);
 
       // Validate required detail fields
-      if (!basicPrice || !passengerType || !cabin || !originPort || !destinationPort) {
+      if (basicPriceVal === '' || basicPriceVal === null || basicPriceVal < 0 || !passengerType || !cabin || !originPort || !destinationPort) {
         Swal.fire({
           icon: 'warning',
           title: 'Missing Fields',
-          text: 'Please fill in all required detail fields.',
+          text: 'Please fill in all required detail fields and ensure price is not negative.',
         });
         setIsSubmitting(false);
         return;
@@ -623,8 +498,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           originPort,
           destinationPort,
           visaType: visaType || 'Tourist',
-          basicPrice: parseFloat(basicPrice),
-          taxIds: selectedTaxIds,
+          basicPrice: parseFloat(basicPriceVal),
+          taxIds: selectedTaxIdsList,
           taxForm: taxForm || 'refundable',
           allowedLuggagePieces: parseInt(allowedPieces) || 1,
           allowedLuggageWeight: parseInt(allowedWeight) || 20,
@@ -654,12 +529,15 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                 document.getElementById('new-origin-port').value = '';
                 document.getElementById('new-destination-port').value = '';
                 document.getElementById('new-visa-type').value = '';
-                document.getElementById('new-basic-price').value = '';
-                document.getElementById('new-total-price').value = '';
                 document.getElementById('new-allowed-pieces').value = '';
                 document.getElementById('new-allowed-weight').value = '';
                 document.getElementById('new-excess-price').value = '';
                 document.getElementById('new-tax-form').value = 'refundable';
+                // Reset state
+                setBasicPrice(0);
+                setSelectedTaxIds([]);
+                setCurrentTaxBase('fare_only');
+                setTotalPrice(0);
                 // Clear tax tags
                 const selectedTaxTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
                 if (selectedTaxTagsContainer) {
@@ -724,8 +602,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
             originPort,
             destinationPort,
             visaType: visaType || 'Tourist',
-            basicPrice: parseFloat(basicPrice),
-            taxIds: selectedTaxIds,
+            basicPrice: parseFloat(basicPriceVal),
+            taxIds: selectedTaxIdsList,
             taxForm: taxForm || 'refundable',
             allowedLuggagePieces: parseInt(allowedPieces) || 1,
             allowedLuggageWeight: parseInt(allowedWeight) || 20,
@@ -798,353 +676,370 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
           </button>
 
           <form className="vstack gap-4" onSubmit={handleSubmit}>
-        {isEditMode && priceListLoading && (
-          <div className="alert alert-info">Loading price list details...</div>
-        )}
+            {isEditMode && priceListLoading && (
+              <div className="alert alert-info">Loading price list details...</div>
+            )}
 
-        {isEditMode && !priceListLoading && existingPriceList && (
-          <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="fw-bold mb-0">Price List Header (Read-Only)</h5>
-              <button type="button" className="btn btn-sm btn-secondary">
-                ✎ Edit Header
-              </button>
-            </div>
-            <div className="row g-4 mb-4">
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Price List Name</label>
-                <input type="text" className="form-control" value={existingPriceList.header?.priceListName || ''} disabled />
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Effective Date & Time</label>
-                <input type="text" className="form-control" value={existingPriceList.header?.effectiveDateTime ? new Date(existingPriceList.header.effectiveDateTime).toLocaleString() : ''} disabled />
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Tax Base</label>
-                <input type="text" className="form-control" value={existingPriceList.header?.taxBase === 'fare_only' ? 'Fare Only' : 'Fare & Taxes'} disabled />
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Currency</label>
-                <input type="text" className="form-control" value={existingPriceList.header?.currency?.currencyCode || ''} disabled />
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Partners</label>
-                <input type="text" className="form-control" value={existingPriceList.header?.partners?.map(p => p.name).join(', ') || 'None'} disabled />
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Status</label>
-                <input type="text" className="form-control" value={existingPriceList.header?.status || ''} disabled />
-              </div>
-            </div>
+            {isEditMode && !priceListLoading && existingPriceList && (
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <h5 className="fw-bold mb-0">Price List Header (Read-Only)</h5>
+                  <button type="button" className="btn btn-sm btn-secondary">
+                    ✎ Edit Header
+                  </button>
+                </div>
+                <div className="row g-4 mb-4">
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Price List Name</label>
+                    <input type="text" className="form-control" value={existingPriceList.header?.priceListName || ''} disabled />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Effective Date & Time</label>
+                    <input type="text" className="form-control" value={existingPriceList.header?.effectiveDateTime ? new Date(existingPriceList.header.effectiveDateTime).toLocaleString() : ''} disabled />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Tax Base</label>
+                    <input type="text" className="form-control" value={existingPriceList.header?.taxBase === 'fare_only' ? 'Fare Only' : 'Fare & Taxes'} disabled />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Currency</label>
+                    <input type="text" className="form-control" value={existingPriceList.header?.currency?.currencyCode || ''} disabled />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Partners</label>
+                    <input type="text" className="form-control" value={existingPriceList.header?.partners?.map(p => p.name).join(', ') || 'None'} disabled />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Status</label>
+                    <input type="text" className="form-control" value={existingPriceList.header?.status || ''} disabled />
+                  </div>
+                </div>
 
-            <hr />
-          </div>
-        )}
-
-        {!isEditMode && (
-          <div>
-            <h5 className="fw-bold mb-4">Price List Header</h5>
-            <div className="row g-4 mb-4">
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Price List Name</label>
-                <input type="text" id={`${idPrefix}-name`} className="form-control" placeholder="Enter price list name" />
+                <hr />
               </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Effective Date & Time</label>
-                <input type="datetime-local" id={`${idPrefix}-effective-date`} className="form-control" />
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Tax Base</label>
-                <select id={`${idPrefix}-tax-base`} className="form-select">
-                  <option value="fare_only">Fare Only</option>
-                  <option value="fare_plus_tax">Fare & Taxes</option>
-                </select>
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Currency</label>
-                <select id={`${idPrefix}-currency`} className="form-select">
-                  <option value="">Select Currency</option>
-                  {currencies.map((currency) => (
-                    <option key={currency._id} value={currency._id}>
-                      {currency.currencyCode}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6 col-lg-3">
-                <label className="form-label">Partners</label>
-                <select
-                  id={`${idPrefix}-partners`}
-                  className="form-select"
-                  onChange={(e) => {
-                    const option = e.target.options[e.target.selectedIndex];
-                    if (option.value) {
-                      // Add selected partner as tag
-                      const partnersContainer = document.getElementById(`${idPrefix}-partners-tags`);
-                      const tag = document.createElement('div');
-                      tag.className = 'tag';
-                      tag.setAttribute('data-id', option.value);
-                      tag.innerHTML = `<span>${option.text}</span><button type="button" data-id="${option.value}">&times;</button>`;
-                      partnersContainer.appendChild(tag);
+            )}
 
-                      const btn = tag.querySelector('button');
-                      btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const select = document.getElementById(`${idPrefix}-partners`);
-                        Array.from(select.options).forEach(opt => {
-                          if (opt.value === option.value) opt.selected = false;
-                        });
-                        tag.remove();
-                      });
-
-                      // Reset dropdown
-                      e.target.selectedIndex = 0;
-                    }
-                  }}
-                >
-                  <option value="">Select Marine Partners</option>
-                  {marinePartners.map((partner) => (
-                    <option key={partner._id} value={partner._id}>
-                      {partner.name}
-                    </option>
-                  ))}
-                </select>
-                <div id={`${idPrefix}-partners-tags`} className="selected-tags mt-2"></div>
-              </div>
-            </div>
-            <hr />
-          </div>
-        )}
-
-        {/* Detail Form Section - shown in both create and edit modes */}
-        <div className="card p-2 rounded-3 shadow-sm">
-          <h3 className="mb-4">Price List Details</h3>
-          <div className="table-responsive">
-            <table className="table table-striped mb-0">
-              <thead>
-                <tr>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Passenger Type</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Ticket Type</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Cabin</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Origin Port</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Destination Port</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Visa Type</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Basic Price</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Taxes</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Tax Form</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Total Price</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Pieces)</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Weight)</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Excess Luggage Price (kg)</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Status</th>
-                  <th scope="col" className="px-2 py-3 text-start fw-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="table-group-divider">
-                {/* Show existing details in edit mode */}
-                {isEditMode && existingPriceList?.details && existingPriceList.details.length > 0 && (
-                  existingPriceList.details.map((detail) => {
-                    // passengerType can be either an object with name property or just an ID string
-                    const passengerTypeName = typeof detail.passengerType === 'object'
-                      ? detail.passengerType?.name
-                      : payloadTypes.find(pt => pt._id === detail.passengerType)?.name || detail.passengerType;
-                    // taxIds contains full tax objects with name field
-                    const taxNames = detail.taxIds?.map(tax => tax?.name || 'N/A').join(', ') || 'N/A';
-
-                    return (
-                      <tr key={detail._id}>
-                        <td className="px-2 py-4 text-nowrap">{passengerTypeName}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.ticketType || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.cabin?.name || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.originPort?.name || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.destinationPort?.name || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.visaType || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.basicPrice || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{taxNames}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.taxForm || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.totalPrice || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.allowedLuggagePieces || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.allowedLuggageWeight || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">{detail.excessLuggagePricePerKg || 'N/A'}</td>
-                        <td className="px-2 py-4 text-nowrap">
-                          <span className={`badge ${detail.isDisabled ? 'bg-danger' : 'bg-success'}`}>
-                            {detail.isDisabled ? 'Disabled' : 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-2 py-4">
-                          {!detail.isDisabled && (
-                            <CanDisable action="update" path="/company/pricing/pricelist">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDisableDetail(detail._id)}
-                                title="Disable this detail permanently"
-                              >
-                                Disable
-                              </button>
-                            </CanDisable>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-
-                {/* editable row for adding new detail */}
-                <tr>
-                  <td className="px-2 py-4">
-                    <select id="new-passenger-type" className="form-select w-100 rounded-2 p-1">
-                      <option value="">Select {idPrefix === 'passenger' ? 'Passenger' : idPrefix === 'vehicle' ? 'Vehicle' : 'Cargo'} Type</option>
-                      {payloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType._id}>
-                          {payloadType.name}
+            {!isEditMode && (
+              <div>
+                <h5 className="fw-bold mb-4">Price List Header</h5>
+                <div className="row g-4 mb-4">
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Price List Name</label>
+                    <input type="text" id={`${idPrefix}-name`} className="form-control" placeholder="Enter price list name" />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Effective Date & Time</label>
+                    <input type="datetime-local" id={`${idPrefix}-effective-date`} className="form-control" />
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Tax Base</label>
+                    <select 
+                      id={`${idPrefix}-tax-base`} 
+                      className="form-select"
+                      value={currentTaxBase}
+                      onChange={(e) => setCurrentTaxBase(e.target.value)}
+                    >
+                      <option value="fare_only">Fare Only</option>
+                      <option value="fare_plus_tax">Fare & Taxes</option>
+                    </select>
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Currency</label>
+                    <select id={`${idPrefix}-currency`} className="form-select">
+                      <option value="">Select Currency</option>
+                      {currencies.map((currency) => (
+                        <option key={currency._id} value={currency._id}>
+                          {currency.currencyCode}
                         </option>
                       ))}
                     </select>
-                  </td>
-
-                  <td className="px-2 py-4">
-                    <select id="new-ticket-type" className="form-select w-100 rounded-2 p-1">
-                      <option value="">Select Ticket Type</option>
-                      <option value="one_way">One Way</option>
-                      <option value="round_trip">Round Trip</option>
-                      <option value="return">Return</option>
-                    </select>
-                  </td>
-
-                  <td className="px-2 py-4">
-                    <select id="new-cabin" className="form-select w-100 rounded-2 p-1" disabled={cabinsLoading}>
-                      <option value="">Select Cabin</option>
-                      {cabins.map((cabin) => (
-                        <option key={cabin._id} value={cabin._id}>
-                          {cabin.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="px-2 py-4">
-                    <select id="new-origin-port" className="form-select w-100 rounded-2 p-1" disabled={portsLoading}>
-                      <option value="">Select Origin Port</option>
-                      {ports.map((port) => (
-                        <option key={port._id} value={port._id}>
-                          {port.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="px-2 py-4">
-                    <select id="new-destination-port" className="form-select w-100 rounded-2 p-1" disabled={portsLoading}>
-                      <option value="">Select Destination Port</option>
-                      {ports.map((port) => (
-                        <option key={port._id} value={port._id}>
-                          {port.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="px-2 py-4">
-                    <select id="new-visa-type" className="form-select w-100 rounded-2 p-1">
-                      <option>Tourist</option><option>Business</option><option>Student</option><option>N/A</option>
-                    </select>
-                  </td>
-
-                  <td className="px-2 py-4">
-                    <input type="number" step="0.01" id="new-basic-price" className="form-control w-100 rounded-2 p-1" />
-                  </td>
-
-                  <td className="px-2 py-4">
+                  </div>
+                  <div className="col-md-6 col-lg-3">
+                    <label className="form-label">Partners</label>
                     <select
-                      id={`${idPrefix}-tax-select`}
-                      className="select-with-tags form-select rounded-2 p-1 h-24"
-                      style={{ width: 150 }}
-                      disabled={taxesLoading}
+                      id={`${idPrefix}-partners`}
+                      className="form-select"
                       onChange={(e) => {
-                        const selectedValue = e.target.value;
-                        if (!selectedValue) return;
+                        const option = e.target.options[e.target.selectedIndex];
+                        if (option.value) {
+                          // Add selected partner as tag
+                          const partnersContainer = document.getElementById(`${idPrefix}-partners-tags`);
+                          const tag = document.createElement('div');
+                          tag.className = 'tag';
+                          tag.setAttribute('data-id', option.value);
+                          tag.innerHTML = `<span>${option.text}</span><button type="button" data-id="${option.value}">&times;</button>`;
+                          partnersContainer.appendChild(tag);
 
-                        // Get the selected option text
-                        const selectedOption = e.target.options[e.target.selectedIndex];
-                        const selectedText = selectedOption.text;
+                          const btn = tag.querySelector('button');
+                          btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const select = document.getElementById(`${idPrefix}-partners`);
+                            Array.from(select.options).forEach(opt => {
+                              if (opt.value === option.value) opt.selected = false;
+                            });
+                            tag.remove();
+                          });
 
-                        // Check if tax already added
-                        const taxTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
-                        const existingTags = taxTagsContainer.querySelectorAll('.tag');
-                        const isDuplicate = Array.from(existingTags).some(tag =>
-                          tag.querySelector('button')?.getAttribute('data-value') === selectedValue
-                        );
-
-                        if (isDuplicate) {
-                          console.log("[v0] Tax already added:", selectedText);
+                          // Reset dropdown
                           e.target.selectedIndex = 0;
-                          return;
                         }
-
-                        // Add selected tax as tag
-                        const tag = document.createElement('div');
-                        tag.className = 'tag';
-                        tag.setAttribute('data-value', selectedValue);
-                        tag.innerHTML = `<span>${selectedText}</span><button type="button" data-value="${selectedValue}">&times;</button>`;
-                        taxTagsContainer.appendChild(tag);
-
-                        const btn = tag.querySelector('button');
-                        btn.addEventListener('click', (e) => {
-                          e.preventDefault();
-                          tag.remove();
-                          calculateTotalPrice();
-                        });
-
-                        // Reset dropdown
-                        e.target.selectedIndex = 0;
                       }}
                     >
-                      <option value="">Select Tax</option>
-                      {taxes.map((tax) => (
-                        <option key={tax._id} value={tax._id}>
-                          {tax.name}
+                      <option value="">Select Marine Partners</option>
+                      {marinePartners.map((partner) => (
+                        <option key={partner._id} value={partner._id}>
+                          {partner.name}
                         </option>
                       ))}
                     </select>
-                    <div id={`${idPrefix}-tax-tags`} className="selected-tags"></div>
-                  </td>
+                    <div id={`${idPrefix}-partners-tags`} className="selected-tags mt-2"></div>
+                  </div>
+                </div>
+                <hr />
+              </div>
+            )}
 
-                  <td>
-                    <select className="form-select" id="new-tax-form" style={{ width: 150 }}>
-                      <option value="refundable">Refundable</option>
-                      <option value="non_refundable">Non Refundable</option>
-                    </select>
-                  </td>
+            {/* Detail Form Section - shown in both create and edit modes */}
+            <div className="card p-2 rounded-3 shadow-sm">
+              <h3 className="mb-4">Price List Details</h3>
+              <div className="table-responsive">
+                <table className="table table-striped mb-0">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Passenger Type</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Ticket Type</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Cabin</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Origin Port</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Destination Port</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Visa Type</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Basic Price</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Taxes</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Tax Form</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Total Price</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Pieces)</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Weight)</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Excess Luggage Price (kg)</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Status</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="table-group-divider">
+                    {/* Show existing details in edit mode */}
+                    {isEditMode && existingPriceList?.details && existingPriceList.details.length > 0 && (
+                      existingPriceList.details.map((detail) => {
+                        // passengerType can be either an object with name property or just an ID string
+                        const passengerTypeName = typeof detail.passengerType === 'object'
+                          ? detail.passengerType?.name
+                          : payloadTypes.find(pt => pt._id === detail.passengerType)?.name || detail.passengerType;
+                        // taxIds contains full tax objects with name field
+                        const taxNames = detail.taxIds?.map(tax => tax?.name || 'N/A').join(', ') || 'N/A';
 
-                  <td className="px-2 py-4">
-                    <input type="number" step="0.01" id="new-total-price" className="form-control w-100 rounded-2 p-1" readOnly />
-                  </td>
+                        return (
+                          <tr key={detail._id}>
+                            <td className="px-2 py-4 text-nowrap">{passengerTypeName}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.ticketType || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.cabin?.name || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.originPort?.name || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.destinationPort?.name || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.visaType || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.basicPrice || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{taxNames}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.taxForm || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.totalPrice || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.allowedLuggagePieces || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.allowedLuggageWeight || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">{detail.excessLuggagePricePerKg || 'N/A'}</td>
+                            <td className="px-2 py-4 text-nowrap">
+                              <span className={`badge ${detail.isDisabled ? 'bg-danger' : 'bg-success'}`}>
+                                {detail.isDisabled ? 'Disabled' : 'Active'}
+                              </span>
+                            </td>
+                            <td className="px-2 py-4">
+                              {!detail.isDisabled && (
+                                <CanDisable action="update" path="/company/pricing/pricelist">
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger"
+                                    onClick={() => handleDisableDetail(detail._id)}
+                                    title="Disable this detail permanently"
+                                  >
+                                    Disable
+                                  </button>
+                                </CanDisable>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
 
-                  <td className="px-2 py-4">
-                    <input type="number" id="new-allowed-pieces" className="form-control w-100 rounded-2 p-1" />
-                  </td>
+                    {/* editable row for adding new detail */}
+                    <tr>
+                      <td className="px-2 py-4">
+                        <select id="new-passenger-type" className="form-select w-100 rounded-2 p-1">
+                          <option value="">Select {idPrefix === 'passenger' ? 'Passenger' : idPrefix === 'vehicle' ? 'Vehicle' : 'Cargo'} Type</option>
+                          {payloadTypes.map((payloadType) => (
+                            <option key={payloadType._id} value={payloadType._id}>
+                              {payloadType.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
 
-                  <td className="px-2 py-4">
-                    <input type="number" step="0.01" id="new-allowed-weight" className="form-control w-100 rounded-2 p-1" />
-                  </td>
+                      <td className="px-2 py-4">
+                        <select id="new-ticket-type" className="form-select w-100 rounded-2 p-1">
+                          <option value="">Select Ticket Type</option>
+                          <option value="one_way">One Way</option>
+                          <option value="round_trip">Round Trip</option>
+                          <option value="return">Return</option>
+                        </select>
+                      </td>
 
-                  <td className="px-2 py-4">
-                    <input type="number" step="0.01" id="new-excess-price" className="form-control w-100 rounded-2 p-1" />
-                  </td>
-                </tr>
+                      <td className="px-2 py-4">
+                        <select id="new-cabin" className="form-select w-100 rounded-2 p-1" disabled={cabinsLoading}>
+                          <option value="">Select Cabin</option>
+                          {cabins.map((cabin) => (
+                            <option key={cabin._id} value={cabin._id}>
+                              {cabin.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
 
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      <td className="px-2 py-4">
+                        <select id="new-origin-port" className="form-select w-100 rounded-2 p-1" disabled={portsLoading}>
+                          <option value="">Select Origin Port</option>
+                          {ports.map((port) => (
+                            <option key={port._id} value={port._id}>
+                              {port.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
 
-        <div className="d-flex justify-content-end">
-          <button type="submit" className="btn btn-turquoise fw-medium" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Details"}
-          </button>
-        </div>
-      </form>
+                      <td className="px-2 py-4">
+                        <select id="new-destination-port" className="form-select w-100 rounded-2 p-1" disabled={portsLoading}>
+                          <option value="">Select Destination Port</option>
+                          {ports.map((port) => (
+                            <option key={port._id} value={port._id}>
+                              {port.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <select id="new-visa-type" className="form-select w-100 rounded-2 p-1">
+                          <option>Tourist</option><option>Business</option><option>Student</option><option>N/A</option>
+                        </select>
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          id="new-basic-price" 
+                          className="form-control w-100 rounded-2 p-1"
+                          value={basicPrice}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setBasicPrice('');
+                            } else {
+                              setBasicPrice(Number(val));
+                            }
+                          }}
+                        />
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <select
+                          id={`${idPrefix}-tax-select`}
+                          className="select-with-tags form-select rounded-2 p-1 h-24"
+                          style={{ width: 150 }}
+                          disabled={taxesLoading}
+                          onChange={(e) => {
+                            const selectedValue = e.target.value;
+                            if (!selectedValue) return;
+
+                            // Immediately update selectedTaxIds state
+                            setSelectedTaxIds(prev =>
+                              prev.includes(selectedValue)
+                                ? prev
+                                : [...prev, selectedValue]
+                            );
+
+                            // Reset dropdown
+                            e.target.selectedIndex = 0;
+                          }}
+                        >
+                          <option value="">Select Tax</option>
+                          {taxes.map((tax) => (
+                            <option key={tax._id} value={tax._id}>
+                              {tax.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div id={`${idPrefix}-tax-tags`} className="selected-tags">
+                          {selectedTaxIds.map(taxId => {
+                            const tax = taxes.find(t => t._id === taxId);
+                            return (
+                              <div key={taxId} className="tag">
+                                <span>{tax?.name}</span>
+                                <button 
+                                  type="button" 
+                                  onClick={() => setSelectedTaxIds(prev => prev.filter(id => id !== taxId))}
+                                >
+                                  &times;
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+
+                      <td>
+                        <select className="form-select" id="new-tax-form" style={{ width: 150 }}>
+                          <option value="refundable">Refundable</option>
+                          <option value="non_refundable">Non Refundable</option>
+                        </select>
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          id="new-total-price" 
+                          className="form-control w-100 rounded-2 p-1" 
+                          value={totalPrice}
+                          readOnly 
+                        />
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <input type="number" id="new-allowed-pieces" className="form-control w-100 rounded-2 p-1" />
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <input type="number" step="0.01" id="new-allowed-weight" className="form-control w-100 rounded-2 p-1" />
+                      </td>
+
+                      <td className="px-2 py-4">
+                        <input type="number" step="0.01" id="new-excess-price" className="form-control w-100 rounded-2 p-1" />
+                      </td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-end">
+              <button type="submit" className="btn btn-turquoise fw-medium" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Details"}
+              </button>
+            </div>
+          </form>
         </>
       )}
     </div>
