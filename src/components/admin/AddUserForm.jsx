@@ -5,6 +5,7 @@ import { partnerApi } from "../../api/partnerApi"
 import { usersApi } from "../../api/usersApi"
 import { loginApi } from "../../api/loginApi"
 import Swal from "sweetalert2"
+import CanDisable from "../CanDisable"
 
 export default function AddUserForm() {
   const [tab, setTab] = useState("profile")
@@ -552,9 +553,11 @@ export default function AddUserForm() {
         </div>
       </div>
 
-      <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
-        {loading ? "Creating User..." : "Create User"}
-      </button>
+      <CanDisable action="create" path="/company/administration/users">
+        <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
+          {loading ? "Creating User..." : "Create User"}
+        </button>
+      </CanDisable>
     </form>
   )
 }

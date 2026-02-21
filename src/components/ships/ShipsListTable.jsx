@@ -292,7 +292,7 @@ export default function ShipsListTable() {
                               )}
                             </td>
                             <td className="action-buttons">
-                              <CanDisable action="update">
+                              <CanDisable action="update" path="/company/administration/ships">
                                 <button 
                                   className="btn btn-sm btn-outline-primary me-1"
                                   onClick={() => handleEdit(s._id)}
@@ -300,7 +300,7 @@ export default function ShipsListTable() {
                                   <i className="bi bi-pencil" />
                                 </button>
                               </CanDisable>
-                              <CanDisable action="delete">
+                              <CanDisable action="delete" path="/company/administration/ships">
                                 <button 
                                   className="btn btn-sm btn-outline-danger"
                                   onClick={() => handleDelete(s._id)}

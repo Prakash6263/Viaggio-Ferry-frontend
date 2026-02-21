@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { usersApi } from "../../api/usersApi"
 import { useParams } from "react-router-dom"
 import Swal from "sweetalert2"
+import CanDisable from "../CanDisable"
 
 export default function EditUserForm() {
   const { userId } = useParams()
@@ -453,9 +454,11 @@ export default function EditUserForm() {
       </div>
 
       {/* Submit Button */}
-      <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
-        {loading ? "Updating User..." : "Update User"}
-      </button>
+      <CanDisable action="update" path="/company/administration/users">
+        <button type="submit" className="btn btn-turquoise mt-4" disabled={loading}>
+          {loading ? "Updating User..." : "Update User"}
+        </button>
+      </CanDisable>
     </form>
   )
 }

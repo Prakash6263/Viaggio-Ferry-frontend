@@ -5,6 +5,7 @@ import { Sidebar } from "../components/layout/Sidebar"
 import { PageWrapper } from "../components/layout/PageWrapper"
 import CurrencyHistoryTable from "../components/admin/CurrencyHistoryTable"
 import { Link } from "react-router-dom"
+import Can from "../components/Can"
 
 export default function CompanyCurrencyHistory() {
   const { currencyId } = useParams()
@@ -14,26 +15,28 @@ export default function CompanyCurrencyHistory() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        {/* Back Button */}
-        <div className="mb-3">
-          <Link to="/company/administration/currency" className="btn btn-turquoise">
-            <i className="bi bi-arrow-left"></i> Back to List
-          </Link>
-        </div>
-
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="content-page-header">
-            <h5>Currency Exchange Rate History</h5>
+        <Can action="read" path="/company/administration/currency">
+          {/* Back Button */}
+          <div className="mb-3">
+            <Link to="/company/administration/currency" className="btn btn-turquoise">
+              <i className="bi bi-arrow-left"></i> Back to List
+            </Link>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="row">
-          <div className="col-sm-12">
-            <CurrencyHistoryTable currencyId={currencyId} />
+          {/* Page Header */}
+          <div className="page-header">
+            <div className="content-page-header">
+              <h5>Currency Exchange Rate History</h5>
+            </div>
           </div>
-        </div>
+
+          {/* Table */}
+          <div className="row">
+            <div className="col-sm-12">
+              <CurrencyHistoryTable currencyId={currencyId} />
+            </div>
+          </div>
+        </Can>
       </PageWrapper>
     </div>
   )

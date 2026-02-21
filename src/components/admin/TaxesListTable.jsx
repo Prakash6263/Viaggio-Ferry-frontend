@@ -376,7 +376,7 @@ export default function TaxesListTable() {
                       </span>
                     </td>
                     <td>
-                      <CanDisable action="update">
+                      <CanDisable action="update" path="/company/administration/taxes">
                         <button
                           className="btn btn-sm btn-info me-2"
                           onClick={() => handleUpdate(tax._id)}
@@ -385,7 +385,7 @@ export default function TaxesListTable() {
                           <i className="bi bi-pencil"></i> Edit
                         </button>
                       </CanDisable>
-                      <CanDisable action="delete">
+                      <CanDisable action="delete" path="/company/administration/taxes">
                         <button
                           className="btn btn-sm btn-danger"
                           onClick={() => handleDelete(tax._id)}

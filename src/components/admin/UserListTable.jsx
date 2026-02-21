@@ -289,7 +289,7 @@ export default function UserListTable() {
                     </td>
                     <td>{formatDate(user.createdAt)}</td>
                     <td>
-                      <CanDisable action="update">
+                      <CanDisable action="update" path="/company/administration/users">
                         <Link
                           to={`/company/administration/edit-user/${user._id}`}
                           className="btn btn-outline-primary btn-sm"
@@ -297,7 +297,7 @@ export default function UserListTable() {
                           <i className="bi bi-pencil"></i>
                         </Link>
                       </CanDisable>
-                      <CanDisable action="delete">
+                      <CanDisable action="delete" path="/company/administration/users">
                         <button
                           className="btn btn-outline-danger btn-sm ms-1"
                           onClick={() => handleDelete(user._id)}
