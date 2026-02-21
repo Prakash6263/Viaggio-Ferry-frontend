@@ -4,6 +4,8 @@ import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { useNavigate } from "react-router-dom";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 const makeId = (prefix = "") => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2,8)}`;
 
@@ -147,13 +149,14 @@ export default function CompanyAddTrip() {
       <Sidebar />
 
       <PageWrapper>
-        <div className="content container-fluid">
-          {/* Back Button */}
-          <div className="mb-3">
-            <button className="btn btn-turquoise" onClick={() => navigate(-1)}>
-              <i className="bi bi-arrow-left"></i> Back to List
-            </button>
-          </div>
+        <Can action="create" path="/company/ship-trip/trips">
+          <div className="content container-fluid">
+            {/* Back Button */}
+            <div className="mb-3">
+              <button className="btn btn-turquoise" onClick={() => navigate(-1)}>
+                <i className="bi bi-arrow-left"></i> Back to List
+              </button>
+            </div>
 
           <div className="row g-4">
             <div className="col-md-12">
@@ -296,7 +299,9 @@ export default function CompanyAddTrip() {
                         </div>
 
                         <div className="d-flex justify-content-end mt-3">
-                          <button type="submit" className="btn btn-turquoise">Save Trip</button>
+                          <CanDisable action="create" path="/company/ship-trip/trips">
+                            <button type="submit" className="btn btn-turquoise">Save Trip</button>
+                          </CanDisable>
                         </div>
                       </form>
                     </div>
@@ -373,7 +378,9 @@ export default function CompanyAddTrip() {
                         <button type="button" id="addVehicleLine" className="btn btn-sm btn-outline-secondary" onClick={addVehicle}>Add Line</button>
 
                         <div className="text-end mt-3">
-                          <button type="button" className="btn btn-success" onClick={onSaveAvailability}>Save Availability</button>
+                          <CanDisable action="create" path="/company/ship-trip/trips">
+                            <button type="button" className="btn btn-success" onClick={onSaveAvailability}>Save Availability</button>
+                          </CanDisable>
                         </div>
                       </div>
 
@@ -483,7 +490,9 @@ export default function CompanyAddTrip() {
                       <button type="button" id="addTripRuleLine" className="btn btn-outline-secondary btn-sm mt-2" onClick={addTripRule}>Add Line</button>
 
                       <div className="d-flex justify-content-end mt-3">
-                        <button type="button" className="btn btn-success" onClick={onSaveTrip}>Save Trip</button>
+                        <CanDisable action="create" path="/company/ship-trip/trips">
+                          <button type="button" className="btn btn-success" onClick={onSaveTrip}>Save Trip</button>
+                        </CanDisable>
                       </div>
                     </div>
                   </div>
@@ -493,7 +502,8 @@ export default function CompanyAddTrip() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </Can>
       </PageWrapper>
     </div>
   );

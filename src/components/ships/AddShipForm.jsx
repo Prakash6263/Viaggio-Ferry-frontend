@@ -8,6 +8,7 @@ import { cabinsApi } from "../../api/cabinsApi";
 import { shipsApi } from "../../api/shipsApi";
 import { getFullImageUrl } from "../../utils/imageUrl";
 import Can from "../Can";
+import CanDisable from "../CanDisable";
 
 // Placeholder image for failed loads
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='%23999' text-anchor='middle' dy='.3em'%3E?%3C/text%3E%3C/svg%3E";

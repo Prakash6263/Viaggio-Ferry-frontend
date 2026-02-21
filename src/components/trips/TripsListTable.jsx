@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Can from "../Can";
-import CanDisable from "../CanDisable"; // Declare the CanDisable variable
+import CanDisable from "../CanDisable";
 
 export default function TripsListTable() {
   const tableRef = useRef(null);
@@ -37,7 +37,7 @@ export default function TripsListTable() {
           <div className="list-btn" style={{ justifySelf: "end" }}>
             <ul className="filter-list">
               <li>
-                <Can action="create">
+                <Can action="create" path="/company/ship-trip/trips">
                   <Link className="btn btn-turquoise" to="/company/ship-trip/add-trip">
                     <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Trip
                   </Link>
@@ -71,12 +71,12 @@ export default function TripsListTable() {
                         <td>{t.vessel}</td>
                         <td>{t.status}</td>
                         <td className="action-buttons">
-                          <Can action="update" path="/company/fleet-management/trips">
+                          <CanDisable action="update" path="/company/ship-trip/trips">
                             <button className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></button>
-                          </Can>
-                          <Can action="delete" path="/company/fleet-management/trips">
+                          </CanDisable>
+                          <CanDisable action="delete" path="/company/ship-trip/trips">
                             <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
-                          </Can>
+                          </CanDisable>
                         </td>
                       </tr>
                     ))}

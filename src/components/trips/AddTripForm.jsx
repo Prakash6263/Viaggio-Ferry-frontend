@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import CanDisable from "../CanDisable";
 
 const makeId = () => Date.now() + Math.random();
 
-export default function AddTripForm() {
+export default function AddTripForm({ tripId = null, isEditMode = false }) {
   // Tab control
   const [activeTab, setActiveTab] = useState("details"); // details | availability | ticketing
 
@@ -202,9 +203,11 @@ export default function AddTripForm() {
               <textarea name="remarks" value={form.remarks} onChange={onChange} className="form-control" rows={3} />
             </div>
 
-            <div className="d-flex justify-content-end mt-3 col-12">
-              <button type="submit" className="btn btn-turquoise">Save Trip</button>
-            </div>
+                        <div className="d-flex justify-content-end mt-3 col-12">
+                          <CanDisable action={isEditMode ? "update" : "create"} path="/company/ship-trip/trips">
+                            <button type="submit" className="btn btn-turquoise">{isEditMode ? "Update Trip" : "Save Trip"}</button>
+                          </CanDisable>
+                        </div>
           </div>
         </div>
       )}
@@ -338,9 +341,11 @@ export default function AddTripForm() {
             </div>
             <button type="button" className="btn btn-sm btn-outline-secondary mt-2" onClick={addAgent}>Add Another Agent</button>
 
-            <div className="text-end mt-3">
-              <button type="button" className="btn btn-success" onClick={() => alert("Availability saved (mock)")}>Save Availability</button>
-            </div>
+                            <div className="text-end mt-3">
+                              <CanDisable action={isEditMode ? "update" : "create"} path="/company/ship-trip/trips">
+                                <button type="button" className="btn btn-success" onClick={() => alert("Availability saved (mock)")}>Save Availability</button>
+                              </CanDisable>
+                            </div>
           </div>
         </div>
       )}
@@ -369,7 +374,9 @@ export default function AddTripForm() {
           <button type="button" className="btn btn-outline-secondary btn-sm mt-2" onClick={addRule}>Add Line</button>
 
           <div className="d-flex justify-content-end mt-3">
-            <button type="submit" className="btn btn-success">Save Trip</button>
+            <CanDisable action={isEditMode ? "update" : "create"} path="/company/ship-trip/trips">
+              <button type="submit" className="btn btn-success">{isEditMode ? "Update Trip" : "Save Trip"}</button>
+            </CanDisable>
           </div>
         </div>
       )}
