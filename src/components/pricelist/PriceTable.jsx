@@ -102,7 +102,7 @@ export default function PriceTable({ category = "passenger", onRowClick, refresh
         <tbody className="table-group-divider">
           {data.length > 0 ? (
             data.map((r) => (
-              <Can key={r._id} action="update" path="/company/pricing/pricelist">
+              <Can key={r._id} action="update" path="/company/partner-management/pricelist">
                 <tr
                   className="cursor-pointer"
                   onClick={() => onRowClick && onRowClick(r)}
