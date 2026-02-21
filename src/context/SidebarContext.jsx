@@ -110,6 +110,7 @@ export function SidebarProvider({ children }) {
   /**
    * Listen for login event to reload sidebar
    * Also listen for logout event to clear sidebar
+   * ALSO listen for permission update events to refresh sidebar
    */
   useEffect(() => {
     const handleLogin = () => {
@@ -122,12 +123,24 @@ export function SidebarProvider({ children }) {
       clearSidebar()
     }
 
+    /**
+     * CRITICAL: Listen for permission update events
+     * When a user's permissions are assigned/removed on the backend,
+     * this event is fired to refresh the sidebar with new permissions
+     */
+    const handlePermissionUpdate = () => {
+      console.log("[v0] Permission update event received, reloading sidebar...")
+      loadSidebar()
+    }
+
     window.addEventListener(AUTH_LOGIN_EVENT, handleLogin)
     window.addEventListener(AUTH_LOGOUT_EVENT, handleLogout)
+    window.addEventListener("PERMISSION_UPDATED", handlePermissionUpdate)
 
     return () => {
       window.removeEventListener(AUTH_LOGIN_EVENT, handleLogin)
       window.removeEventListener(AUTH_LOGOUT_EVENT, handleLogout)
+      window.removeEventListener("PERMISSION_UPDATED", handlePermissionUpdate)
     }
   }, [loadSidebar, clearSidebar])
 

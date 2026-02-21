@@ -1,5 +1,15 @@
 import { apiRequest } from "./apiClient"
 
+/**
+ * Helper: Trigger permission update event
+ * This fires a custom event that the SidebarContext listens for
+ * to reload permissions immediately when they change
+ */
+const triggerPermissionUpdate = () => {
+  console.log("[v0] Firing PERMISSION_UPDATED event to refresh sidebar...")
+  window.dispatchEvent(new CustomEvent("PERMISSION_UPDATED"))
+}
+
 export const usersApi = {
   // 1. Create new user
   createUser: async (userData) => {
@@ -75,5 +85,69 @@ export const usersApi = {
       method: "PUT",
       body: formData, // FormData object with fullName, position, profileImage
     })
+  },
+
+  /**
+   * CRITICAL: Assign access group to user
+   * When this completes, triggers sidebar refresh so permissions update immediately
+   */
+  assignAccessGroupToUser: async (userId, moduleCode, accessGroupId) => {
+    console.log("[v0] Assigning access group to user:", { userId, moduleCode, accessGroupId })
+    
+    try {
+      const result = await apiRequest(`/api/users/${userId}/assign-access-group`, {
+        method: "POST",
+        body: JSON.stringify({ moduleCode, accessGroupId }),
+      })
+
+      if (result.success || result.data) {
+        console.log("[v0] Permission assigned successfully, triggering sidebar refresh...")
+        // Delay slightly to ensure backend has persisted
+        setTimeout(() => {
+          triggerPermissionUpdate()
+        }, 300)
+      }
+
+      return result
+    } catch (error) {
+      console.error("[v0] Error assigning access group:", error)
+      throw error
+    }
+  },
+
+  /**
+   * CRITICAL: Remove access group from user
+   * When this completes, triggers sidebar refresh so permissions update immediately
+   */
+  removeAccessGroupFromUser: async (userId, moduleCode) => {
+    console.log("[v0] Removing access group from user:", { userId, moduleCode })
+    
+    try {
+      const result = await apiRequest(`/api/users/${userId}/access-group/${moduleCode}`, {
+        method: "DELETE",
+      })
+
+      if (result.success || result.data) {
+        console.log("[v0] Permission removed successfully, triggering sidebar refresh...")
+        // Delay slightly to ensure backend has persisted
+        setTimeout(() => {
+          triggerPermissionUpdate()
+        }, 300)
+      }
+
+      return result
+    } catch (error) {
+      console.error("[v0] Error removing access group:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Manual trigger for permission updates
+   * Use this if you assign/update permissions through other means
+   */
+  refreshPermissions: () => {
+    console.log("[v0] Manually triggering permission refresh...")
+    triggerPermissionUpdate()
   },
 }
