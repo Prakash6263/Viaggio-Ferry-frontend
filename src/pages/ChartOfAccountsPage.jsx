@@ -8,6 +8,8 @@ import { ledgerApi } from "../api/ledgerApi"
 import { partnerApi } from "../api/partnerApi"
 import { CirclesWithBar } from "react-loader-spinner"
 import Swal from "sweetalert2"
+import Can from "../components/Can"
+import CanDisable from "../components/CanDisable"
 
 export default function ChartOfAccountsPage() {
   const [isFormVisible, setIsFormVisible] = useState(false)

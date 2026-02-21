@@ -8,6 +8,7 @@ import Header from "../components/layout/Header";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import CabinForm from "../components/cabin/CabinForm";
 import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 import { cabinsApi } from "../api/cabinsApi";
 
 export default function EditCabin() {
@@ -46,52 +47,10 @@ export default function EditCabin() {
   }, [cabinId]);
 
   if (loading) {
-    return (
-      <div className="main-wrapper">
-        <Header />
-        <Sidebar />
-        <PageWrapper>
-          <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
-            <CirclesWithBar
-              height="80"
-              width="80"
-              color="#05468f"
-              outerCircleColor="#05468f"
-              innerCircleColor="#05468f"
-              barColor="#05468f"
-              ariaLabel="circles-with-bar-loading"
-              visible={true}
-            />
-          </div>
-        </PageWrapper>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="main-wrapper">
-        <Header />
-        <Sidebar />
-        <PageWrapper>
-          <div className="alert alert-danger" role="alert">
-            <h4 className="alert-heading">Error Loading Cabin</h4>
-            <p>{error}</p>
-            <hr />
-            <Link to="/company/settings/cabin" className="btn btn-turquoise">
-              Back to List
-            </Link>
-          </div>
-        </PageWrapper>
-      </div>
-    );
-  }
-
   return (
     <div className="main-wrapper">
       <Header />
       <Sidebar />
-
       <PageWrapper>
         <Can action="update" path="/company/settings/cabin">
           <div className="content container-fluid">

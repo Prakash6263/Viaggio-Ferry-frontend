@@ -8,6 +8,8 @@ import { bankCashAccountsApi } from "../api/bankCashAccountsApi"
 import { currencyApi } from "../api/currencyApi"
 import { partnerApi } from "../api/partnerApi"
 import Swal from "sweetalert2"
+import Can from "../components/Can"
+import CanDisable from "../components/CanDisable"
 
 const LAYER_OPTIONS = ["Company", "Marine", "Commercial", "Selling"]
 

@@ -3,6 +3,8 @@ import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { Link } from "react-router-dom";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 /**
  * GeneralLedger.jsx
@@ -334,7 +336,8 @@ export default function GeneralLedger() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="content container-fluid">
+        <Can action="read" path="/company/finance-accounting/general-ledger">
+          <div className="content container-fluid">
           {/* Page Header */}
           <div className="page-header">
             <div className="content-page-header">
@@ -507,7 +510,7 @@ export default function GeneralLedger() {
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

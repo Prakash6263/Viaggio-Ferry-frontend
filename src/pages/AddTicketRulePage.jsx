@@ -5,6 +5,8 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import RuleCard from "../components/ticketing/RuleCard";
 import { useNavigate } from "react-router-dom";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 /**
  * AddTicketRulePage
@@ -80,7 +82,8 @@ export default function AddTicketRulePage() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="content container-fluid">
+        <Can action="create" path="/company/sales-booking/ticketing-rules">
+          <div className="content container-fluid">
           <div className="mb-3">
             <a href="/company/ticketing-rules" className="btn btn-turquoise">
               <i className="bi bi-arrow-left"></i> Back to List
@@ -120,9 +123,11 @@ export default function AddTicketRulePage() {
                     </select>
                   </div>
                   <div className="col-md-6">
-                    <button className="btn btn-primary" id="addRuleBtn" onClick={addRule}>
-                      Add Rule
-                    </button>
+                    <CanDisable action="create" path="/company/sales-booking/ticketing-rules">
+                      <button className="btn btn-primary" id="addRuleBtn" onClick={addRule}>
+                        Add Rule
+                      </button>
+                    </CanDisable>
                   </div>
                 </div>
 
@@ -139,6 +144,7 @@ export default function AddTicketRulePage() {
             </div>
           </div>
         </div>
+        </Can>
       </PageWrapper>
     </div>
   );

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import Header from "../components/layout/Header"
 import { Sidebar } from "../components/layout/Sidebar"
 import { PageWrapper } from "../components/layout/PageWrapper"
+import Can from "../components/Can"
+import CanDisable from "../components/CanDisable"
 
 export default function TripCompletionPage() {
   const [trips, setTrips] = useState([])
@@ -719,7 +721,8 @@ export default function TripCompletionPage() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="page-header">
+        <Can action="update" path="/company/sales-booking/trip-completion">
+          <div className="page-header">
           <div className="content-page-header">
             <h5>Trip Reporting & Completion</h5>
           </div>
@@ -991,7 +994,7 @@ export default function TripCompletionPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   )

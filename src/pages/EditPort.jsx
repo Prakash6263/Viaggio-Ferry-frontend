@@ -9,6 +9,8 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { portsApi } from "../api/portsApi";
 import { countryApi } from "../api/countryApi";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 
 export default function EditPort() {
@@ -146,7 +148,8 @@ const data = response.data;
       <Sidebar />
 
       <PageWrapper>
-        <div className="content container-fluid">
+        <Can action="update" path="/company/settings/port">
+          <div className="content container-fluid">
           {/* Back Button */}
           <div className="mb-3">
             <Link to="/company/settings/port" className="btn btn-turquoise">
@@ -274,16 +277,18 @@ const data = response.data;
                         ></textarea>
                       </div>
 
-                      <button type="submit" className="btn btn-turquoise" disabled={submitting || loading}>
-                        {submitting ? "Updating..." : "Update Port"}
-                      </button>
+                      <CanDisable action="update" path="/company/settings/port">
+                        <button type="submit" className="btn btn-turquoise" disabled={submitting || loading}>
+                          {submitting ? "Updating..." : "Update Port"}
+                        </button>
+                      </CanDisable>
                     </form>
                   )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

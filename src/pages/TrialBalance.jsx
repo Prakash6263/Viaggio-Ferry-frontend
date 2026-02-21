@@ -3,6 +3,8 @@ import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { Link } from "react-router-dom";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 /**
  * TrialBalance.jsx
@@ -193,7 +195,8 @@ export default function TrialBalance() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="content container-fluid">
+        <Can action="read" path="/company/finance-accounting/trial-balance">
+          <div className="content container-fluid">
           {/* Page Header */}
           <div className="page-header">
             <div className="content-page-header">
@@ -362,7 +365,7 @@ export default function TrialBalance() {
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

@@ -4,6 +4,8 @@ import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { Link } from "react-router-dom";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 /**
  * PaymentsAndReceipts.jsx

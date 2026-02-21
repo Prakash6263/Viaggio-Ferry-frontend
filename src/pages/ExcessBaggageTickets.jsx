@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 /**
  * ExcessBaggageTickets.jsx
  *
@@ -69,11 +71,12 @@ const ExcessBaggageTickets = () => {
   const cargoCols = 34;
 
   return (
-    <>
-<Header />
-<Sidebar />
-<PageWrapper>
-      <div className="content container-fluid">
+    <div className="main-wrapper">
+      <Header />
+      <Sidebar />
+      <PageWrapper>
+        <Can action="update" path="/company/sales-booking/excess-baggage">
+          <div className="content container-fluid">
         {/* Page Header */}
         <div className="page-header">
           <div className="content-page-header">
@@ -428,11 +431,11 @@ const ExcessBaggageTickets = () => {
               </div>
               {/* end card-body */}
             </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </PageWrapper>
-    </>
+        </Can>
+      </PageWrapper>
+    </div>
   );
 };
 

@@ -9,6 +9,8 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { portsApi } from "../api/portsApi";
 import { countryApi } from "../api/countryApi";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 export default function AddPort() {
   const navigate = useNavigate();
@@ -107,7 +109,8 @@ export default function AddPort() {
       <Sidebar />
 
       <PageWrapper>
-        <div className="content container-fluid">
+        <Can action="create" path="/company/settings/port">
+          <div className="content container-fluid">
           {/* Back Button */}
           <div className="mb-3">
             <Link to="/company/settings/port" className="btn btn-turquoise">
@@ -235,16 +238,18 @@ export default function AddPort() {
                         ></textarea>
                       </div>
 
-                      <button type="submit" className="btn btn-turquoise" disabled={loading}>
-                        {loading ? "Creating..." : "Add Port"}
-                      </button>
+                      <CanDisable action="create" path="/company/settings/port">
+                        <button type="submit" className="btn btn-turquoise" disabled={loading}>
+                          {loading ? "Creating..." : "Add Port"}
+                        </button>
+                      </CanDisable>
                     </form>
                   )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

@@ -1,5 +1,6 @@
 // src/components/ticketing/RuleCard.jsx
 import React from "react";
+import CanDisable from "../CanDisable";
 
 /**
  * RuleCard - displays a single rule card exactly like HTML markup.
@@ -23,7 +24,9 @@ export default function RuleCard({ rule, onRemove, onChange }) {
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <span className={`badge bg-${badgeColor} badge-type`}>{rule.type}</span>
-          <button type="button" className="btn btn-remove btn-sm" onClick={() => onRemove(rule.id)}>Remove</button>
+          <CanDisable action="delete" path="/company/sales-booking/ticketing-rules">
+            <button type="button" className="btn btn-remove btn-sm" onClick={() => onRemove(rule.id)}>Remove</button>
+          </CanDisable>
         </div>
 
         <div className="mb-3">

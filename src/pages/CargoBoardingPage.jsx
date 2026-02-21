@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Sidebar } from "../components/layout/Sidebar"
 import Header from "../components/layout/Header"
+import Can from "../components/Can"
+import CanDisable from "../components/CanDisable"
 
 export default function CargoBoardingPage() {
   const [trips, setTrips] = useState([])
@@ -232,7 +234,8 @@ export default function CargoBoardingPage() {
       <Sidebar />
       <div className="page-wrapper">
         <div className="content container-fluid">
-          <div className="page-header">
+          <Can action="update" path="/company/sales-booking/cargo-boarding">
+        <div className="page-header">
             <div className="content-page-header">
               <h5>Cargo Boarding</h5>
             </div>
@@ -589,7 +592,7 @@ export default function CargoBoardingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </Can>
     </div>
   )
 }

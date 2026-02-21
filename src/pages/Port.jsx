@@ -13,7 +13,7 @@ export default function Port() {
       <Sidebar />
       <PageWrapper>
         {/* READ permission gate - hide entire page if no read access */}
-        <Can action="read">
+        <Can action="read" path="/company/settings/port">
           {/* Page Header */}
           <div className="page-header">
             <div className="content-page-header">
