@@ -211,14 +211,40 @@ export function usePermissions(customPath = null) {
 
   const path = customPath || location.pathname
 
+  console.log("[v0] [RBAC] usePermissions called for path:", path, "customPath:", customPath, "user role:", user?.role)
+
   // Company role has all permissions
   if (user?.role === "company") {
+    console.log("[v0] [RBAC] User is company role, granting all permissions")
     return {
       read: true,
       create: true,
       update: true,
       delete: true,
     }
+  }
+
+  // Get raw permissions from backend (via sidebar context)
+  const rawPermissions = getRoutePermissions(path) || {}
+
+  console.log("[v0] [RBAC] Raw permissions from backend:", rawPermissions)
+
+  // Normalize: Backend sends either format, convert to internal standard
+  // Format A: { canRead, canWrite, canEdit, canDelete }
+  // Format B: { read, create, update, delete }
+  // We normalize to: { read, create, update, delete }
+  
+  const normalized = {
+    read: rawPermissions.canRead === true || rawPermissions.read === true,
+    create: rawPermissions.canWrite === true || rawPermissions.create === true,
+    update: rawPermissions.canEdit === true || rawPermissions.update === true,
+    delete: rawPermissions.canDelete === true || rawPermissions.delete === true,
+  }
+
+  console.log("[v0] [RBAC] Normalized permissions:", normalized)
+
+  return normalized
+}
   }
 
   // Get raw permissions from backend (via sidebar context)

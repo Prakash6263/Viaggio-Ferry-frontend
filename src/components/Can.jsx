@@ -32,10 +32,17 @@ import { usePermissions } from "../hooks/usePermissions"
 export default function Can({ action, path = null, children, fallback = null }) {
   const permissions = usePermissions(path)
 
-  if (!permissions) return fallback
+  console.log("[v0] [RBAC] Can component rendering:", { action, path, permissions })
+
+  if (!permissions) {
+    console.log("[v0] [RBAC] Can: No permissions object, showing fallback")
+    return fallback
+  }
 
   // All actions map to the normalized permission format
   const allowed = permissions[action] === true
+
+  console.log("[v0] [RBAC] Can: Action", action, allowed ? "ALLOWED" : "DENIED")
 
   return allowed ? children : fallback
 }
