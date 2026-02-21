@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { usersApi } from "../../api/usersApi"
 import Swal from "sweetalert2"
 import { CirclesWithBar } from "react-loader-spinner"
+import CanDisable from "../CanDisable"
 
 /**
  * SalesmenList
@@ -267,12 +268,16 @@ export default function SalesmenList({ onEdit, onDelete }) {
                     </td>
                     <td>{formatDate(salesman.createdAt)}</td>
                     <td>
-                      <button className="btn btn-outline-primary btn-sm" onClick={() => onEdit?.(salesman._id)}>
-                        <i className="bi bi-pencil"></i>
-                      </button>
-                      <button className="btn btn-outline-danger btn-sm ms-1" onClick={() => handleDelete(salesman._id)}>
-                        <i className="bi bi-trash"></i>
-                      </button>
+                      <CanDisable action="update" path="/company/partner-management/salesman">
+                        <button className="btn btn-outline-primary btn-sm" onClick={() => onEdit?.(salesman._id)}>
+                          <i className="bi bi-pencil"></i>
+                        </button>
+                      </CanDisable>
+                      <CanDisable action="delete" path="/company/partner-management/salesman">
+                        <button className="btn btn-outline-danger btn-sm ms-1" onClick={() => handleDelete(salesman._id)}>
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </CanDisable>
                     </td>
                   </tr>
                 ))

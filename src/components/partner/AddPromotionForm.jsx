@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CanDisable from "../CanDisable";
 
 export default function AddPromotionForm() {
   const navigate = useNavigate();
@@ -309,7 +310,9 @@ export default function AddPromotionForm() {
       </div>
 
       <button type="button" className="btn btn-secondary me-2" onClick={() => navigate(-1)}>Cancel</button>
-      <button type="submit" className="btn btn-turquoise" id="save-promotion-btn">Save Promotion</button>
+      <CanDisable action="create" path="/company/partner-management/promotions">
+        <button type="submit" className="btn btn-turquoise" id="save-promotion-btn">Save Promotion</button>
+      </CanDisable>
     </form>
   );
 }

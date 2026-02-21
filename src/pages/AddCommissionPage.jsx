@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 /**
  * AddCommissionPage
@@ -108,18 +110,19 @@ export default function AddCommissionPage() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="content container-fluid">
-          <style>{`
-            .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-            .delete-route { cursor:pointer; color:red; font-size:18px; }
-          `}</style>
+        <Can action="create" path="/company/partner-management/commission">
+          <div className="content container-fluid">
+            <style>{`
+              .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+              .delete-route { cursor:pointer; color:red; font-size:18px; }
+            `}</style>
 
-          {/* Back Button */}
-          <div className="mb-3">
-            <a href="/company/commission" className="btn btn-turquoise">
-              <i className="bi bi-arrow-left"></i> Back
-            </a>
-          </div>
+            {/* Back Button */}
+            <div className="mb-3">
+              <a href="/company/partner-management/commission" className="btn btn-turquoise">
+                <i className="bi bi-arrow-left"></i> Back
+              </a>
+            </div>
 
           <div className="row g-4">
             <div className="col-md-12">
@@ -293,14 +296,16 @@ export default function AddCommissionPage() {
 
                   <div className="d-flex justify-content-end">
                     <button className="btn btn-secondary me-2">Cancel</button>
-                    <button className="btn btn-turquoise">Save Rule</button>
+                    <CanDisable action="create" path="/company/partner-management/commission">
+                      <button className="btn btn-turquoise">Save Rule</button>
+                    </CanDisable>
                   </div>
 
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

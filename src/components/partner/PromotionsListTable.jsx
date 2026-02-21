@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from "react";
-import Can from "../CanDisable"; // Import CanDisable component
+import CanDisable from "../CanDisable";
 
 export default function PromotionsListTable() {
   useEffect(() => {
@@ -51,8 +51,12 @@ export default function PromotionsListTable() {
                 <td>Passenger: Buy 2 Get 1 Free<br/>Cargo: 15% Off<br/>Vehicle: $10 Off</td>
                 <td>Passenger: Adult, Economy<br/>Cargo: General Goods<br/>Vehicle: Car</td>
                 <td>
-                  <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
-                  <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
+                  <CanDisable action="update" path="/company/partner-management/promotions">
+                    <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
+                  </CanDisable>
+                  <CanDisable action="delete" path="/company/partner-management/promotions">
+                    <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
+                  </CanDisable>
                 </td>
               </tr>
               <tr>
@@ -62,12 +66,12 @@ export default function PromotionsListTable() {
                 <td>Passenger: 20% Off<br/>Vehicle: Buy 1 Get 1 Free</td>
                 <td>Passenger: Adult, Business<br/>Vehicle: Car, Motorcycle</td>
                 <td>
-                  <Can action="update" path="/company/partner-management/promotions">
+                  <CanDisable action="update" path="/company/partner-management/promotions">
                     <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
-                  </Can>
-                  <Can action="delete" path="/company/partner-management/promotions">
+                  </CanDisable>
+                  <CanDisable action="delete" path="/company/partner-management/promotions">
                     <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
-                  </Can>
+                  </CanDisable>
                 </td>
               </tr>
             </tbody>

@@ -53,7 +53,7 @@ export default function CompanyPromotionsList() {
       <Sidebar />
       <PageWrapper>
         {/* READ permission gate - hide entire page if no read access */}
-        <Can action="read">
+        <Can action="read" path="/company/partner-management/promotions">
           <div className="page-header">
             <div className="content-page-header">
               <h5>Promotion</h5>
