@@ -150,7 +150,6 @@ export default function CompanyAddTrip() {
 
       <PageWrapper>
         <Can action="create" path="/company/fleet-management/trips">
-        <Can action="create" path="/company/ship-trip/trips">
           <div className="content container-fluid">
             {/* Back Button */}
             <div className="mb-3">

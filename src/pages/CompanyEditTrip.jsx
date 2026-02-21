@@ -17,7 +17,7 @@ export default function CompanyEditTrip() {
       <Sidebar />
 
       <PageWrapper>
-        <Can action="update" path="/company/ship-trip/trips">
+        <Can action="update" path="/company/fleet-management/trips">
           <div className="content container-fluid">
             {/* Back Button */}
             <div className="mb-3">

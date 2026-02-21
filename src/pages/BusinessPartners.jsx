@@ -345,7 +345,7 @@ export default function BusinessPartnersPage() {
       <Sidebar />
 
       <PageWrapper>
-        <Can action="read" path="/company/ship-trip/partners">
+        <Can action="read" path="/company/partner-management/partners">
           <div className="content container-fluid">
             {/* Page Header */}
             <div className="page-header">
@@ -354,7 +354,7 @@ export default function BusinessPartnersPage() {
                 <div className="list-btn" style={{ justifySelf: "end" }}>
                   <ul className="filter-list">
                     <li>
-                      <Can action="create" path="/company/ship-trip/partners">
+                      <Can action="create" path="/company/partner-management/partners">
                         <button id="add-partner-btn" className="btn btn-turquoise" onClick={handleAddClick}>
                           <i className="fa fa-plus-circle me-2" aria-hidden="true"></i> Add New Partner
                         </button>

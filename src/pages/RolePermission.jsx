@@ -299,7 +299,7 @@ export default function RolePermission() {
                                   </label>
                                 </td>
                                 <td style={{ whiteSpace: "nowrap" }}>
-                                  <CanDisable action="update">
+                                  <CanDisable action="update" path="/company/administration/role-permission">
                                     <Link
                                       to={`/company/settings/add-group-permission?id=${group._id}`}
                                       className="btn btn-sm btn-primary me-2"
@@ -308,7 +308,7 @@ export default function RolePermission() {
                                       <i className="fa fa-edit"></i>
                                     </Link>
                                   </CanDisable>
-                                  <CanDisable action="delete">
+                                  <CanDisable action="delete" path="/company/administration/role-permission">
                                     <button
                                       className="btn btn-sm btn-danger"
                                       onClick={() => handleDelete(group._id)}
