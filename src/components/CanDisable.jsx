@@ -37,11 +37,8 @@ import { usePermissions } from "../hooks/usePermissions"
 export default function CanDisable({ action, path = null, children, tooltip = "You do not have permission" }) {
   const permissions = usePermissions(path)
 
-  console.log("[v0] [RBAC] CanDisable rendering:", { action, path, permissions })
-
   // If no permissions object (edge case), render enabled
   if (!permissions) {
-    console.log("[v0] [RBAC] CanDisable: No permissions object, rendering enabled")
     return children
   }
 
@@ -54,11 +51,8 @@ export default function CanDisable({ action, path = null, children, tooltip = "Y
   // Check if permission is granted using normalized format
   const allowed = permissions[action] === true
 
-  console.log("[v0] [RBAC] CanDisable action check:", { action, allowed, allPermissions: permissions })
-
   // If allowed, render children as-is
   if (allowed) {
-    console.log("[v0] [RBAC] CanDisable: Permission GRANTED for action", action)
     return children
   }
 
@@ -68,8 +62,6 @@ export default function CanDisable({ action, path = null, children, tooltip = "Y
     console.warn(`[v0] CanDisable: Expected single React element as children`)
     return children
   }
-
-  console.log("[v0] [RBAC] CanDisable: Permission DENIED for action", action, "- disabling button")
 
   return React.cloneElement(children, {
     disabled: true,

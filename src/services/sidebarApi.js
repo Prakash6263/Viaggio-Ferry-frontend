@@ -101,7 +101,6 @@ export const isPathAuthorized = (path, routes) => {
  */
 const normalizePermissions = (rawPerms) => {
   if (!rawPerms) {
-    console.log("[v0] [RBAC] normalizePermissions: No permissions provided, defaulting to false")
     return {
       read: false,
       create: false,
@@ -111,15 +110,12 @@ const normalizePermissions = (rawPerms) => {
   }
 
   // Normalize: Try both formats, default to false (strict mode)
-  const normalized = {
+  return {
     read: rawPerms.canRead === true || rawPerms.read === true || false,
     create: rawPerms.canWrite === true || rawPerms.create === true || false,
     update: rawPerms.canEdit === true || rawPerms.update === true || false,
     delete: rawPerms.canDelete === true || rawPerms.delete === true || false,
   }
-
-  console.log("[v0] [RBAC] normalizePermissions: Input =", rawPerms, "Output =", normalized)
-  return normalized
 }
 
 /**
@@ -132,7 +128,6 @@ const normalizePermissions = (rawPerms) => {
  */
 export const getPermissionsForRoute = (path, menu) => {
   if (!path || !menu) {
-    console.log("[v0] [RBAC] getPermissionsForRoute: No path or menu, denying all")
     return {
       read: false,
       create: false,
@@ -141,15 +136,10 @@ export const getPermissionsForRoute = (path, menu) => {
     }
   }
 
-  console.log("[v0] [RBAC] getPermissionsForRoute: Checking path =", path)
-
-  for (const moduleCode of Object.keys(menu)) {
-    const module = menu[moduleCode]
-    
+  for (const module of Object.values(menu)) {
     // Check single page modules
     if (module.type === "single" && module.route) {
       if (path === module.route || path.startsWith(module.route + "/")) {
-        console.log("[v0] [RBAC] Single module match:", moduleCode)
         // Single modules get normalized permissions or default deny
         return normalizePermissions(module.permissions || module.userPermissions)
       }
@@ -157,13 +147,10 @@ export const getPermissionsForRoute = (path, menu) => {
 
     // Check submodules - main permission source
     if (module.submodules) {
-      for (const submoduleCode of Object.keys(module.submodules)) {
-        const submodule = module.submodules[submoduleCode]
+      for (const submodule of Object.values(module.submodules)) {
         if (submodule.route && (path === submodule.route || path.startsWith(submodule.route + "/"))) {
-          console.log("[v0] [RBAC] Submodule match:", moduleCode, "->", submoduleCode)
           // Submodules can have either format: permissions or userPermissions
           const perms = submodule.permissions || submodule.userPermissions
-          console.log("[v0] [RBAC] Raw permissions found:", perms)
           return normalizePermissions(perms)
         }
       }
@@ -171,7 +158,6 @@ export const getPermissionsForRoute = (path, menu) => {
   }
 
   // Route not found - deny all
-  console.log("[v0] [RBAC] Route not found in menu, denying all")
   return {
     read: false,
     create: false,

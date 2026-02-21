@@ -122,19 +122,12 @@ export function SidebarProvider({ children }) {
       clearSidebar()
     }
 
-    const handlePermissionUpdate = () => {
-      console.log("[v0] Permission update event received, reloading sidebar...")
-      loadSidebar()
-    }
-
     window.addEventListener(AUTH_LOGIN_EVENT, handleLogin)
     window.addEventListener(AUTH_LOGOUT_EVENT, handleLogout)
-    window.addEventListener("PERMISSION_UPDATED", handlePermissionUpdate)
 
     return () => {
       window.removeEventListener(AUTH_LOGIN_EVENT, handleLogin)
       window.removeEventListener(AUTH_LOGOUT_EVENT, handleLogout)
-      window.removeEventListener("PERMISSION_UPDATED", handlePermissionUpdate)
     }
   }, [loadSidebar, clearSidebar])
 

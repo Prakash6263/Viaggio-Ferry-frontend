@@ -1,5 +1,4 @@
 import { apiRequest } from "./apiClient"
-import { triggerPermissionUpdate } from "../utils/rbacUtils"
 
 export const usersApi = {
   // 1. Create new user
@@ -76,51 +75,5 @@ export const usersApi = {
       method: "PUT",
       body: formData, // FormData object with fullName, position, profileImage
     })
-  },
-
-  /**
-   * PERMISSION MANAGEMENT ENDPOINTS
-   * ================================
-   */
-
-  // Get user's access groups across all modules
-  getUserAccessGroups: async (userId) => {
-    const result = await apiRequest(`/api/users/${userId}/access-groups`)
-    console.log("[v0] getUserAccessGroups result:", result)
-    return result
-  },
-
-  // Get user permissions for a specific module
-  getUserPermissionsForModule: async (userId, moduleCode) => {
-    const result = await apiRequest(`/api/users/${userId}/permissions/${moduleCode}`)
-    console.log("[v0] getUserPermissionsForModule result:", result)
-    return result
-  },
-
-  // Assign access group to user for a module
-  assignAccessGroupToUser: async (userId, moduleCode, accessGroupId) => {
-    console.log("[v0] Assigning access group to user:", { userId, moduleCode, accessGroupId })
-    const result = await apiRequest(`/api/users/${userId}/assign-access-group`, {
-      method: "POST",
-      body: JSON.stringify({ moduleCode, accessGroupId }),
-    })
-    if (result.success) {
-      console.log("[v0] Permission assigned successfully, triggering UI refresh...")
-      triggerPermissionUpdate()
-    }
-    return result
-  },
-
-  // Remove access group from user for a module
-  removeAccessGroupFromUser: async (userId, moduleCode) => {
-    console.log("[v0] Removing access group from user:", { userId, moduleCode })
-    const result = await apiRequest(`/api/users/${userId}/access-group/${moduleCode}`, {
-      method: "DELETE",
-    })
-    if (result.success) {
-      console.log("[v0] Permission removed successfully, triggering UI refresh...")
-      triggerPermissionUpdate()
-    }
-    return result
   },
 }
