@@ -395,7 +395,7 @@ export default function EditTaxForm({ taxId }) {
       </div>
 
   <div className="mt-4">
-  <CanDisable action="update">
+  <CanDisable action="update" path="/company/administration/taxes">
     <button type="submit" className="btn btn-turquoise btn-save" disabled={submitting}>
     {submitting ? "Updating..." : "Update Tax"}
     </button>

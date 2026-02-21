@@ -407,7 +407,7 @@ export default function AddCurrencyForm() {
       </div>
 
       <div className="mt-4">
-        <CanDisable action="create">
+        <CanDisable action="create" path="/company/administration/currency">
           <button type="submit" className="btn btn-turquoise btn-save" disabled={submitting}>
             {submitting ? "Saving..." : "Save Currency"}
           </button>

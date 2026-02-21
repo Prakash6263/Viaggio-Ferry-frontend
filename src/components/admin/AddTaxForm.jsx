@@ -274,7 +274,7 @@ export default function AddTaxForm() {
         <button type="button" className="btn btn-secondary me-2" onClick={() => navigate(-1)} disabled={loading}>
           Cancel
         </button>
-        <CanDisable action="create">
+        <CanDisable action="create" path="/company/administration/taxes">
           <button type="submit" className="btn btn-turquoise" disabled={loading}>
             {loading ? (
               <>

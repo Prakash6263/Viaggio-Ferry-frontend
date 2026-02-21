@@ -127,41 +127,64 @@ const normalizePermissions = (rawPerms) => {
  * @returns {Object} Normalized permissions { read, create, update, delete }
  */
 export const getPermissionsForRoute = (path, menu) => {
-  if (!path || !menu) {
-    return {
-      read: false,
-      create: false,
-      update: false,
-      delete: false,
-    }
+  // Default deny (strict mode)
+  const defaultPermissions = {
+    read: false,
+    create: false,
+    update: false,
+    delete: false,
   }
 
+  if (!path || !menu) {
+    return defaultPermissions
+  }
+
+  // 🔥 CRITICAL FIX:
+  // 1. Remove query parameters
+  // 2. Remove trailing slash (except root)
+  const cleanPath = path
+    .split("?")[0]
+    .replace(/\/+$/, "") || "/"
+
   for (const module of Object.values(menu)) {
-    // Check single page modules
+    // ========================
+    // SINGLE PAGE MODULES
+    // ========================
     if (module.type === "single" && module.route) {
-      if (path === module.route || path.startsWith(module.route + "/")) {
-        // Single modules get normalized permissions or default deny
-        return normalizePermissions(module.permissions || module.userPermissions)
+      const moduleRoute = module.route.replace(/\/+$/, "")
+
+      if (
+        cleanPath === moduleRoute ||
+        cleanPath.startsWith(moduleRoute + "/")
+      ) {
+        return normalizePermissions(
+          module.permissions || module.userPermissions
+        )
       }
     }
 
-    // Check submodules - main permission source
+    // ========================
+    // SUBMODULES (MAIN SOURCE)
+    // ========================
     if (module.submodules) {
       for (const submodule of Object.values(module.submodules)) {
-        if (submodule.route && (path === submodule.route || path.startsWith(submodule.route + "/"))) {
-          // Submodules can have either format: permissions or userPermissions
-          const perms = submodule.permissions || submodule.userPermissions
+        if (!submodule.route) continue
+
+        const subRoute = submodule.route.replace(/\/+$/, "")
+
+        if (
+          cleanPath === subRoute ||
+          cleanPath.startsWith(subRoute + "/")
+        ) {
+          const perms =
+            submodule.permissions || submodule.userPermissions
+
           return normalizePermissions(perms)
         }
       }
     }
   }
 
-  // Route not found - deny all
-  return {
-    read: false,
-    create: false,
-    update: false,
-    delete: false,
-  }
+  // Route not found → deny all
+  return defaultPermissions
 }
