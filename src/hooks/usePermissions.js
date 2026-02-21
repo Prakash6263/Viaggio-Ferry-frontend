@@ -251,10 +251,10 @@ export function useModulePermissions(moduleCode, submoduleCode = null) {
   // Company role has all permissions
   if (user?.role === "company") {
     return {
-      canRead: true,
-      canWrite: true,
-      canEdit: true,
-      canDelete: true,
+      read: true,
+      create: true,
+      update: true,
+      delete: true,
       hasAccess: true,
     }
   }
@@ -264,10 +264,10 @@ export function useModulePermissions(moduleCode, submoduleCode = null) {
 
   if (!module) {
     return {
-      canRead: false,
-      canWrite: false,
-      canEdit: false,
-      canDelete: false,
+      read: false,
+      create: false,
+      update: false,
+      delete: false,
       hasAccess: false,
     }
   }
@@ -275,10 +275,10 @@ export function useModulePermissions(moduleCode, submoduleCode = null) {
   // If no submodule specified, check module-level access
   if (!submoduleCode) {
     return {
-      canRead: true, // Module is visible
-      canWrite: true,
-      canEdit: true,
-      canDelete: true,
+      read: true, // Module is visible
+      create: true,
+      update: true,
+      delete: true,
       hasAccess: true,
     }
   }
@@ -288,24 +288,25 @@ export function useModulePermissions(moduleCode, submoduleCode = null) {
 
   if (!submodule) {
     return {
-      canRead: false,
-      canWrite: false,
-      canEdit: false,
-      canDelete: false,
+      read: false,
+      create: false,
+      update: false,
+      delete: false,
       hasAccess: false,
     }
   }
 
-  // CRITICAL FIX: Backend sends userPermissions, not permissions
-  // Backend contract: { canRead, canWrite, canEdit, canDelete }
-  const userPermissions = submodule.userPermissions || {}
+  // CRITICAL FIX: Normalize permissions to match internal format
+  // Backend sends either: { canRead, canWrite, canEdit, canDelete } or { read, create, update, delete }
+  // Return normalized: { read, create, update, delete }
+  const perms = submodule.permissions || submodule.userPermissions || {}
 
   return {
-    canRead: userPermissions.canRead === true,
-    canWrite: userPermissions.canWrite === true,
-    canEdit: userPermissions.canEdit === true,
-    canDelete: userPermissions.canDelete === true,
-    hasAccess: userPermissions.canRead === true,
+    read: perms.canRead === true || perms.read === true,
+    create: perms.canWrite === true || perms.create === true,
+    update: perms.canEdit === true || perms.update === true,
+    delete: perms.canDelete === true || perms.delete === true,
+    hasAccess: (perms.canRead === true || perms.read === true),
   }
 }
 

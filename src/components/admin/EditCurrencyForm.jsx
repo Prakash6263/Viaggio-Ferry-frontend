@@ -392,7 +392,7 @@ export default function EditCurrencyForm({ currencyId }) {
       </div>
 
   <div className="mt-4">
-  <CanDisable action="update">
+  <CanDisable action="update" path="/company/administration/currency">
     <button type="submit" className="btn btn-turquoise btn-save" disabled={submitting}>
     {submitting ? "Saving..." : "Update Currency"}
     </button>
