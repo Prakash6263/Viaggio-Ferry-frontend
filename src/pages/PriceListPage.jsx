@@ -51,7 +51,7 @@ export default function PriceListPage() {
     // list view
     return (
       <div id={listViewId} className="list-view">
-        <Can action="create" path="/company/pricing/pricelist">
+        <Can action="create" path="/company/partner-management/pricelist">
           <button className={tab === "passenger" ? "mb-4 btn btn-success fw-medium" : "mb-4 btn btn-turquoise fw-medium"}
                   onClick={() => showDetails(tab)}>
             Add New Price List
@@ -74,7 +74,7 @@ export default function PriceListPage() {
       <Sidebar />
       <PageWrapper>
         {/* READ permission gate - hide entire page if no read access */}
-        <Can action="read">
+        <Can action="read" path="/company/partner-management/pricelist">
           <div className="content container-fluid">
             <div className="page-header">
               <div className="content-page-header">

@@ -549,7 +549,9 @@ export default function MarkupDiscountBoardPage() {
 
       {/* Page wrapper (keeps same outer wrapper as original) */}
       <PageWrapper>
-        <div className="content container-fluid">
+        {/* READ permission gate - hide entire page if no read access */}
+        <Can action="read" path="/company/partner-management/markup-discount">
+          <div className="content container-fluid">
           {/* Page Header */}
           <div className="page-header">
             <div className="content-page-header">
@@ -560,7 +562,7 @@ export default function MarkupDiscountBoardPage() {
                     <button className="btn btn-secondary me-2">Export</button>
                   </li>
                   <li>
-                    <Can action="create">
+                    <Can action="create" path="/company/partner-management/markup-discount">
                       <Link className="btn btn-turquoise" to="/company/markup/add-rule">
                         <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Rule
                       </Link>
@@ -747,10 +749,10 @@ export default function MarkupDiscountBoardPage() {
                               </td>
                               <td><span className="badge badge-status-active">Active</span></td>
                               <td className="action-icons">
-                                <CanDisable action="update">
+                                <CanDisable action="update" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
                                 </CanDisable>
-                                <CanDisable action="delete">
+                                <CanDisable action="delete" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
                                 </CanDisable>
                               </td>
@@ -770,10 +772,10 @@ export default function MarkupDiscountBoardPage() {
                               </td>
                               <td><span className="badge badge-status-active">Active</span></td>
                               <td className="action-icons">
-                                <CanDisable action="update">
+                                <CanDisable action="update" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
                                 </CanDisable>
-                                <CanDisable action="delete">
+                                <CanDisable action="delete" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
                                 </CanDisable>
                               </td>
@@ -792,10 +794,10 @@ export default function MarkupDiscountBoardPage() {
                               </td>
                               <td><span className="badge badge-status-active">Active</span></td>
                               <td className="action-icons">
-                                <CanDisable action="update">
+                                <CanDisable action="update" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
                                 </CanDisable>
-                                <CanDisable action="delete">
+                                <CanDisable action="delete" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
                                 </CanDisable>
                               </td>
@@ -814,10 +816,10 @@ export default function MarkupDiscountBoardPage() {
                               </td>
                               <td><span className="badge badge-status-pending">Pending</span></td>
                               <td className="action-icons">
-                                <CanDisable action="update">
+                                <CanDisable action="update" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
                                 </CanDisable>
-                                <CanDisable action="delete">
+                                <CanDisable action="delete" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
                                 </CanDisable>
                               </td>
@@ -836,10 +838,10 @@ export default function MarkupDiscountBoardPage() {
                               </td>
                               <td><span className="badge badge-status-active">Active</span></td>
                               <td className="action-icons">
-                                <CanDisable action="update">
+                                <CanDisable action="update" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
                                 </CanDisable>
-                                <CanDisable action="delete">
+                                <CanDisable action="delete" path="/company/partner-management/markup-discount">
                                   <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
                                 </CanDisable>
                               </td>
@@ -928,12 +930,12 @@ export default function MarkupDiscountBoardPage() {
                     </div>
                   </div>
 
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

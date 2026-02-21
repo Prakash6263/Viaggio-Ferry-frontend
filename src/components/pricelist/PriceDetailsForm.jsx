@@ -856,7 +856,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                             </td>
                             <td className="px-2 py-4">
                               {!detail.isDisabled && (
-                                <CanDisable action="update" path="/company/pricing/pricelist">
+                                <CanDisable action="update" path="/company/partner-management/pricelist">
                                   <button
                                     type="button"
                                     className="btn btn-sm btn-outline-danger"
@@ -1035,9 +1035,11 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
             </div>
 
             <div className="d-flex justify-content-end">
-              <button type="submit" className="btn btn-turquoise fw-medium" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Details"}
-              </button>
+              <CanDisable action="create" path="/company/partner-management/pricelist">
+                <button type="submit" className="btn btn-turquoise fw-medium" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save Details"}
+                </button>
+              </CanDisable>
             </div>
           </form>
         </>

@@ -3,6 +3,8 @@
   import Header from "../components/layout/Header";
   import { Sidebar } from "../components/layout/Sidebar";
   import { PageWrapper } from "../components/layout/PageWrapper";
+  import Can from "../components/Can";
+  import CanDisable from "../components/CanDisable";
 
   export default function AddRulePage() {
     const [ruleName, setRuleName] = useState("");
@@ -46,7 +48,8 @@
         <Header />
         <Sidebar />
         <PageWrapper>
-          <div className="content container-fluid">
+          <Can action="create" path="/company/partner-management/markup-discount">
+            <div className="content container-fluid">
             <div className="mb-3">
               <a href="/company/markup" className="btn btn-turquoise"><i className="bi bi-arrow-left"></i> Back</a>
             </div>
@@ -220,13 +223,14 @@
 
                   <div className="d-flex justify-content-end">
                     <button type="button" className="btn btn-secondary me-2" onClick={() => window.history.back()}>Cancel</button>
-                    <button className="btn btn-turquoise">Save Rule</button>
+                    <CanDisable action="create" path="/company/partner-management/markup-discount">
+                      <button className="btn btn-turquoise">Save Rule</button>
+                    </CanDisable>
                   </div>
                 </form>
-              </div>
             </div>
-
           </div>
+          </Can>
         </PageWrapper>
       </div>
     );
