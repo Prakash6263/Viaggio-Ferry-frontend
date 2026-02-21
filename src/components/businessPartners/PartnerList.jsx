@@ -186,28 +186,29 @@ export default function PartnerList({ partners = [], onUpdate, onDisable, onEnab
                 <td>{p.layer === "Marine" ? p.parentCompany?.companyName || "-" : p.parentAccount?.name || "-"}</td>
                 <td>{p.partnerStatus || p.status}</td>
                   <td style={{ whiteSpace: "nowrap" }}>
-                  <CanDisable action="update">
+                  <CanDisable action="update" path="/company/ship-trip/partners">
                     <button className="btn btn-sm btn-primary me-2" onClick={() => onUpdate?.(p)} title="Edit partner">
                       <i className="fa fa-edit"></i>
                     </button>
                   </CanDisable>
-                  <CanDisable action="update">
-                    <button
-                      className="btn btn-sm btn-warning me-2"
-                      onClick={() => onDisable?.(p)}
-                      title="Disable partner"
-                    >
-                      <i className="fa fa-ban"></i>
-                    </button>
-                  </CanDisable>
-                  <CanDisable action="update">
-                    <button
-                      className="btn btn-sm btn-success me-2"
-                      onClick={() => onEnable?.(p)}
-                      title="Enable partner"
-                    >
-                      <i className="fa fa-check"></i>
-                    </button>
+                  <CanDisable action="update" path="/company/ship-trip/partners">
+                    {p.partnerStatus === "Active" || p.status === "Active" ? (
+                      <button
+                        className="btn btn-sm btn-warning me-2"
+                        onClick={() => onDisable?.(p)}
+                        title="Disable partner"
+                      >
+                        <i className="fa fa-ban"></i>
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-sm btn-success me-2"
+                        onClick={() => onEnable?.(p)}
+                        title="Enable partner"
+                      >
+                        <i className="fa fa-check"></i>
+                      </button>
+                    )}
                   </CanDisable>
                 </td>
               </tr>

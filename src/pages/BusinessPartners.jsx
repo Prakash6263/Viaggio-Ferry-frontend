@@ -345,20 +345,21 @@ export default function BusinessPartnersPage() {
       <Sidebar />
 
       <PageWrapper>
-        <div className="content container-fluid">
-          {/* Page Header */}
-          <div className="page-header">
-            <div className="content-page-header">
-              <h5>Partners</h5>
-              <div className="list-btn" style={{ justifySelf: "end" }}>
-                <ul className="filter-list">
-                  <li>
-                    <Can action="create">
-                      <button id="add-partner-btn" className="btn btn-turquoise" onClick={handleAddClick}>
-                        <i className="fa fa-plus-circle me-2" aria-hidden="true"></i> Add New Partner
-                      </button>
-                    </Can>
-                  </li>
+        <Can action="read" path="/company/ship-trip/partners">
+          <div className="content container-fluid">
+            {/* Page Header */}
+            <div className="page-header">
+              <div className="content-page-header">
+                <h5>Partners</h5>
+                <div className="list-btn" style={{ justifySelf: "end" }}>
+                  <ul className="filter-list">
+                    <li>
+                      <Can action="create" path="/company/ship-trip/partners">
+                        <button id="add-partner-btn" className="btn btn-turquoise" onClick={handleAddClick}>
+                          <i className="fa fa-plus-circle me-2" aria-hidden="true"></i> Add New Partner
+                        </button>
+                      </Can>
+                    </li>
                   <li>
                     <div className="me-5">
                       <a
@@ -427,6 +428,7 @@ export default function BusinessPartnersPage() {
             />
           </div>
         </div>
+        </Can>
       </PageWrapper>
     </div>
   )

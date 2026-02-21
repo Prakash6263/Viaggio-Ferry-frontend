@@ -7,6 +7,7 @@ import PartnerUsersTable from "./PartnerUsersTable"
 import { companyApi } from "../../api/companyapi"
 import { CountryCodeSelector } from "../common/CountryCodeSelector"
 import { companyProfile } from "../../api/companyapi" // Declare companyProfile variable
+import CanDisable from "../CanDisable"
 
 export default function PartnerModal({ open, onClose, onSave, editingPartner = null, allPartners = [], companyName }) {
   const [tab, setTab] = useState("basic") // "basic" | "credit" | "contact" | "users"
@@ -526,9 +527,11 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
                 <PartnerUsersTable users={users} onAdd={addUser} onChangeUser={changeUser} onRemove={removeUser} />
               </div>
 
-              <button type="submit" className="btn btn-turquoise">
-                {editingPartner ? "Update Partner" : "Save Partner"}
-              </button>
+              <CanDisable action={editingPartner ? "update" : "create"} path="/company/ship-trip/partners">
+                <button type="submit" className="btn btn-turquoise">
+                  {editingPartner ? "Update Partner" : "Save Partner"}
+                </button>
+              </CanDisable>
             </form>
           </div>
         </div>
