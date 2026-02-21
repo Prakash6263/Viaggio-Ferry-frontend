@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import CanDisable from '../CanDisable'
 
 const Tabs = ({ activeTab = 'passenger' }) => {
   const [dropdownOpen, setDropdownOpen] = useState({
@@ -331,7 +332,11 @@ const Tabs = ({ activeTab = 'passenger' }) => {
                 {visibleColumns.passenger[35] && <td>$550</td>}
                 {visibleColumns.passenger[36] && <td>$510</td>}
                 {visibleColumns.passenger[37] && <td>525</td>}
-                <td><button className="action-btn">Action</button></td>
+                <td>
+                  <CanDisable action="update" path="/company/sales-booking/bookings">
+                    <button className="action-btn">Action</button>
+                  </CanDisable>
+                </td>
               </tr>
               <tr>
                 {/* Ticket Details */}
@@ -377,7 +382,11 @@ const Tabs = ({ activeTab = 'passenger' }) => {
                 {visibleColumns.passenger[35] && <td>$700</td>}
                 {visibleColumns.passenger[36] && <td>$660</td>}
                 {visibleColumns.passenger[37] && <td>690</td>}
-                <td><button className="action-btn">Action</button></td>
+                <td>
+                  <CanDisable action="update" path="/company/sales-booking/bookings">
+                    <button className="action-btn">Action</button>
+                  </CanDisable>
+                </td>
               </tr>
             </tbody>
           </table>

@@ -1,4 +1,5 @@
 import React from 'react'
+import CanDisable from '../CanDisable'
 
 const ActionPanel = () => {
   return (
@@ -173,15 +174,17 @@ const ActionPanel = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="confirm-btn-container">
-                        <button
-                          className="confirm-btn"
-                          id="confirmBtn"
-                          disabled=""
-                        >
-                          <i className="fas fa-check" /> Confirm
-                        </button>
-                      </div>
+                          <div className="confirm-btn-container">
+                            <CanDisable action="update" path="/company/sales-booking/bookings">
+                              <button
+                                className="confirm-btn"
+                                id="confirmBtn"
+                                disabled=""
+                              >
+                                <i className="fas fa-check" /> Confirm
+                              </button>
+                            </CanDisable>
+                          </div>
                     </div>
                     <div className="action-right-column">
                       <div className="detail-box">

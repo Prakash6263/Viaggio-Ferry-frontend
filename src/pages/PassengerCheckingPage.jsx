@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar"
 import { PageWrapper } from "../components/layout/PageWrapper";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
 
 /**
  * Demo trips and traveler dataset (copied/adapted from your original HTML example)
@@ -480,7 +482,8 @@ export default function PassengerCheckingPage() {
         <Header />
         <Sidebar />
         <PageWrapper>
-          <style
+          <Can action="update" path="/company/sales-booking/passenger-checking">
+            <style
             dangerouslySetInnerHTML={{
               __html: `
     * { box-sizing: border-box; }
@@ -1163,6 +1166,7 @@ export default function PassengerCheckingPage() {
             </div>
           </div>
         </PageWrapper>
+        </Can>
       </div>
     </>
   );

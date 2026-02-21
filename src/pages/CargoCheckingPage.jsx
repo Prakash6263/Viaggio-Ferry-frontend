@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import Header from "../components/layout/Header"
 import { Sidebar } from "../components/layout/Sidebar"
 import { PageWrapper } from "../components/layout/PageWrapper"
+import Can from "../components/Can"
+import CanDisable from "../components/CanDisable"
 
 /**
  * Demo trips and cargo dataset
@@ -501,7 +503,8 @@ export default function CargoCheckingPage() {
         <Header />
         <Sidebar />
         <PageWrapper>
-          <style
+          <Can action="update" path="/company/sales-booking/cargo-checking">
+            <style
             dangerouslySetInnerHTML={{
               __html: `
     * { box-sizing: border-box; }
@@ -1677,7 +1680,8 @@ export default function CargoCheckingPage() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          </Can>
         </PageWrapper>
       </div>
     </>
