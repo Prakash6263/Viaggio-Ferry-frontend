@@ -11,7 +11,7 @@ export default function CompanyAddShip() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <Can action="create" path="/company/administration/ships">
+        <Can action="create" path="/company/fleet-management/ships">
           <div className="mb-3">
             <button className="btn btn-turquoise" onClick={() => window.history.back()}>
               <i className="bi bi-arrow-left"></i> Back to List

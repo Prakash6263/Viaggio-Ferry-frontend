@@ -208,7 +208,7 @@ export default function AccountingPeriods() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <Can ability="read">
+        <Can action="read" path="/company/finance-accounting/accounting-periods">
           <div className="content container-fluid">
             {/* Page Header */}
             <div className="page-header">

@@ -195,7 +195,8 @@ export default function ChartOfAccountsPage() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        {/* Page Header */}
+        <Can action="read" path="/company/finance-accounting/chart-of-accounts">
+          {/* Page Header */}
         <div className="page-header">
           <div className="content-page-header">
             <h5>Chart of Accounts</h5>
@@ -471,7 +472,7 @@ export default function ChartOfAccountsPage() {
               )}
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   )

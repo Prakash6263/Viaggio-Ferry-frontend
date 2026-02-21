@@ -157,6 +157,7 @@ export default function BankAndCashAccountsPage() {
       <Header />
       <Sidebar />
       <PageWrapper>
+        <Can action="read" path="/company/finance-accounting/bank-cash-accounts">
         <div className="page-header">
           <div className="content-page-header">
             <h5>Bank & Cash Accounts</h5>
@@ -319,7 +320,7 @@ export default function BankAndCashAccountsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   )

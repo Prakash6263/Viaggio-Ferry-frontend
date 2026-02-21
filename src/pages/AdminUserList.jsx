@@ -55,14 +55,15 @@ export default function AdminUserList() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        {/* Page Header (same classes as HTML) */}
+        <Can action="read" path="/company/administration/users">
+          {/* Page Header (same classes as HTML) */}
         <div className="page-header">
           <div className="content-page-header d-flex justify-content-between align-items-center">
             <h5 className="mb-0">User List</h5>
             <div className="list-btn" style={{ justifySelf: "end" }}>
               <ul className="filter-list mb-0">
                 <li>
-                  <Can action="create">
+                  <Can action="create" path="/company/administration/users">
                     <Link className="btn btn-turquoise" to="/company/administration/add-user">
                       <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>
                       Add New User
@@ -79,7 +80,7 @@ export default function AdminUserList() {
           <div className="col-sm-12">
             <UserListTable />
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   )

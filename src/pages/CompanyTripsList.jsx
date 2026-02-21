@@ -11,7 +11,7 @@ export default function CompanyTripsList() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <Can action="read">
+        <Can action="read" path="/company/fleet-management/trips">
           <TripsListTable />
         </Can>
       </PageWrapper>

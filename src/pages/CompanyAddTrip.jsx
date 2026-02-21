@@ -149,6 +149,7 @@ export default function CompanyAddTrip() {
       <Sidebar />
 
       <PageWrapper>
+        <Can action="create" path="/company/fleet-management/trips">
         <Can action="create" path="/company/ship-trip/trips">
           <div className="content container-fluid">
             {/* Back Button */}
@@ -503,6 +504,7 @@ export default function CompanyAddTrip() {
             </div>
           </div>
           </div>
+        </Can>
         </Can>
       </PageWrapper>
     </div>

@@ -96,7 +96,8 @@ export default function PaymentsAndReceipts() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="content container-fluid">
+        <Can action="read" path="/company/finance-accounting/payments-receipts">
+          <div className="content container-fluid">
           <div className="page-header">
             <div className="content-page-header">
               <h5>Internal Payments & Receipts</h5>
@@ -162,7 +163,7 @@ export default function PaymentsAndReceipts() {
               </div>
             </div>
           </div>
-        </div>
+        </Can>
       </PageWrapper>
     </div>
   );

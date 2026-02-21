@@ -13,7 +13,7 @@ export default function CompanyShipsList() {
       <Sidebar />
       <PageWrapper>
         {/* READ permission gate - hide entire page if no read access */}
-        <Can action="read">
+        <Can action="read" path="/company/fleet-management/ships">
           {/* Page Header */}
     
 
