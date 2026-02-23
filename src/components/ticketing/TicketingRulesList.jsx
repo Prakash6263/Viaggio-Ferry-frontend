@@ -7,6 +7,12 @@ import { useNavigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import CanDisable from "../CanDisable"
 
+/**
+ * TicketingRulesList - displays all ticketing rules in a DataTable
+ * - fetches data from API with exact Postman payload structure
+ * - applies RBAC using CanDisable wrapper pattern (like currency module)
+ * - maintains existing ticket rule page design with DataTable
+ */
 export default function TicketingRulesList() {
   const navigate = useNavigate()
   const [rules, setRules] = useState([])
@@ -16,7 +22,7 @@ export default function TicketingRulesList() {
   const fetchRules = async () => {
     try {
       setLoading(true)
-      const response = await ticketingRulesApi.getTicketingRules(1, 100)
+      const response = await ticketingRulesApi.getTicketingRules()
       setRules(response.data || [])
       setError(null)
     } catch (err) {
@@ -31,11 +37,11 @@ export default function TicketingRulesList() {
     fetchRules()
   }, [])
 
+  // Initialize DataTable when rules change
   useEffect(() => {
     const el = document.getElementById("ticketingRulesTable")
     if (!el || !window.DataTable) return
 
-    // destroy if hot-reloaded
     try {
       if (el._dt) {
         el._dt.destroy()
@@ -68,13 +74,14 @@ export default function TicketingRulesList() {
   }, [rules])
 
   const formatPenalty = (penalty) => {
-    if (!penalty || penalty.type === "NONE") return "-"
-    if (penalty.type === "FIXED") return `₹ ${penalty.value || 0}`
-    if (penalty.type === "PERCENTAGE") return `${penalty.value || 0}%`
+    if (!penalty) return "-"
+    if (penalty.type === "NONE") return "-"
+    if (penalty.type === "FIXED") return `₹ ${penalty.value}`
+    if (penalty.type === "PERCENTAGE") return `${penalty.value}%`
     return "-"
   }
 
-  const handleUpdate = (ruleId) => {
+  const handleEdit = (ruleId) => {
     navigate(`/company/edit-ticket-rule/${ruleId}`)
   }
 
@@ -93,24 +100,21 @@ export default function TicketingRulesList() {
     if (result.isConfirmed) {
       try {
         setLoading(true)
-        const res = await ticketingRulesApi.deleteTicketingRule(ruleId)
-        if (res.success) {
-          Swal.fire({
-            icon: "success",
-            title: "Deleted!",
-            text: res.message || "Ticketing rule has been deleted successfully.",
-            timer: 2000,
-            showConfirmButton: false,
-          })
-          fetchRules()
-        }
+        await ticketingRulesApi.deleteTicketingRule(ruleId)
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "Ticketing rule has been deleted successfully.",
+          timer: 2000,
+          showConfirmButton: false,
+        })
+        fetchRules()
       } catch (err) {
         Swal.fire({
           icon: "error",
           title: "Error",
           text: err.message || "Failed to delete ticketing rule",
         })
-      } finally {
         setLoading(false)
       }
     }
@@ -157,9 +161,7 @@ export default function TicketingRulesList() {
               <tbody>
                 {rules.map((rule) => (
                   <tr key={rule._id}>
-                    <td>
-                      <span className="badge bg-info">{rule.ruleType || "N/A"}</span>
-                    </td>
+                    <td>{rule.ruleType || "N/A"}</td>
                     <td>{rule.ruleName || "N/A"}</td>
                     <td>{rule.payloadType || "N/A"}</td>
                     <td>{formatPenalty(rule.normalFee)}</td>
@@ -169,10 +171,10 @@ export default function TicketingRulesList() {
                       <CanDisable action="update" path="/sales-bookings/ticketing-rules">
                         <button
                           className="btn btn-sm btn-primary me-2"
-                          onClick={() => handleUpdate(rule._id)}
-                          title="Update Rule"
+                          onClick={() => handleEdit(rule._id)}
+                          title="Edit Rule"
                         >
-                          <i className="bi bi-pencil"></i> Update
+                          <i className="bi bi-pencil"></i> Edit
                         </button>
                       </CanDisable>
                       <CanDisable action="delete" path="/sales-bookings/ticketing-rules">
@@ -195,4 +197,3 @@ export default function TicketingRulesList() {
     </div>
   )
 }
-
