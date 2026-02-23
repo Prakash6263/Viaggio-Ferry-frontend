@@ -142,23 +142,30 @@
 
 
 
-'use client'
+'use client';
 
-// src/pages/TicketingRulesPage.jsx
-import React from "react"
-import Header from "../components/layout/Header"
-import { Sidebar } from "../components/layout/Sidebar"
-import { PageWrapper } from "../components/layout/PageWrapper"
-import Can from "../components/Can"
-import TicketingRulesList from "../components/ticketing/TicketingRulesList"
+import React from "react";
+import Header from "../components/layout/Header";
+import { Sidebar } from "../components/layout/Sidebar";
+import { PageWrapper } from "../components/layout/PageWrapper";
+import { useNavigate } from "react-router-dom";
+import Can from "../components/Can";
+import CanDisable from "../components/CanDisable";
+import TicketingRulesList from "../components/ticketing/TicketingRulesList";
 
 /**
- * TicketingRulesPage
- * - Main page for Ticketing Rules management
- * - Shows list of all ticketing rules with filters
- * - Integrated with RBAC using Can component
+ * TicketingRulesPage - Main page for Ticketing Rules management
+ * - displays list of all ticketing rules from API
+ * - integrated with RBAC using Can component for page-level access
+ * - follows currency module pattern for consistent design
  */
 export default function TicketingRulesPage() {
+  const navigate = useNavigate();
+
+  const handleAddRule = () => {
+    navigate("/company/add-ticket-rule");
+  };
+
   return (
     <div className="main-wrapper">
       <Header />
@@ -167,7 +174,18 @@ export default function TicketingRulesPage() {
         <div className="content container-fluid">
           <div className="page-header">
             <div className="content-page-header">
-              <h5>Ticketing Rules Management</h5>
+              <h5>Ticketing Rule Management</h5>
+              <div className="list-btn" style={{ justifySelf: "end" }}>
+                <ul className="filter-list">
+                  <li>
+                    <CanDisable action="create" path="/sales-bookings/ticketing-rules">
+                      <button className="btn btn-turquoise" onClick={handleAddRule}>
+                        <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add Ticket Rule
+                      </button>
+                    </CanDisable>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -181,5 +199,5 @@ export default function TicketingRulesPage() {
         </div>
       </PageWrapper>
     </div>
-  )
+  );
 }
