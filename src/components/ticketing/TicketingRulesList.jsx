@@ -151,7 +151,6 @@ export default function TicketingRulesList() {
                 <tr>
                   <th>Rule Type</th>
                   <th>Rule Name</th>
-                  <th>Payload Type</th>
                   <th>Normal Fee</th>
                   <th>Restricted Penalty</th>
                   <th>No Show Penalty</th>
@@ -163,7 +162,6 @@ export default function TicketingRulesList() {
                   <tr key={rule._id}>
                     <td>{rule.ruleType || "N/A"}</td>
                     <td>{rule.ruleName || "N/A"}</td>
-                    <td>{rule.payloadType || "N/A"}</td>
                     <td>{formatPenalty(rule.normalFee)}</td>
                     <td>{formatPenalty(rule.restrictedPenalty)}</td>
                     <td>{formatPenalty(rule.noShowPenalty)}</td>

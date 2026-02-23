@@ -17,7 +17,6 @@ export const ticketingRulesApi = {
       if (params.limit) queryParams.append("limit", params.limit)
       if (params.search) queryParams.append("search", params.search)
       if (params.ruleType) queryParams.append("ruleType", params.ruleType)
-      if (params.payloadType) queryParams.append("payloadType", params.payloadType)
 
       const queryString = queryParams.toString()
       const url = `/api/ticketing-rules${queryString ? `?${queryString}` : ""}`
