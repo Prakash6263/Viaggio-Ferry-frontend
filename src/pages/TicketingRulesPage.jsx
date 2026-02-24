@@ -261,6 +261,8 @@ export default function TicketingRulesPage() {
       // Prepare payload - only send UPDATE fields from Postman collection
       const updatePayload = {
         ruleName: editFormData.ruleName,
+        sameDayOnly: editFormData.sameDayOnly,
+        startOffsetDays: editFormData.startOffsetDays,
         restrictedWindowHours: editFormData.restrictedWindowHours,
         normalFee: editFormData.normalFee,
         restrictedPenalty: editFormData.restrictedPenalty,
@@ -575,6 +577,17 @@ export default function TicketingRulesPage() {
                         value={editFormData.ruleName || ""}
                         onChange={(e) => handleEditFieldChange("ruleName", e.target.value)}
                       />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.sameDayOnly || false}
+                          onChange={(e) => handleEditFieldChange("sameDayOnly", e.target.checked)}
+                        />
+                        {" "}Same Day Only
+                      </label>
                     </div>
 
                     {editFormData.ruleType === "VOID" ? (

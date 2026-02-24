@@ -48,33 +48,32 @@ export default function RuleCard({ rule, onRemove, onChange }) {
           />
         </div>
 
+        {/* Same Day Only - Available for all rule types */}
+        <div className="mb-3">
+          <label className="form-label">
+            <input
+              type="checkbox"
+              checked={rule.sameDayOnly || false}
+              onChange={(e) => onChange(rule.id, { sameDayOnly: e.target.checked })}
+            />
+            {" "}Same Day Only
+          </label>
+        </div>
+
         {/* Conditional Fields Based on Rule Type */}
         {rule.ruleType === "VOID" ? (
           <>
-            {/* VOID Rule: sameDayOnly and restrictedWindowHours */}
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label className="form-label">
-                  <input
-                    type="checkbox"
-                    checked={rule.sameDayOnly || false}
-                    onChange={(e) => onChange(rule.id, { sameDayOnly: e.target.checked })}
-                  />
-                  {" "}Same Day Only
-                </label>
-              </div>
-
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Restricted Window Hours (before departure)</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="e.g., 3"
-                  min="0"
-                  value={rule.restrictedWindowHours || ""}
-                  onChange={(e) => onChange(rule.id, { restrictedWindowHours: parseInt(e.target.value) || 0 })}
-                />
-              </div>
+            {/* VOID Rule: restrictedWindowHours */}
+            <div className="mb-3">
+              <label className="form-label">Restricted Window Hours (before departure)</label>
+              <input
+                type="number"
+                className="form-control"
+                placeholder="e.g., 3"
+                min="0"
+                value={rule.restrictedWindowHours || ""}
+                onChange={(e) => onChange(rule.id, { restrictedWindowHours: parseInt(e.target.value) || 0 })}
+              />
             </div>
           </>
         ) : (
