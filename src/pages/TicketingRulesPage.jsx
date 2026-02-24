@@ -158,6 +158,7 @@ import { ticketingRuleApi } from "../api/ticketingRuleApi";
  * - keeps markup and classes identical (only JSX changes)
  * - defensive DataTable init on the table element
  * - fetches data from API and populates table
+ * - includes edit modal and delete functionality
  */
 export default function TicketingRulesPage() {
   const tableRef = useRef(null);
@@ -173,6 +174,10 @@ export default function TicketingRulesPage() {
     search: "",
     ruleType: ""
   });
+  const [editingRule, setEditingRule] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState(null);
 
   // Fetch rules from API
   useEffect(() => {
@@ -218,6 +223,96 @@ export default function TicketingRulesPage() {
       return `${rule.startOffsetDays} Day${rule.startOffsetDays > 1 ? "s" : ""} Before`;
     }
     return `${rule.restrictedWindowHours} Hour${rule.restrictedWindowHours > 1 ? "s" : ""} Before`;
+  };
+
+  // Handle edit button click
+  const handleEdit = async (ruleId) => {
+    try {
+      setEditLoading(true);
+      setEditError(null);
+      const response = await ticketingRuleApi.getTicketingRuleById(ruleId);
+      setEditingRule(response.data || response);
+      setEditFormData(response.data || response);
+      // Open modal
+      const modal = new window.bootstrap.Modal(document.getElementById("editRuleModal"));
+      modal.show();
+    } catch (err) {
+      console.error("[v0] Error fetching rule for edit:", err);
+      setEditError(err.message || "Failed to load rule details");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Handle update rule
+  const handleUpdateRule = async () => {
+    try {
+      setEditLoading(true);
+      setEditError(null);
+      const ruleId = editingRule._id || editingRule.id;
+      await ticketingRuleApi.updateTicketingRule(ruleId, editFormData);
+      
+      // Close modal
+      const modal = window.bootstrap.Modal.getInstance(document.getElementById("editRuleModal"));
+      if (modal) modal.hide();
+      
+      // Refresh the list
+      const response = await ticketingRuleApi.getTicketingRules(
+        pagination.page,
+        pagination.limit,
+        filters
+      );
+      setRules(response.data || []);
+      setEditingRule(null);
+    } catch (err) {
+      console.error("[v0] Error updating rule:", err);
+      setEditError(err.message || "Failed to update rule");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Handle delete button click
+  const handleDelete = async (ruleId) => {
+    if (!window.confirm("Are you sure you want to delete this rule?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await ticketingRuleApi.deleteTicketingRule(ruleId);
+      // Refresh the list
+      const response = await ticketingRuleApi.getTicketingRules(
+        pagination.page,
+        pagination.limit,
+        filters
+      );
+      setRules(response.data || []);
+    } catch (err) {
+      console.error("[v0] Error deleting rule:", err);
+      setError(err.message || "Failed to delete rule");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle edit form field changes
+  const handleEditFieldChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handle edit form nested field changes for fees
+  const handleEditFeeChange = (feeField, type, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [feeField]: {
+        type,
+        value: value === "" ? 0 : parseFloat(value) || 0
+      }
+    }));
   };
 
   // Initialize DataTable
@@ -274,6 +369,8 @@ export default function TicketingRulesPage() {
             .btn-remove { background-color: #dc3545; color: white; }
             .loading-spinner { text-align: center; padding: 2rem; }
             .error-message { color: #dc3545; padding: 1rem; background-color: #f8d7da; border-radius: 0.5rem; margin-bottom: 1rem; }
+            .action-buttons { display: flex; gap: 0.5rem; }
+            .action-buttons button { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
           `}</style>
 
           <div className="page-header">
@@ -323,6 +420,7 @@ export default function TicketingRulesPage() {
                             <th>Restricted Penalty</th>
                             <th>No Show Penalty</th>
                             <th>Conditions</th>
+                            <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -330,7 +428,7 @@ export default function TicketingRulesPage() {
                             rules.map((rule) => (
                               <tr key={rule.id || rule._id}>
                                 <td>
-                                  <span className={`badge badge-${rule.ruleType === 'VOID' ? 'danger' : rule.ruleType === 'REFUND' ? 'success' : 'info'}`}>
+                                  <span className={`badge badge-${rule.ruleType === 'VOID' ? 'danger' : rule.ruleType === 'REFUND' ? 'success' : 'primary'}`}>
                                     {rule.ruleType}
                                   </span>
                                 </td>
@@ -340,11 +438,33 @@ export default function TicketingRulesPage() {
                                 <td>{formatFee(rule.restrictedPenalty)}</td>
                                 <td>{formatFee(rule.noShowPenalty)}</td>
                                 <td>{rule.conditions || "-"}</td>
+                                <td>
+                                  <div className="action-buttons">
+                                    <Can action="update">
+                                      <button 
+                                        className="btn btn-sm btn-info"
+                                        onClick={() => handleEdit(rule._id || rule.id)}
+                                        title="Edit"
+                                      >
+                                        <i className="fa fa-edit"></i>
+                                      </button>
+                                    </Can>
+                                    <Can action="delete">
+                                      <button 
+                                        className="btn btn-sm btn-danger"
+                                        onClick={() => handleDelete(rule._id || rule.id)}
+                                        title="Delete"
+                                      >
+                                        <i className="fa fa-trash"></i>
+                                      </button>
+                                    </Can>
+                                  </div>
+                                </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="7" style={{ textAlign: "center", padding: "2rem" }}>
+                              <td colSpan="8" style={{ textAlign: "center", padding: "2rem" }}>
                                 No ticketing rules found
                               </td>
                             </tr>
@@ -358,6 +478,120 @@ export default function TicketingRulesPage() {
             </div>
           </div>
 
+        </div>
+
+        {/* Edit Rule Modal */}
+        <div className="modal fade" id="editRuleModal" tabIndex="-1" aria-hidden="true">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Ticketing Rule</h5>
+                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {editError && (
+                  <div className="alert alert-danger">{editError}</div>
+                )}
+                {editingRule && (
+                  <form>
+                    <div className="mb-3">
+                      <label className="form-label">Rule Type</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        value={editFormData.ruleType || ""} 
+                        disabled 
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Rule Name</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        value={editFormData.ruleName || ""}
+                        onChange={(e) => handleEditFieldChange("ruleName", e.target.value)}
+                      />
+                    </div>
+
+                    {editFormData.ruleType === "VOID" ? (
+                      <>
+                        <div className="mb-3">
+                          <label className="form-label">
+                            <input
+                              type="checkbox"
+                              checked={editFormData.sameDayOnly || false}
+                              onChange={(e) => handleEditFieldChange("sameDayOnly", e.target.checked)}
+                            />
+                            {" "}Same Day Only
+                          </label>
+                        </div>
+                      </>
+                    ) : null}
+
+                    <div className="mb-3">
+                      <label className="form-label">Restricted Window Hours</label>
+                      <input 
+                        type="number" 
+                        className="form-control" 
+                        min="0"
+                        value={editFormData.restrictedWindowHours || ""}
+                        onChange={(e) => handleEditFieldChange("restrictedWindowHours", parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">Normal Fee Type</label>
+                        <select
+                          className="form-select"
+                          value={editFormData.normalFee?.type || "NONE"}
+                          onChange={(e) => handleEditFeeChange("normalFee", e.target.value, editFormData.normalFee?.value || 0)}
+                        >
+                          <option value="NONE">None</option>
+                          <option value="FIXED">Fixed Amount</option>
+                          <option value="PERCENTAGE">Percentage</option>
+                        </select>
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">Normal Fee Value</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          value={editFormData.normalFee?.value || ""}
+                          disabled={editFormData.normalFee?.type === "NONE"}
+                          onChange={(e) => handleEditFeeChange("normalFee", editFormData.normalFee?.type || "FIXED", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Conditions</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={editFormData.conditions || ""}
+                        onChange={(e) => handleEditFieldChange("conditions", e.target.value)}
+                      />
+                    </div>
+                  </form>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" disabled={editLoading}>Close</button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleUpdateRule}
+                  disabled={editLoading}
+                >
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </PageWrapper>
     </div>
