@@ -372,7 +372,7 @@ export default function TicketingRulesPage() {
 
   // Initialize DataTable
   useEffect(() => {
-    if (loading || !tableRef.current) return;
+    if (loading || !tableRef.current || rules.length === 0) return;
 
     const el = tableRef.current;
 
@@ -392,7 +392,7 @@ export default function TicketingRulesPage() {
     }
 
     try {
-      // instantiate DataTable defensively
+      // instantiate DataTable defensively - only if there are rows
       el._dt = new window.DataTable(el, {
         // leave default options so the look is same as original
       });
