@@ -5,15 +5,19 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import RuleCard from "../components/ticketing/RuleCard";
 import { useNavigate } from "react-router-dom";
+import { ticketingRuleApi } from "../api/ticketingRuleApi";
 
 /**
  * AddTicketRulePage
- * - reproduces add-ticket-rule.html behavior using React state
- * - preserves classes and markup so styling stays identical
+ * - Matches Postman collection payload structure exactly
+ * - All fields from schema are included
+ * - Integrates with ticketingRuleApi for CREATE operation
  */
 export default function AddTicketRulePage() {
   const [selectedType, setSelectedType] = useState("");
   const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,15 +52,21 @@ export default function AddTicketRulePage() {
       return alert("Please select a rule type.");
     }
     const id = Date.now().toString(36);
+    
+    // Create template based on rule type with all required fields from Postman
     const newRule = {
       id,
-      type: selectedType,
-      name: `${selectedType} - Example`,
-      timeframeBefore: "",
-      afterIssued: "",
-      fee: "",
-      conditions: "",
+      ruleType: selectedType,
+      ruleName: "",
+      sameDayOnly: selectedType === "VOID",
+      startOffsetDays: 0,
+      restrictedWindowHours: 0,
+      normalFee: { type: "NONE", value: 0 },
+      restrictedPenalty: { type: "NONE", value: 0 },
+      noShowPenalty: { type: "NONE", value: 0 },
+      conditions: ""
     };
+    
     setRules((r) => [...r, newRule]);
   };
 
@@ -68,11 +78,40 @@ export default function AddTicketRulePage() {
     setRules((r) => r.map((row) => (row.id === id ? { ...row, ...fields } : row)));
   };
 
-  const saveRules = () => {
-    // TODO: hook up API; for now we simply navigate back or show success message
-    // keep markup: we keep Save Rules button that looks identical
-    alert("Rules saved (simulate).");
-    navigate("/company/ticketing-rules");
+  const saveRules = async () => {
+    try {
+      // Validate all rules have required fields
+      const validationErrors = [];
+      rules.forEach((rule, idx) => {
+        if (!rule.ruleName || rule.ruleName.trim() === "") {
+          validationErrors.push(`Rule ${idx + 1}: Rule Name is required`);
+        }
+      });
+
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join("\n"));
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      // Remove the temporary 'id' field and save each rule to API
+      const savePromises = rules.map((rule) => {
+        const { id: _, ...payload } = rule; // Remove temp id
+        return ticketingRuleApi.createTicketingRule(payload);
+      });
+
+      await Promise.all(savePromises);
+      
+      // Success - navigate back to list
+      navigate("/company/ticketing-rules");
+    } catch (err) {
+      console.error("[v0] Error saving rules:", err);
+      setError(err.message || "Failed to save rules. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,15 +121,20 @@ export default function AddTicketRulePage() {
       <PageWrapper>
         <div className="content container-fluid">
           <div className="mb-3">
-            <a href="/company/ticketing-rules" className="btn btn-turquoise">
+            <button 
+              onClick={() => navigate("/company/ticketing-rules")} 
+              className="btn btn-turquoise"
+              disabled={loading}
+            >
               <i className="bi bi-arrow-left"></i> Back to List
-            </a>
+            </button>
           </div>
 
           <style>{`
             .rule-card { background-color: #f2f9ff; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem; }
             .badge-type { font-size: 0.8rem; font-weight: bold; }
             .btn-remove { background-color: #dc3545; color: white; }
+            .error-alert { color: #dc3545; padding: 1rem; background-color: #f8d7da; border-radius: 0.5rem; margin-bottom: 1rem; }
           `}</style>
 
           <div className="page-header">
@@ -99,10 +143,16 @@ export default function AddTicketRulePage() {
             </div>
           </div>
 
+          {error && (
+            <div className="error-alert">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
           <div className="row">
             <div className="col-sm-12">
               <div className="card p-4">
-                <h5 className="mb-2">Ticketing Rules Configuration</h5>
+                <h5 className="mb-2">Create Ticketing Rules</h5>
 
                 <div className="row mb-3 align-items-center">
                   <div className="col-md-6">
@@ -111,16 +161,21 @@ export default function AddTicketRulePage() {
                       id="ruleTypeSelect"
                       value={selectedType}
                       onChange={(e) => setSelectedType(e.target.value)}
+                      disabled={loading}
                     >
                       <option value="">Select a rule type</option>
                       <option value="VOID">Void</option>
-                      <option value="REISSUE">Reissue</option>
                       <option value="REFUND">Refund</option>
-                      <option value="NOSHOW">No Show</option>
+                      <option value="REISSUE">Reissue</option>
                     </select>
                   </div>
                   <div className="col-md-6">
-                    <button className="btn btn-primary" id="addRuleBtn" onClick={addRule}>
+                    <button 
+                      className="btn btn-primary" 
+                      id="addRuleBtn" 
+                      onClick={addRule}
+                      disabled={loading}
+                    >
                       Add Rule
                     </button>
                   </div>
@@ -132,8 +187,19 @@ export default function AddTicketRulePage() {
                   ))}
                 </div>
 
-                <button className="btn btn-turquoise mt-3" onClick={saveRules}>
-                  Save Rules
+                <button 
+                  className="btn btn-turquoise mt-3" 
+                  onClick={saveRules}
+                  disabled={loading || rules.length === 0}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Rules"
+                  )}
                 </button>
               </div>
             </div>
