@@ -285,7 +285,6 @@ import AddCommissionPage from "./pages/AddCommissionPage"
 import PriceListPage from "./pages/PriceListPage"
 import TicketingRulesPage from "./pages/TicketingRulesPage"
 import AddTicketRulePage from "./pages/AddTicketRulePage"
-import TicketingRuleList from "./pages/sales-bookings/ticketing-rules/TicketingRuleList"
 import BookingAndTicketsPage from "./pages/BookingAndTicketsPage"
 import ExcessBaggageTickets from "./pages/ExcessBaggageTickets"
 
@@ -468,7 +467,6 @@ function AppRoutes() {
         {/* Sales and Booking */}
         <Route path="/company/pricelist" element={<ProtectedRoute element={<PriceListPage />} />} />
         <Route path="/company/ticketing-rules" element={<ProtectedRoute element={<TicketingRulesPage />} />} />
-        <Route path="/sales-bookings/ticketing-rules" element={<ProtectedRoute element={<TicketingRuleList />} />} />
         <Route path="/company/add-ticket-rule" element={<ProtectedRoute element={<AddTicketRulePage />} />} />
         <Route path="/company/booking-and-tickets" element={<ProtectedRoute element={<BookingAndTicketsPage />} />} />
         <Route path="/company/excess-baggage-tickets" element={<ProtectedRoute element={<ExcessBaggageTickets />} />} />
