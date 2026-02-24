@@ -814,7 +814,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       <th scope="col" className="px-2 py-3 text-start fw-semibold">Visa Type</th>
                       <th scope="col" className="px-2 py-3 text-start fw-semibold">Basic Price</th>
                       <th scope="col" className="px-2 py-3 text-start fw-semibold">Taxes</th>
-                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Tax Form</th>
+                      <th scope="col" className="px-2 py-3 text-start fw-semibold">Refund Form</th>
                       <th scope="col" className="px-2 py-3 text-start fw-semibold">Total Price</th>
                       <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Pieces)</th>
                       <th scope="col" className="px-2 py-3 text-start fw-semibold">Allowed Luggage (Weight)</th>

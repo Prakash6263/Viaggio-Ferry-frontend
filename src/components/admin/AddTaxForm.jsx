@@ -255,7 +255,7 @@ export default function AddTaxForm() {
 
       <div className="row mb-3">
         <div className="col-md-6">
-          <label className="form-label">Tax Form</label>
+          <label className="form-label">Refund Form</label>
           <select className="form-select" name="form" value={form.form} onChange={onChange}>
             <option value="Refundable">Refundable</option>
             <option value="Non Refundable">Non Refundable</option>
