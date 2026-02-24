@@ -152,6 +152,8 @@ import { PageWrapper } from "../components/layout/PageWrapper";
 import { Link } from "react-router-dom";
 import Can from "../components/Can";
 import { ticketingRuleApi } from "../api/ticketingRuleApi";
+import { CirclesWithBar } from "react-loader-spinner";
+import Swal from "sweetalert2";
 
 /**
  * TicketingRulesPage - displays ticketing rules with API integration
@@ -206,12 +208,12 @@ export default function TicketingRulesPage() {
     fetchRules();
   }, [pagination.page, filters]);
 
-  // Format fee display
+  // Format fee display - no rupee symbol
   const formatFee = (feeObj) => {
     if (!feeObj) return "-";
     const { type, value } = feeObj;
     if (type === "NONE") return "-";
-    if (type === "FIXED") return `₹${value}`;
+    if (type === "FIXED") return `${value}`;
     if (type === "PERCENTAGE") return `${value}%`;
     return "-";
   };
@@ -239,22 +241,47 @@ export default function TicketingRulesPage() {
     } catch (err) {
       console.error("[v0] Error fetching rule for edit:", err);
       setEditError(err.message || "Failed to load rule details");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to load rule details"
+      });
     } finally {
       setEditLoading(false);
     }
   };
 
-  // Handle update rule
+  // Handle update rule with SweetAlert
   const handleUpdateRule = async () => {
     try {
       setEditLoading(true);
       setEditError(null);
       const ruleId = editingRule._id || editingRule.id;
-      await ticketingRuleApi.updateTicketingRule(ruleId, editFormData);
+      
+      // Prepare payload - only send UPDATE fields from Postman collection
+      const updatePayload = {
+        ruleName: editFormData.ruleName,
+        restrictedWindowHours: editFormData.restrictedWindowHours,
+        normalFee: editFormData.normalFee,
+        restrictedPenalty: editFormData.restrictedPenalty,
+        noShowPenalty: editFormData.noShowPenalty,
+        conditions: editFormData.conditions
+      };
+      
+      await ticketingRuleApi.updateTicketingRule(ruleId, updatePayload);
       
       // Close modal
       const modal = window.bootstrap.Modal.getInstance(document.getElementById("editRuleModal"));
       if (modal) modal.hide();
+      
+      // Show success message
+      Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Rule has been updated successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
       
       // Refresh the list
       const response = await ticketingRuleApi.getTicketingRules(
@@ -267,32 +294,60 @@ export default function TicketingRulesPage() {
     } catch (err) {
       console.error("[v0] Error updating rule:", err);
       setEditError(err.message || "Failed to update rule");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to update rule"
+      });
     } finally {
       setEditLoading(false);
     }
   };
 
-  // Handle delete button click
+  // Handle delete button click with SweetAlert
   const handleDelete = async (ruleId) => {
-    if (!window.confirm("Are you sure you want to delete this rule?")) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
 
-    try {
-      setLoading(true);
-      await ticketingRuleApi.deleteTicketingRule(ruleId);
-      // Refresh the list
-      const response = await ticketingRuleApi.getTicketingRules(
-        pagination.page,
-        pagination.limit,
-        filters
-      );
-      setRules(response.data || []);
-    } catch (err) {
-      console.error("[v0] Error deleting rule:", err);
-      setError(err.message || "Failed to delete rule");
-    } finally {
-      setLoading(false);
+    if (result.isConfirmed) {
+      try {
+        setLoading(true);
+        await ticketingRuleApi.deleteTicketingRule(ruleId);
+        
+        // Show success message
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "Rule has been deleted successfully.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        
+        // Refresh the list
+        const response = await ticketingRuleApi.getTicketingRules(
+          pagination.page,
+          pagination.limit,
+          filters
+        );
+        setRules(response.data || []);
+      } catch (err) {
+        console.error("[v0] Error deleting rule:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err.message || "Failed to delete rule"
+        });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -400,14 +455,22 @@ export default function TicketingRulesPage() {
             <div className="col-sm-12">
               <div className="card-table card p-2">
                 <div className="card-body">
-                  {loading ? (
-                    <div className="loading-spinner">
-                      <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading ticketing rules...</p>
+                  {loading && (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+                      <CirclesWithBar
+                        height="100"
+                        width="100"
+                        color="#05468f"
+                        outerCircleColor="#05468f"
+                        innerCircleColor="#05468f"
+                        barColor="#05468f"
+                        ariaLabel="circles-with-bar-loading"
+                        visible={true}
+                      />
                     </div>
-                  ) : (
+                  )}
+
+                  {!loading && (
                     <div className="table-responsive">
                       {/* keep id "example" as in original HTML */}
                       <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
@@ -563,6 +626,60 @@ export default function TicketingRulesPage() {
                           value={editFormData.normalFee?.value || ""}
                           disabled={editFormData.normalFee?.type === "NONE"}
                           onChange={(e) => handleEditFeeChange("normalFee", editFormData.normalFee?.type || "FIXED", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">Restricted Penalty Type</label>
+                        <select
+                          className="form-select"
+                          value={editFormData.restrictedPenalty?.type || "NONE"}
+                          onChange={(e) => handleEditFeeChange("restrictedPenalty", e.target.value, editFormData.restrictedPenalty?.value || 0)}
+                        >
+                          <option value="NONE">None</option>
+                          <option value="FIXED">Fixed Amount</option>
+                          <option value="PERCENTAGE">Percentage</option>
+                        </select>
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">Restricted Penalty Value</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          value={editFormData.restrictedPenalty?.value || ""}
+                          disabled={editFormData.restrictedPenalty?.type === "NONE"}
+                          onChange={(e) => handleEditFeeChange("restrictedPenalty", editFormData.restrictedPenalty?.type || "FIXED", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">No Show Penalty Type</label>
+                        <select
+                          className="form-select"
+                          value={editFormData.noShowPenalty?.type || "NONE"}
+                          onChange={(e) => handleEditFeeChange("noShowPenalty", e.target.value, editFormData.noShowPenalty?.value || 0)}
+                        >
+                          <option value="NONE">None</option>
+                          <option value="FIXED">Fixed Amount</option>
+                          <option value="PERCENTAGE">Percentage</option>
+                        </select>
+                      </div>
+
+                      <div className="col-md-6 mb-3">
+                        <label className="form-label">No Show Penalty Value</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          value={editFormData.noShowPenalty?.value || ""}
+                          disabled={editFormData.noShowPenalty?.type === "NONE"}
+                          onChange={(e) => handleEditFeeChange("noShowPenalty", editFormData.noShowPenalty?.type || "FIXED", e.target.value)}
                         />
                       </div>
                     </div>
