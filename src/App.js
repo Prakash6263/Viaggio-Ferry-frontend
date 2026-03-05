@@ -31,6 +31,7 @@ import CompanyAddShip from "./pages/CompanyAddShip"
 import CompanyEditShip from "./pages/CompanyEditShip"
 import CompanyTripsList from "./pages/CompanyTripsList"
 import CompanyAddTrip from "./pages/CompanyAddTrip"
+import CompanyEditTrip from "./pages/CompanyEditTrip"
 
 // Partner
 import CompanyPromotionsList from "./pages/CompanyPromotionsList"
@@ -208,6 +209,7 @@ function AppRoutes() {
         <Route path="/company/ship-trip/edit-ship/:id" element={<ProtectedRoute element={<CompanyEditShip />} />} />
         <Route path="/company/ship-trip/trips" element={<ProtectedRoute element={<CompanyTripsList />} />} />
         <Route path="/company/ship-trip/add-trip" element={<ProtectedRoute element={<CompanyAddTrip />} />} />
+        <Route path="/company/ship-trip/edit-trip/:tripId" element={<ProtectedRoute element={<CompanyEditTrip />} />} />
 
         {/* Partners */}
         <Route
