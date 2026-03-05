@@ -357,38 +357,93 @@ export default function CompanyEditTrip() {
     console.log("[v0] Rule type changed to:", ruleType, "Rules available:", ticketingRulesByType);
   };
 
-  // Fetch agent allocations for selected availability
-  const fetchAgentAllocations = async (availabilityId) => {
-    if (!availabilityId) {
-      setAgentAllocations([]);
+  // Prefill agents form from fetched allocations
+  const prefillAgentsFromAllocations = (allocationsData) => {
+    if (!allocationsData || allocationsData.length === 0) {
       return;
     }
 
+    const prefilteredAgents = allocationsData.map((allocation) => {
+      const passengerLines = [];
+      const cargoLines = [];
+      const vehicleLines = [];
+
+      if (allocation.allocations && Array.isArray(allocation.allocations)) {
+        allocation.allocations.forEach((alloc) => {
+          if (alloc.type === "passenger" && alloc.cabins) {
+            alloc.cabins.forEach((cabin) => {
+              passengerLines.push({
+                id: makeId("ap_"),
+                select: cabin.cabin?._id || cabin.cabin,
+                qty: cabin.allocatedSeats?.toString() || ""
+              });
+            });
+          }
+          if (alloc.type === "cargo" && alloc.cabins) {
+            alloc.cabins.forEach((cabin) => {
+              cargoLines.push({
+                id: makeId("ac_"),
+                select: cabin.cabin?._id || cabin.cabin,
+                qty: cabin.allocatedSeats?.toString() || ""
+              });
+            });
+          }
+          if (alloc.type === "vehicle" && alloc.cabins) {
+            alloc.cabins.forEach((cabin) => {
+              vehicleLines.push({
+                id: makeId("av_"),
+                select: cabin.cabin?._id || cabin.cabin,
+                qty: cabin.allocatedSeats?.toString() || ""
+              });
+            });
+          }
+        });
+      }
+
+      return {
+        id: makeId("a_"),
+        trip: tripId,
+        agentId: allocation.agent?._id || "",
+        agentName: allocation.agent?.name || "",
+        passengerLines: passengerLines.length > 0 ? passengerLines : [{ id: makeId("ap_"), select: "", qty: "" }],
+        cargoLines: cargoLines.length > 0 ? cargoLines : [{ id: makeId("ac_"), select: "", qty: "" }],
+        vehicleLines: vehicleLines.length > 0 ? vehicleLines : [{ id: makeId("av_"), select: "", qty: "" }]
+      };
+    });
+
+    console.log("[v0] Prefilled agents from allocations:", prefilteredAgents);
+    setAgents(prefilteredAgents);
+  };
+
+  // Fetch agent allocations for trip
+  const fetchAgentAllocations = async () => {
     try {
       setLoadingAllocations(true);
-      console.log("[v0] Fetching allocations for trip:", tripId, "availability:", availabilityId);
-      const response = await tripsApi.getAgentAllocations(tripId, availabilityId);
+      console.log("[v0] Fetching allocations for trip:", tripId);
+      const response = await tripsApi.getAgentAllocationsByTrip(tripId);
       console.log("[v0] Agent allocations fetched:", response);
-      setAgentAllocations(response.data || []);
+      const allocationsData = response.data || [];
+      setAgentAllocations(allocationsData);
+      
+      // Prefill the form with fetched allocations
+      if (allocationsData.length > 0) {
+        prefillAgentsFromAllocations(allocationsData);
+      }
     } catch (error) {
       console.error("[v0] Error fetching allocations:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load agent allocations"
-      });
+      // Don't show error alert - allocations might not exist yet
       setAgentAllocations([]);
     } finally {
       setLoadingAllocations(false);
     }
   };
 
-  // Auto-load allocations when availability is selected
+  // Auto-load allocations when trip is loaded
   useEffect(() => {
-    if (selectedAvailabilityId) {
-      fetchAgentAllocations(selectedAvailabilityId);
+    if (tripId) {
+      fetchAgentAllocations();
     }
-  }, [selectedAvailabilityId]);
+  }, [tripId]);
 
   // Save handlers
   const onSaveTrip = async (e) => {
@@ -1061,129 +1116,128 @@ export default function CompanyEditTrip() {
                       {/* Allocate to Agent */}
                       <div id="allocateAvailabilityContent" className={availInnerTab === "allocate" ? "" : "hidden"}>
                         <div id="agent-allocation-container">
-                          {agents.map((agent) => (
-                            <div className="agent-block" key={agent.id}>
-                              <div className="d-flex justify-content-between align-items-center mb-3">
-                                <h6>Agent Details</h6>
-                                <button type="button" className="btn btn-sm btn-danger remove-agent" onClick={() => removeAgent(agent.id)}>Remove Agent</button>
-                              </div>
-
-                              <select className="form-select mb-3" value={agent.agentName} onChange={(e) => {
-                                const selectedPartner = partners.find(p => p.name === e.target.value);
-                                setAgents((a) => a.map((ag) => 
-                                  ag.id === agent.id 
-                                    ? { ...ag, agentName: e.target.value, agentId: selectedPartner?._id || "" } 
-                                    : ag
-                                ));
-                              }}>
-                                <option value="">-- Select a Partner --</option>
-                                {partners.map((partner) => (
-                                  <option key={partner._id} value={partner.name}>
-                                    {partner.name}
-                                  </option>
-                                ))}
-                              </select>
-
-                              <div className="allocation-section">
-                                <h6>Passenger Allocation</h6>
-                                <div className="passenger-lines">
-                                  {agent.passengerLines.map((line) => {
-                                    const selectedPassenger = selectedTripAvailability.passenger.find(p => p.cabin._id === line.select);
-                                    return (
-                                      <div className="mb-3" key={line.id}>
-                                        <div className="capacity-grid align-items-center">
-                                          <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)}>
-                                            <option value="">Select</option>
-                                            {selectedTripAvailability.passenger.map((p) => (
-                                              <option key={p.cabin._id} value={p.cabin._id}>
-                                                {p.cabin.name} (Remaining: {p.remainingSeats})
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} />
-                                          <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "passenger", line.id)}>Remove</button>
-                                        </div>
-                                        {selectedPassenger && (
-                                          <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                            Remaining: {selectedPassenger.remainingSeats}
-                                          </small>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                            {agents.map((agent) => (
+                              <div className="agent-block" key={agent.id}>
+                                  <div className="d-flex justify-content-between align-items-center mb-3">
+                                  <h6>Agent Details</h6>
+                                  <button type="button" className="btn btn-sm btn-danger remove-agent" onClick={() => removeAgent(agent.id)}>Remove Agent</button>
                                 </div>
-                                <button type="button" className="btn btn-sm btn-outline-secondary add-passenger-line" onClick={() => addAgentLine(agent.id, "passenger")}>Add Passenger Line</button>
-                              </div>
 
-                              <div className="allocation-section">
-                                <h6>Cargo Allocation</h6>
-                                <div className="cargo-lines">
-                                  {agent.cargoLines.map((line) => {
-                                    const selectedCargo = selectedTripAvailability.cargo.find(c => c.cabin._id === line.select);
-                                    return (
-                                      <div className="mb-3" key={line.id}>
-                                        <div className="capacity-grid align-items-center">
-                                          <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)}>
-                                            <option value="">Select</option>
-                                            {selectedTripAvailability.cargo.map((c) => (
-                                              <option key={c.cabin._id} value={c.cabin._id}>
-                                                {c.cabin.name} (Remaining: {c.remainingSeats})
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} />
-                                          <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "cargo", line.id)}>Remove</button>
-                                        </div>
-                                        {selectedCargo && (
-                                          <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                            Remaining: {selectedCargo.remainingSeats}
-                                          </small>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                <button type="button" className="btn btn-sm btn-outline-secondary add-cargo-line" onClick={() => addAgentLine(agent.id, "cargo")}>Add Cargo Line</button>
-                              </div>
+                                <select className="form-select mb-3" value={agent.agentName} onChange={(e) => {
+                                  const selectedPartner = partners.find(p => p.name === e.target.value);
+                                  setAgents((a) => a.map((ag) => 
+                                    ag.id === agent.id 
+                                      ? { ...ag, agentName: e.target.value, agentId: selectedPartner?._id || "" } 
+                                      : ag
+                                  ));
+                                }}>
+                                  <option value="">-- Select a Partner --</option>
+                                  {partners.map((partner) => (
+                                    <option key={partner._id} value={partner.name}>
+                                      {partner.name}
+                                    </option>
+                                  ))}
+                                </select>
 
-                              <div className="allocation-section">
-                                <h6>Vehicle Allocation</h6>
-                                <div className="vehicle-lines">
-                                  {agent.vehicleLines.map((line) => {
-                                    const selectedVehicle = selectedTripAvailability.vehicle.find(v => v.cabin._id === line.select);
-                                    return (
-                                      <div className="mb-3" key={line.id}>
-                                        <div className="capacity-grid align-items-center">
-                                          <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)}>
-                                            <option value="">Select</option>
-                                            {selectedTripAvailability.vehicle.map((v) => (
-                                              <option key={v.cabin._id} value={v.cabin._id}>
-                                                {v.cabin.name} (Remaining: {v.remainingSeats})
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} />
-                                          <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}>Remove</button>
+                                <div className="allocation-section">
+                                  <h6>Passenger Allocation</h6>
+                                  <div className="passenger-lines">
+                                    {agent.passengerLines.map((line) => {
+                                      const selectedPassenger = selectedTripAvailability.passenger.find(p => p.cabin._id === line.select);
+                                      return (
+                                        <div className="mb-3" key={line.id}>
+                                          <div className="capacity-grid align-items-center">
+                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)}>
+                                              <option value="">Select</option>
+                                              {selectedTripAvailability.passenger.map((p) => (
+                                                <option key={p.cabin._id} value={p.cabin._id}>
+                                                  {p.cabin.name} (Remaining: {p.remainingSeats})
+                                                </option>
+                                              ))}
+                                            </select>
+                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} />
+                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "passenger", line.id)}>Remove</button>
+                                          </div>
+                                          {selectedPassenger && (
+                                            <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
+                                              Remaining: {selectedPassenger.remainingSeats}
+                                            </small>
+                                          )}
                                         </div>
-                                        {selectedVehicle && (
-                                          <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                            Remaining: {selectedVehicle.remainingSeats}
-                                          </small>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
+                                  <button type="button" className="btn btn-sm btn-outline-secondary add-passenger-line" onClick={() => addAgentLine(agent.id, "passenger")}>Add Passenger Line</button>
                                 </div>
-                                <button type="button" className="btn btn-sm btn-outline-secondary add-vehicle-line" onClick={() => addAgentLine(agent.id, "vehicle")}>Add Vehicle Line</button>
+
+                                <div className="allocation-section">
+                                  <h6>Cargo Allocation</h6>
+                                  <div className="cargo-lines">
+                                    {agent.cargoLines.map((line) => {
+                                      const selectedCargo = selectedTripAvailability.cargo.find(c => c.cabin._id === line.select);
+                                      return (
+                                        <div className="mb-3" key={line.id}>
+                                          <div className="capacity-grid align-items-center">
+                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)}>
+                                              <option value="">Select</option>
+                                              {selectedTripAvailability.cargo.map((c) => (
+                                                <option key={c.cabin._id} value={c.cabin._id}>
+                                                  {c.cabin.name} (Remaining: {c.remainingSeats})
+                                                </option>
+                                              ))}
+                                            </select>
+                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} />
+                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "cargo", line.id)}>Remove</button>
+                                          </div>
+                                          {selectedCargo && (
+                                            <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
+                                              Remaining: {selectedCargo.remainingSeats}
+                                            </small>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <button type="button" className="btn btn-sm btn-outline-secondary add-cargo-line" onClick={() => addAgentLine(agent.id, "cargo")}>Add Cargo Line</button>
+                                </div>
+
+                                <div className="allocation-section">
+                                  <h6>Vehicle Allocation</h6>
+                                  <div className="vehicle-lines">
+                                    {agent.vehicleLines.map((line) => {
+                                      const selectedVehicle = selectedTripAvailability.vehicle.find(v => v.cabin._id === line.select);
+                                      return (
+                                        <div className="mb-3" key={line.id}>
+                                          <div className="capacity-grid align-items-center">
+                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)}>
+                                              <option value="">Select</option>
+                                              {selectedTripAvailability.vehicle.map((v) => (
+                                                <option key={v.cabin._id} value={v.cabin._id}>
+                                                  {v.cabin.name} (Remaining: {v.remainingSeats})
+                                                </option>
+                                              ))}
+                                            </select>
+                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} />
+                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}>Remove</button>
+                                          </div>
+                                          {selectedVehicle && (
+                                            <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
+                                              Remaining: {selectedVehicle.remainingSeats}
+                                            </small>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <button type="button" className="btn btn-sm btn-outline-secondary add-vehicle-line" onClick={() => addAgentLine(agent.id, "vehicle")}>Add Vehicle Line</button>
+                                </div>
                               </div>
+                            ))}
+                            <button type="button" id="addAgentLine" className="btn btn-sm btn-outline-secondary" onClick={addAgent}>Add Another Agent</button>
+
+                            <div className="text-end mt-3">
+                              <button type="button" className="btn btn-success" onClick={onSaveAgentAllocations}>Save Allocation</button>
                             </div>
-                          ))}
-                        </div>
-
-                        <button type="button" id="addAgentLine" className="btn btn-sm btn-outline-secondary" onClick={addAgent}>Add Another Agent</button>
-
-                        <div className="text-end mt-3">
-                          <button type="button" className="btn btn-success" onClick={onSaveAgentAllocations}>Save Allocation</button>
                         </div>
                       </div>
                     </div>

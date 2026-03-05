@@ -253,7 +253,7 @@ export const tripsApi = {
   },
 
   /**
-   * Get agent allocations for trip availability
+   * Get agent allocations for trip availability (with availability ID)
    * @param {string} tripId - Trip ID
    * @param {string} availabilityId - Availability ID
    */
@@ -269,6 +269,36 @@ export const tripsApi = {
       console.log("[v0] Fetching agent allocations for trip:", tripId, "availability:", availabilityId)
 
       const response = await apiFetch(`${BASE_URL}/${tripId}/availabilities/${availabilityId}/agent-allocations`, {
+        method: "GET",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch agent allocations")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Agent allocations fetched successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Get Agent Allocations Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Get all agent allocations for a trip (direct endpoint)
+   * @param {string} tripId - Trip ID
+   */
+  getAgentAllocationsByTrip: async (tripId) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+
+      console.log("[v0] Fetching agent allocations for trip:", tripId)
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}/agent-allocations`, {
         method: "GET",
       })
 
