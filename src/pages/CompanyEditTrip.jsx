@@ -94,7 +94,7 @@ export default function CompanyEditTrip() {
 
   // Ticketing rules
   const [tripRules, setTripRules] = useState([
-    { id: makeId("r_"), trip: "", ruleType: "Refund", ruleName: "" }
+    { id: makeId("r_"), trip: "", ruleType: "Refund", ruleId: "", ruleName: "" }
   ]);
 
   // Fetch data on mount
@@ -212,15 +212,27 @@ export default function CompanyEditTrip() {
           });
         }
 
-        // Prefill ticketing rules
-        if (tripData.ticketingRules && tripData.ticketingRules.length > 0) {
-          const prefillRules = tripData.ticketingRules.map((tr, idx) => ({
+        // Prefill ticketing rules - store ruleId for reliable matching
+        if (tripData.ticketingRules && Array.isArray(tripData.ticketingRules) && tripData.ticketingRules.length > 0) {
+          const prefillRules = tripData.ticketingRules.map((tr) => ({
             id: makeId("r_"),
             trip: tripId,
             ruleType: tr.ruleType === "VOID" ? "Void" : tr.ruleType === "REFUND" ? "Refund" : "Reissue",
-            ruleName: typeof tr.rule === "object" ? tr.rule.ruleName : tr.rule || ""
+            ruleId: (tr.rule && typeof tr.rule === "object" && tr.rule._id) ? tr.rule._id : "",
+            ruleName: (tr.rule && typeof tr.rule === "object" && tr.rule.ruleName) ? tr.rule.ruleName : ""
           }));
-          console.log("[v0] Prefilled trip rules:", prefillRules);
+          console.log("[v0] Prefilled trip rules from tripData:", prefillRules);
+          setTripRules(prefillRules);
+        } else if (assignedTripRules && Array.isArray(assignedTripRules) && assignedTripRules.length > 0) {
+          // Fallback: use assignedTripRules if tripData doesn't have ticketingRules
+          const prefillRules = assignedTripRules.map((tr) => ({
+            id: makeId("r_"),
+            trip: tripId,
+            ruleType: tr.ruleType === "VOID" ? "Void" : tr.ruleType === "REFUND" ? "Refund" : "Reissue",
+            ruleId: (tr.rule && typeof tr.rule === "object" && tr.rule._id) ? tr.rule._id : "",
+            ruleName: (tr.rule && typeof tr.rule === "object" && tr.rule.ruleName) ? tr.rule.ruleName : ""
+          }));
+          console.log("[v0] Prefilled trip rules from assignedTripRules:", prefillRules);
           setTripRules(prefillRules);
         }
       }
@@ -406,12 +418,12 @@ export default function CompanyEditTrip() {
   };
 
   // Trip rules handlers
-  const addTripRule = () => setTripRules((r) => [...r, { id: makeId("r_"), ruleType: "Refund", ruleName: "" }]);
+  const addTripRule = () => setTripRules((r) => [...r, { id: makeId("r_"), ruleType: "Refund", ruleId: "", ruleName: "" }]);
   const removeTripRule = (id) => setTripRules((r) => r.filter((x) => x.id !== id));
   const updateTripRule = (id, key, value) => setTripRules((r) => r.map((x) => (x.id === id ? { ...x, [key]: value } : x)));
 
   const handleRuleTypeChange = (ruleId, ruleType) => {
-    setTripRules((r) => r.map((rule) => (rule.id === ruleId ? { ...rule, ruleName: "" } : rule)));
+    setTripRules((r) => r.map((rule) => (rule.id === ruleId ? { ...rule, ruleId: "", ruleName: "" } : rule)));
     console.log("[v0] Rule type changed to:", ruleType, "Rules available:", ticketingRulesByType);
   };
 
@@ -508,6 +520,21 @@ export default function CompanyEditTrip() {
     }
   }, [tripId]);
 
+  // Sync assignedTripRules to tripRules when assignedTripRules updates and tripRules is still empty
+  useEffect(() => {
+    if (assignedTripRules.length > 0 && tripRules.length === 1 && tripRules[0].ruleId === "") {
+      const prefillRules = assignedTripRules.map((tr) => ({
+        id: makeId("r_"),
+        trip: tripId,
+        ruleType: tr.ruleType === "VOID" ? "Void" : tr.ruleType === "REFUND" ? "Refund" : "Reissue",
+        ruleId: (tr.rule && typeof tr.rule === "object" && tr.rule._id) ? tr.rule._id : "",
+        ruleName: (tr.rule && typeof tr.rule === "object" && tr.rule.ruleName) ? tr.rule.ruleName : ""
+      }));
+      console.log("[v0] Syncing assignedTripRules to tripRules:", prefillRules);
+      setTripRules(prefillRules);
+    }
+  }, [assignedTripRules]);
+
   // Save handlers
   const onSaveTrip = async (e) => {
     e.preventDefault();
@@ -555,17 +582,15 @@ export default function CompanyEditTrip() {
 
       // Save ticketing rules if any
       if (tripRules && tripRules.length > 0) {
-        const rulesWithValidSelection = tripRules.filter(rule => rule.ruleName && rule.ruleType);
+        const rulesWithValidSelection = tripRules.filter(rule => rule.ruleId && rule.ruleType);
         
         if (rulesWithValidSelection.length > 0) {
           const ticketingRulesPayload = {
             ticketingRules: rulesWithValidSelection.map(rule => {
               const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
-              const rulesForType = ticketingRulesByType[ruleTypeKey] || [];
-              const selectedRule = rulesForType.find(tr => tr.ruleName === rule.ruleName);
               return {
                 ruleType: ruleTypeKey,
-                rule: selectedRule?._id || rule.ruleName
+                rule: rule.ruleId
               };
             })
           };
@@ -941,7 +966,7 @@ export default function CompanyEditTrip() {
 
   const onSaveTicketingRules = async () => {
     try {
-      const rulesWithValidSelection = tripRules.filter(rule => rule.ruleName && rule.ruleType);
+      const rulesWithValidSelection = tripRules.filter(rule => rule.ruleId && rule.ruleType);
       
       if (rulesWithValidSelection.length === 0) {
         Swal.fire({
@@ -964,11 +989,9 @@ export default function CompanyEditTrip() {
       const ticketingRulesPayload = {
         ticketingRules: rulesWithValidSelection.map(rule => {
           const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
-          const rulesForType = ticketingRulesByType[ruleTypeKey] || [];
-          const selectedRule = rulesForType.find(tr => tr.ruleName === rule.ruleName);
           return {
             ruleType: ruleTypeKey,
-            rule: selectedRule?._id || ""
+            rule: rule.ruleId
           };
         })
       };
@@ -980,7 +1003,7 @@ export default function CompanyEditTrip() {
       console.log("[v0] Ticketing rules saved successfully:", response);
 
       setTripRules([
-        { id: makeId("r_"), trip: "", ruleType: "Refund", ruleName: "" }
+        { id: makeId("r_"), trip: "", ruleType: "Refund", ruleId: "", ruleName: "" }
       ]);
 
       Swal.fire({
@@ -1487,13 +1510,26 @@ export default function CompanyEditTrip() {
                               <option value="Reissue">Reissue</option>
                             </select>
 
-                            <select className="form-select" name="rulename" value={rule.ruleName} onChange={(e) => updateTripRule(rule.id, "ruleName", e.target.value)}>
+                            <select className="form-select" name="rulename" value={rule.ruleId} onChange={(e) => {
+                              const selectedRuleId = e.target.value;
+                              const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
+                              const availableRules = ticketingRulesByType[ruleTypeKey] || [];
+                              const selectedRule = availableRules.find(tr => tr._id === selectedRuleId);
+                              updateTripRule(rule.id, "ruleId", selectedRuleId);
+                              if (selectedRule) {
+                                updateTripRule(rule.id, "ruleName", selectedRule.ruleName);
+                              }
+                            }}>
                               <option value="">Select Rule</option>
-                              {rule.ruleType && ticketingRulesByType[rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE"]?.map((ticketRule) => (
-                                <option key={ticketRule._id} value={ticketRule.ruleName}>
-                                  {ticketRule.ruleName} ({ticketRule.ruleType})
-                                </option>
-                              ))}
+                              {rule.ruleType && (() => {
+                                const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
+                                const availableRules = ticketingRulesByType[ruleTypeKey] || [];
+                                return availableRules.map((ticketRule) => (
+                                  <option key={ticketRule._id} value={ticketRule._id}>
+                                    {ticketRule.ruleName}
+                                  </option>
+                                ));
+                              })()}
                             </select>
 
                             <button type="button" className="btn btn-sm btn-danger remove-trip-rule" onClick={() => removeTripRule(rule.id)}>Remove</button>
