@@ -85,9 +85,10 @@ export default function CompanyEditTrip() {
       trip: "",
       agentId: "",
       agentName: "Agent Alpha",
-      passengerLines: [{ id: makeId("ap_"), select: "", qty: "" }],
-      cargoLines: [{ id: makeId("ac_"), select: "", qty: "" }],
-      vehicleLines: [{ id: makeId("av_"), select: "", qty: "" }]
+      isNew: true,
+      passengerLines: [{ id: makeId("ap_"), select: "", qty: "", isNew: true }],
+      cargoLines: [{ id: makeId("ac_"), select: "", qty: "", isNew: true }],
+      vehicleLines: [{ id: makeId("av_"), select: "", qty: "", isNew: true }]
     }
   ]);
 
@@ -370,9 +371,10 @@ export default function CompanyEditTrip() {
         id: makeId("a_"),
         agentId: "",
         agentName: "",
-        passengerLines: [{ id: makeId("ap_"), select: "", qty: "" }],
-        cargoLines: [{ id: makeId("ac_"), select: "", qty: "" }],
-        vehicleLines: [{ id: makeId("av_"), select: "", qty: "" }]
+        isNew: true,
+        passengerLines: [{ id: makeId("ap_"), select: "", qty: "", isNew: true }],
+        cargoLines: [{ id: makeId("ac_"), select: "", qty: "", isNew: true }],
+        vehicleLines: [{ id: makeId("av_"), select: "", qty: "", isNew: true }]
       }
     ]);
   const removeAgent = (id) => setAgents((a) => a.filter((ag) => ag.id !== id));
@@ -381,7 +383,7 @@ export default function CompanyEditTrip() {
     setAgents((a) =>
       a.map((ag) => {
         if (ag.id !== agentId) return ag;
-        const newLine = { id: makeId(section + "_"), select: "", qty: "" };
+        const newLine = { id: makeId(section + "_"), select: "", qty: "", isNew: true };
         return { ...ag, [`${section}Lines`]: [...ag[`${section}Lines`], newLine] };
       })
     );
@@ -431,7 +433,8 @@ export default function CompanyEditTrip() {
               passengerLines.push({
                 id: makeId("ap_"),
                 select: cabin.cabin?._id || cabin.cabin,
-                qty: cabin.allocatedSeats?.toString() || ""
+                qty: cabin.allocatedSeats?.toString() || "",
+                isNew: false
               });
             });
           }
@@ -440,7 +443,8 @@ export default function CompanyEditTrip() {
               cargoLines.push({
                 id: makeId("ac_"),
                 select: cabin.cabin?._id || cabin.cabin,
-                qty: cabin.allocatedSeats?.toString() || ""
+                qty: cabin.allocatedSeats?.toString() || "",
+                isNew: false
               });
             });
           }
@@ -449,7 +453,8 @@ export default function CompanyEditTrip() {
               vehicleLines.push({
                 id: makeId("av_"),
                 select: cabin.cabin?._id || cabin.cabin,
-                qty: cabin.allocatedSeats?.toString() || ""
+                qty: cabin.allocatedSeats?.toString() || "",
+                isNew: false
               });
             });
           }
@@ -461,9 +466,11 @@ export default function CompanyEditTrip() {
         trip: tripId,
         agentId: allocation.agent?._id || "",
         agentName: allocation.agent?.name || "",
-        passengerLines: passengerLines.length > 0 ? passengerLines : [{ id: makeId("ap_"), select: "", qty: "" }],
-        cargoLines: cargoLines.length > 0 ? cargoLines : [{ id: makeId("ac_"), select: "", qty: "" }],
-        vehicleLines: vehicleLines.length > 0 ? vehicleLines : [{ id: makeId("av_"), select: "", qty: "" }]
+        isNew: false,
+        allocationId: allocation._id || "",
+        passengerLines: passengerLines.length > 0 ? passengerLines : [{ id: makeId("ap_"), select: "", qty: "", isNew: true }],
+        cargoLines: cargoLines.length > 0 ? cargoLines : [{ id: makeId("ac_"), select: "", qty: "", isNew: true }],
+        vehicleLines: vehicleLines.length > 0 ? vehicleLines : [{ id: makeId("av_"), select: "", qty: "", isNew: true }]
       };
     });
 
@@ -729,75 +736,79 @@ export default function CompanyEditTrip() {
         }
       });
 
-      // Build the payload matching the API format
-      const payload = agents
-        .filter(agent => {
-          // Filter agents that have at least one allocation
-          const hasPassenger = agent.passengerLines.some(p => p.select && p.qty);
-          const hasCargo = agent.cargoLines.some(c => c.select && c.qty);
-          const hasVehicle = agent.vehicleLines.some(v => v.select && v.qty);
-          return hasPassenger || hasCargo || hasVehicle;
-        })
-        .map(agent => {
-          const allocations = [];
+      // Get new agents only (for batch create via Save Allocation button)
+      const newAgents = agents.filter(a => a.isNew);
 
-          // Add passenger allocations
-          const passengerAllocs = agent.passengerLines
-            .filter(p => p.select && p.qty)
-            .map(p => ({
-              cabin: p.select,
-              allocatedSeats: parseInt(p.qty) || 0
-            }));
+      // Process new agents using createAgentAllocations API (batch create)
+      if (newAgents.length > 0) {
+        const newAgentsPayload = newAgents
+          .filter(agent => {
+            const hasPassenger = agent.passengerLines.some(p => p.select && p.qty);
+            const hasCargo = agent.cargoLines.some(c => c.select && c.qty);
+            const hasVehicle = agent.vehicleLines.some(v => v.select && v.qty);
+            return hasPassenger || hasCargo || hasVehicle;
+          })
+          .map(agent => {
+            const allocations = [];
 
-          if (passengerAllocs.length > 0) {
-            allocations.push({
-              type: "passenger",
-              cabins: passengerAllocs
-            });
-          }
+            // Add passenger allocations
+            const passengerAllocs = agent.passengerLines
+              .filter(p => p.select && p.qty)
+              .map(p => ({
+                cabin: p.select,
+                allocatedSeats: parseInt(p.qty) || 0
+              }));
 
-          // Add cargo allocations
-          const cargoAllocs = agent.cargoLines
-            .filter(c => c.select && c.qty)
-            .map(c => ({
-              cabin: c.select,
-              allocatedSeats: parseInt(c.qty) || 0
-            }));
+            if (passengerAllocs.length > 0) {
+              allocations.push({
+                type: "passenger",
+                cabins: passengerAllocs
+              });
+            }
 
-          if (cargoAllocs.length > 0) {
-            allocations.push({
-              type: "cargo",
-              cabins: cargoAllocs
-            });
-          }
+            // Add cargo allocations
+            const cargoAllocs = agent.cargoLines
+              .filter(c => c.select && c.qty)
+              .map(c => ({
+                cabin: c.select,
+                allocatedSeats: parseInt(c.qty) || 0
+              }));
 
-          // Add vehicle allocations
-          const vehicleAllocs = agent.vehicleLines
-            .filter(v => v.select && v.qty)
-            .map(v => ({
-              cabin: v.select,
-              allocatedSeats: parseInt(v.qty) || 0
-            }));
+            if (cargoAllocs.length > 0) {
+              allocations.push({
+                type: "cargo",
+                cabins: cargoAllocs
+              });
+            }
 
-          if (vehicleAllocs.length > 0) {
-            allocations.push({
-              type: "vehicle",
-              cabins: vehicleAllocs
-            });
-          }
+            // Add vehicle allocations
+            const vehicleAllocs = agent.vehicleLines
+              .filter(v => v.select && v.qty)
+              .map(v => ({
+                cabin: v.select,
+                allocatedSeats: parseInt(v.qty) || 0
+              }));
 
-          return {
-            agent: agent.agentId,
-            allocations
-          };
-        });
+            if (vehicleAllocs.length > 0) {
+              allocations.push({
+                type: "vehicle",
+                cabins: vehicleAllocs
+              });
+            }
 
-      console.log("[v0] Saving agent allocations with payload:", payload);
+            return {
+              agent: agent.agentId,
+              allocations
+            };
+          });
 
-      // Call the API
-      const response = await tripsApi.createAgentAllocations(tripId, selectedAvailabilityId, payload);
+        if (newAgentsPayload.length > 0) {
+          console.log("[v0] Creating allocations for new agents with payload:", newAgentsPayload);
+          await tripsApi.createAgentAllocations(tripId, selectedAvailabilityId, newAgentsPayload);
+        }
+      }
 
-      console.log("[v0] Agent allocations saved successfully:", response);
+      console.log("[v0] Agent allocations saved successfully");
 
       // Show success message
       Swal.fire({
@@ -806,12 +817,124 @@ export default function CompanyEditTrip() {
         text: "Agent allocations saved successfully!",
         confirmButtonText: "OK"
       });
+
+      // Reload allocations to refresh the data
+      fetchAgentAllocations();
     } catch (error) {
       console.error("[v0] Error saving agent allocations:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
         text: error.message || "Failed to save agent allocations. Please try again."
+      });
+    }
+  };
+
+  // Update a single existing agent allocation
+  const updateExistingAgentAllocation = async (agent) => {
+    try {
+      if (!tripId || !selectedAvailabilityId || !agent.allocationId) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Missing required data for update"
+        });
+        return;
+      }
+
+      const hasPassenger = agent.passengerLines.some(p => p.select && p.qty);
+      const hasCargo = agent.cargoLines.some(c => c.select && c.qty);
+      const hasVehicle = agent.vehicleLines.some(v => v.select && v.qty);
+
+      if (!hasPassenger && !hasCargo && !hasVehicle) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Please allocate at least one item to this agent"
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: "Updating Agent Allocation",
+        text: "Please wait...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const allocations = [];
+
+      // Add passenger allocations
+      const passengerAllocs = agent.passengerLines
+        .filter(p => p.select && p.qty)
+        .map(p => ({
+          cabin: p.select,
+          allocatedSeats: parseInt(p.qty) || 0
+        }));
+
+      if (passengerAllocs.length > 0) {
+        allocations.push({
+          type: "passenger",
+          cabins: passengerAllocs
+        });
+      }
+
+      // Add cargo allocations
+      const cargoAllocs = agent.cargoLines
+        .filter(c => c.select && c.qty)
+        .map(c => ({
+          cabin: c.select,
+          allocatedSeats: parseInt(c.qty) || 0
+        }));
+
+      if (cargoAllocs.length > 0) {
+        allocations.push({
+          type: "cargo",
+          cabins: cargoAllocs
+        });
+      }
+
+      // Add vehicle allocations
+      const vehicleAllocs = agent.vehicleLines
+        .filter(v => v.select && v.qty)
+        .map(v => ({
+          cabin: v.select,
+          allocatedSeats: parseInt(v.qty) || 0
+        }));
+
+      if (vehicleAllocs.length > 0) {
+        allocations.push({
+          type: "vehicle",
+          cabins: vehicleAllocs
+        });
+      }
+
+      const payload = {
+        allocations: allocations
+      };
+
+      console.log("[v0] Updating existing agent allocation:", agent.agentId, "Payload:", payload);
+      await tripsApi.updateAgentAllocationById(tripId, selectedAvailabilityId, agent.allocationId, payload);
+
+      console.log("[v0] Agent allocation updated successfully");
+
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Agent allocation updated successfully!",
+        confirmButtonText: "OK"
+      });
+
+      // Reload allocations to refresh the data
+      fetchAgentAllocations();
+    } catch (error) {
+      console.error("[v0] Error updating agent allocation:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to update agent allocation. Please try again."
       });
     }
   };
@@ -1197,7 +1320,14 @@ export default function CompanyEditTrip() {
                               <div className="agent-block" key={agent.id}>
                                   <div className="d-flex justify-content-between align-items-center mb-3">
                                   <h6>Agent Details</h6>
-                                  <button type="button" className="btn btn-sm btn-danger remove-agent" onClick={() => removeAgent(agent.id)}>Remove Agent</button>
+                                  <div>
+                                    {!agent.isNew && (
+                                      <button type="button" className="btn btn-sm btn-primary update-agent" onClick={() => updateExistingAgentAllocation(agent)}>Update Allocation</button>
+                                    )}
+                                    {agent.isNew && (
+                                      <button type="button" className="btn btn-sm btn-danger remove-agent" onClick={() => removeAgent(agent.id)}>Remove Agent</button>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <select className="form-select mb-3" value={agent.agentName} onChange={(e) => {
@@ -1207,7 +1337,7 @@ export default function CompanyEditTrip() {
                                       ? { ...ag, agentName: e.target.value, agentId: selectedPartner?._id || "" } 
                                       : ag
                                   ));
-                                }}>
+                                }} disabled={!agent.isNew}>
                                   <option value="">-- Select a Partner --</option>
                                   {partners.map((partner) => (
                                     <option key={partner._id} value={partner.name}>
@@ -1224,7 +1354,7 @@ export default function CompanyEditTrip() {
                                       return (
                                         <div className="mb-3" key={line.id}>
                                           <div className="capacity-grid align-items-center">
-                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)}>
+                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)} disabled={!line.isNew}>
                                               <option value="">Select</option>
                                               {selectedTripAvailability.passenger.map((p) => (
                                                 <option key={p.cabin._id} value={p.cabin._id}>
@@ -1232,8 +1362,10 @@ export default function CompanyEditTrip() {
                                                 </option>
                                               ))}
                                             </select>
-                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} />
-                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "passenger", line.id)}>Remove</button>
+                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} disabled={!line.isNew} />
+                                            {line.isNew && (
+                                              <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "passenger", line.id)}>Remove</button>
+                                            )}
                                           </div>
                                           {selectedPassenger && (
                                             <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
@@ -1244,7 +1376,12 @@ export default function CompanyEditTrip() {
                                       );
                                     })}
                                   </div>
-                                  <button type="button" className="btn btn-sm btn-outline-secondary add-passenger-line" onClick={() => addAgentLine(agent.id, "passenger")}>Add Passenger Line</button>
+                                  {(() => {
+                                    const totalPassengerRemaining = selectedTripAvailability.passenger.reduce((sum, p) => sum + p.remainingSeats, 0);
+                                    return (
+                                      <button type="button" className="btn btn-sm btn-outline-secondary add-passenger-line" onClick={() => addAgentLine(agent.id, "passenger")} disabled={totalPassengerRemaining < 1}>Add Passenger Line</button>
+                                    );
+                                  })()}
                                 </div>
 
                                 <div className="allocation-section">
@@ -1255,7 +1392,7 @@ export default function CompanyEditTrip() {
                                       return (
                                         <div className="mb-3" key={line.id}>
                                           <div className="capacity-grid align-items-center">
-                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)}>
+                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)} disabled={!line.isNew}>
                                               <option value="">Select</option>
                                               {selectedTripAvailability.cargo.map((c) => (
                                                 <option key={c.cabin._id} value={c.cabin._id}>
@@ -1263,8 +1400,10 @@ export default function CompanyEditTrip() {
                                                 </option>
                                               ))}
                                             </select>
-                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} />
-                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "cargo", line.id)}>Remove</button>
+                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} disabled={!line.isNew} />
+                                            {line.isNew && (
+                                              <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "cargo", line.id)}>Remove</button>
+                                            )}
                                           </div>
                                           {selectedCargo && (
                                             <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
@@ -1275,7 +1414,12 @@ export default function CompanyEditTrip() {
                                       );
                                     })}
                                   </div>
-                                  <button type="button" className="btn btn-sm btn-outline-secondary add-cargo-line" onClick={() => addAgentLine(agent.id, "cargo")}>Add Cargo Line</button>
+                                  {(() => {
+                                    const totalCargoRemaining = selectedTripAvailability.cargo.reduce((sum, c) => sum + c.remainingSeats, 0);
+                                    return (
+                                      <button type="button" className="btn btn-sm btn-outline-secondary add-cargo-line" onClick={() => addAgentLine(agent.id, "cargo")} disabled={totalCargoRemaining < 1}>Add Cargo Line</button>
+                                    );
+                                  })()}
                                 </div>
 
                                 <div className="allocation-section">
@@ -1286,7 +1430,7 @@ export default function CompanyEditTrip() {
                                       return (
                                         <div className="mb-3" key={line.id}>
                                           <div className="capacity-grid align-items-center">
-                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)}>
+                                            <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)} disabled={!line.isNew}>
                                               <option value="">Select</option>
                                               {selectedTripAvailability.vehicle.map((v) => (
                                                 <option key={v.cabin._id} value={v.cabin._id}>
@@ -1294,8 +1438,10 @@ export default function CompanyEditTrip() {
                                                 </option>
                                               ))}
                                             </select>
-                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} />
-                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}>Remove</button>
+                                            <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} disabled={!line.isNew} />
+                                            {line.isNew && (
+                                              <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}>Remove</button>
+                                            )}
                                           </div>
                                           {selectedVehicle && (
                                             <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
@@ -1306,7 +1452,12 @@ export default function CompanyEditTrip() {
                                       );
                                     })}
                                   </div>
-                                  <button type="button" className="btn btn-sm btn-outline-secondary add-vehicle-line" onClick={() => addAgentLine(agent.id, "vehicle")}>Add Vehicle Line</button>
+                                  {(() => {
+                                    const totalVehicleRemaining = selectedTripAvailability.vehicle.reduce((sum, v) => sum + v.remainingSeats, 0);
+                                    return (
+                                      <button type="button" className="btn btn-sm btn-outline-secondary add-vehicle-line" onClick={() => addAgentLine(agent.id, "vehicle")} disabled={totalVehicleRemaining < 1}>Add Vehicle Line</button>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             ))}

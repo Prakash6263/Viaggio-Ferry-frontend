@@ -492,4 +492,116 @@ export const tripsApi = {
       throw error
     }
   },
+
+  /**
+   * Create agent allocation (for new agent allocations)
+   * @param {string} tripId - Trip ID
+   * @param {string} availabilityId - Availability ID
+   * @param {Object} payload - Availability data with availabilityTypes
+   */
+  createAgentAllocation: async (tripId, availabilityId, payload) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+      if (!availabilityId || availabilityId === "undefined") {
+        throw new Error("Invalid availability ID")
+      }
+
+      console.log("[v0] Creating agent allocation for trip ID:", tripId, "availability ID:", availabilityId, "Payload:", payload)
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}/availabilities/${availabilityId}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to create agent allocation")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Agent allocation created successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Create Agent Allocation Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Update agent allocation (for existing agent allocations from backend)
+   * @param {string} tripId - Trip ID
+   * @param {string} availabilityId - Availability ID
+   * @param {Object} payload - Availability data with availabilityTypes
+   */
+  updateAgentAllocation: async (tripId, availabilityId, payload) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+      if (!availabilityId || availabilityId === "undefined") {
+        throw new Error("Invalid availability ID")
+      }
+
+      console.log("[v0] Updating agent allocation for trip ID:", tripId, "availability ID:", availabilityId, "Payload:", payload)
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}/availabilities/${availabilityId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update agent allocation")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Agent allocation updated successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Update Agent Allocation Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Update individual agent allocation by allocation ID
+   * @param {string} tripId - Trip ID
+   * @param {string} availabilityId - Availability ID
+   * @param {string} allocationId - Agent allocation ID
+   * @param {Object} payload - Allocations data with allocations array
+   */
+  updateAgentAllocationById: async (tripId, availabilityId, allocationId, payload) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+      if (!availabilityId || availabilityId === "undefined") {
+        throw new Error("Invalid availability ID")
+      }
+      if (!allocationId || allocationId === "undefined") {
+        throw new Error("Invalid allocation ID")
+      }
+
+      console.log("[v0] Updating agent allocation by ID for trip ID:", tripId, "availability ID:", availabilityId, "allocation ID:", allocationId, "Payload:", payload)
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}/availabilities/${availabilityId}/agent-allocations/${allocationId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update agent allocation")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Agent allocation updated successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Update Agent Allocation By ID Error:", error.message)
+      throw error
+    }
+  },
 }
