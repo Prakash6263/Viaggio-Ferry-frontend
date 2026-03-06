@@ -995,7 +995,15 @@ export default function CompanyEditTrip() {
 
   const onSaveTicketingRules = async () => {
     try {
-      const rulesWithValidSelection = tripRules.filter(rule => rule.ruleId && rule.ruleType);
+      // Filter rules that have both ruleType and ruleId selected
+      const rulesWithValidSelection = tripRules.filter(rule => {
+        const hasRuleType = rule.ruleType && rule.ruleType.trim() !== "";
+        const hasRuleId = rule.ruleId && rule.ruleId.trim() !== "";
+        return hasRuleType && hasRuleId;
+      });
+
+      console.log("[v0] Validating rules. Total rules:", tripRules.length, "Valid rules:", rulesWithValidSelection.length);
+      console.log("[v0] All rules:", tripRules);
 
       if (rulesWithValidSelection.length === 0) {
         Swal.fire({
@@ -1026,14 +1034,18 @@ export default function CompanyEditTrip() {
       };
 
       console.log("[v0] Saving ticketing rules with payload:", ticketingRulesPayload);
+      console.log("[v0] Sending ALL rules (existing + new):", rulesWithValidSelection);
 
       const response = await tripsApi.updateTicketingRules(tripId, ticketingRulesPayload);
 
       console.log("[v0] Ticketing rules saved successfully:", response);
 
-      setTripRules([
+      // Keep all valid rules and add empty rule for adding more
+      const updatedRules = [
+        ...rulesWithValidSelection,
         { id: makeId("r_"), trip: "", ruleType: "Refund", ruleId: "", ruleName: "" }
-      ]);
+      ];
+      setTripRules(updatedRules);
 
       Swal.fire({
         icon: "success",
@@ -1549,7 +1561,7 @@ export default function CompanyEditTrip() {
                                 updateTripRule(rule.id, "ruleName", selectedRule.ruleName);
                               }
                             }}>
-                              {!rule.ruleId}
+                              {!rule.isFromBackend && !rule.ruleId && <option value="">Select Rule</option>}
                               {rule.ruleType &&
                                 (ticketingRulesByType[
                                   rule.ruleType === "Void"

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 import Can from "../Can";
 import CanDisable from "../CanDisable";
 import { tripsApi } from "../../api/tripsApi";
@@ -29,6 +30,58 @@ export default function TripsListTable() {
       setTrips([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteTrip = async (tripId, tripCode) => {
+    try {
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: "Confirm Delete",
+        text: `Are you sure you want to delete trip "${tripCode}"? This action will delete the trip and all related data.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel"
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // Show loading state
+      Swal.fire({
+        title: "Deleting Trip",
+        text: "Please wait...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // Call delete API
+      const response = await tripsApi.deleteTrip(tripId);
+      console.log("[v0] Trip deleted successfully:", response);
+
+      // Remove trip from list
+      setTrips(trips.filter(t => t._id !== tripId));
+
+      // Show success message
+      Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "Trip deleted successfully.",
+        confirmButtonText: "OK"
+      });
+    } catch (error) {
+      console.error("[v0] Error deleting trip:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to delete trip. Please try again."
+      });
     }
   };
 
@@ -104,7 +157,7 @@ export default function TripsListTable() {
                               <Link to={`/company/ship-trip/edit-trip/${t._id}`} className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></Link>
                             </Can>
                             <Can action="delete" path="/company/fleet-management/trips">
-                              <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
+                              <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTrip(t._id, t.tripCode)}><i className="bi bi-trash" /></button>
                             </Can>
                           </td>
                         </tr>
