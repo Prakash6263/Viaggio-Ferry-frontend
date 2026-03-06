@@ -413,4 +413,83 @@ export const tripsApi = {
       throw error
     }
   },
+
+  /**
+   * Update trip status
+   * @param {string} tripId - Trip ID
+   * @param {string} status - New status (e.g., "SCHEDULED", "ONGOING", "COMPLETED")
+   */
+  updateTripStatus: async (tripId, status) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+
+      if (!status) {
+        throw new Error("Status is required")
+      }
+
+      console.log("[v0] Updating trip status for trip ID:", tripId, "New status:", status)
+
+      const payload = { status }
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update trip status")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Trip status updated successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Update Trip Status Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Update trip availabilities
+   * @param {string} tripId - Trip ID
+   * @param {string} availabilityId - Availability ID
+   * @param {Object} payload - Availability data with availabilityTypes array
+   */
+  updateAvailability: async (tripId, availabilityId, payload) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+
+      if (!availabilityId || availabilityId === "undefined") {
+        throw new Error("Invalid availability ID")
+      }
+
+      if (!payload || !payload.availabilityTypes) {
+        throw new Error("Availability types are required")
+      }
+
+      console.log("[v0] Updating availability for trip ID:", tripId, "Availability ID:", availabilityId, "Payload:", payload)
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}/availabilities/${availabilityId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update availability")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Availability updated successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Update Availability Error:", error.message)
+      throw error
+    }
+  },
 }

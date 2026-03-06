@@ -69,13 +69,13 @@ export default function CompanyEditTrip() {
 
   // Availability lines
   const [passengers, setPassengers] = useState([
-    { id: makeId("p_"), trip: "", cabin: "", seats: "" }
+    { id: makeId("p_"), trip: "", cabin: "", seats: "", isNew: true }
   ]);
   const [cargo, setCargo] = useState([
-    { id: makeId("c_"), trip: "", type: "", spots: "" }
+    { id: makeId("c_"), trip: "", type: "", spots: "", isNew: true }
   ]);
   const [vehicles, setVehicles] = useState([
-    { id: makeId("v_"), trip: "", type: "", spots: "" }
+    { id: makeId("v_"), trip: "", type: "", spots: "", isNew: true }
   ]);
 
   // Agents allocation blocks
@@ -260,7 +260,8 @@ export default function CompanyEditTrip() {
               id: makeId("p_"),
               trip: tripId,
               cabin: c.cabin?.name || c.cabin || "",
-              seats: c.seats || ""
+              seats: c.seats || "",
+              isNew: false
             }));
             setPassengers(passengerLines);
           }
@@ -270,7 +271,8 @@ export default function CompanyEditTrip() {
               id: makeId("c_"),
               trip: tripId,
               type: c.cabin?.name || c.cabin || "",
-              spots: c.seats || ""
+              spots: c.seats || "",
+              isNew: false
             }));
             setCargo(cargoLines);
           }
@@ -280,7 +282,8 @@ export default function CompanyEditTrip() {
               id: makeId("v_"),
               trip: tripId,
               type: c.cabin?.name || c.cabin || "",
-              spots: c.seats || ""
+              spots: c.seats || "",
+              isNew: false
             }));
             setVehicles(vehicleLines);
           }
@@ -301,21 +304,61 @@ export default function CompanyEditTrip() {
   // Handlers for form changes
   const onFormChange = (e) => {
     const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value }));
+    // Only allow status changes
+    if (name === "status") {
+      setForm((s) => ({ ...s, [name]: value }));
+    }
+  };
+
+  // Handle status update
+  const onStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    
+    try {
+      Swal.fire({
+        title: "Updating Status",
+        text: "Please wait...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const response = await tripsApi.updateTripStatus(tripId, newStatus);
+      console.log("[v0] Trip status updated:", response);
+
+      setForm((s) => ({ ...s, status: newStatus }));
+
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Trip status updated successfully!",
+        confirmButtonText: "OK"
+      });
+    } catch (error) {
+      console.error("[v0] Error updating status:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to update trip status. Please try again."
+      });
+      // Revert status on error
+      setForm((s) => ({ ...s, status: form.status }));
+    }
   };
 
   // Passenger handlers
-  const addPassenger = () => setPassengers((p) => [...p, { id: makeId("p_"), cabin: "", seats: "" }]);
+  const addPassenger = () => setPassengers((p) => [...p, { id: makeId("p_"), cabin: "", seats: "", isNew: true }]);
   const removePassenger = (id) => setPassengers((p) => p.filter((x) => x.id !== id));
   const updatePassenger = (id, key, value) => setPassengers((p) => p.map((x) => (x.id === id ? { ...x, [key]: value } : x)));
-
+  
   // Cargo handlers
-  const addCargo = () => setCargo((c) => [...c, { id: makeId("c_"), type: "", spots: "" }]);
+  const addCargo = () => setCargo((c) => [...c, { id: makeId("c_"), type: "", spots: "", isNew: true }]);
   const removeCargo = (id) => setCargo((c) => c.filter((x) => x.id !== id));
   const updateCargo = (id, key, value) => setCargo((c) => c.map((x) => (x.id === id ? { ...x, [key]: value } : x)));
-
+  
   // Vehicle handlers
-  const addVehicle = () => setVehicles((v) => [...v, { id: makeId("v_"), type: "", spots: "" }]);
+  const addVehicle = () => setVehicles((v) => [...v, { id: makeId("v_"), type: "", spots: "", isNew: true }]);
   const removeVehicle = (id) => setVehicles((v) => v.filter((x) => x.id !== id));
   const updateVehicle = (id, key, value) => setVehicles((v) => v.map((x) => (x.id === id ? { ...x, [key]: value } : x)));
 
@@ -902,12 +945,12 @@ export default function CompanyEditTrip() {
                       <form className="row g-3" onSubmit={onSaveTrip}>
                         <div className="col-md-6">
                           <label className="form-label">Trip Name/Code</label>
-                          <input type="text" className="form-control" name="code" value={form.code} onChange={onFormChange} />
+                          <input type="text" className="form-control" name="code" value={form.code} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Assign Vessel</label>
-                          <select className="form-select" name="vessel" value={form.vessel} onChange={onFormChange} disabled={loadingData}>
+                          <select className="form-select" name="vessel" value={form.vessel} disabled>
                             <option value="">-- Select a Ship --</option>
                             {ships.map((ship) => (
                               <option key={ship._id} value={ship._id}>
@@ -920,7 +963,7 @@ export default function CompanyEditTrip() {
 
                         <div className="col-md-6">
                           <label className="form-label">Departure Port</label>
-                          <select className="form-select" name="departurePort" value={form.departurePort} onChange={onFormChange} disabled={loadingData}>
+                          <select className="form-select" name="departurePort" value={form.departurePort} disabled>
                             <option value="">-- Select a Port --</option>
                             {ports.map((port) => (
                               <option key={port._id} value={port._id}>
@@ -933,7 +976,7 @@ export default function CompanyEditTrip() {
 
                         <div className="col-md-6">
                           <label className="form-label">Arrival Port</label>
-                          <select className="form-select" name="arrivalPort" value={form.arrivalPort} onChange={onFormChange} disabled={loadingData}>
+                          <select className="form-select" name="arrivalPort" value={form.arrivalPort} disabled>
                             <option value="">-- Select a Port --</option>
                             {ports.map((port) => (
                               <option key={port._id} value={port._id}>
@@ -946,51 +989,51 @@ export default function CompanyEditTrip() {
 
                         <div className="col-md-6">
                           <label className="form-label">Departure Date & Time</label>
-                          <input type="datetime-local" className="form-control" name="departureAt" value={form.departureAt} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="departureAt" value={form.departureAt} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Arrival Date & Time</label>
-                          <input type="datetime-local" className="form-control" name="arrivalAt" value={form.arrivalAt} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="arrivalAt" value={form.arrivalAt} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Status</label>
-                          <select className="form-select" name="status" value={form.status} onChange={onFormChange}>
-                            <option>Scheduled</option>
-                            <option>Ongoing</option>
-                            <option>Completed</option>
+                          <select className="form-select" name="status" value={form.status} onChange={onStatusChange}>
+                            <option value="SCHEDULED">Scheduled</option>
+                            <option value="ONGOING">Ongoing</option>
+                            <option value="COMPLETED">Completed</option>
                           </select>
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Booking Opening Date</label>
-                          <input type="datetime-local" className="form-control" name="bookingOpen" value={form.bookingOpen} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="bookingOpen" value={form.bookingOpen} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Booking Closing Date</label>
-                          <input type="datetime-local" className="form-control" name="bookingClose" value={form.bookingClose} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="bookingClose" value={form.bookingClose} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Check-in Opening Date</label>
-                          <input type="datetime-local" className="form-control" name="checkinOpen" value={form.checkinOpen} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="checkinOpen" value={form.checkinOpen} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Check-in Closing Date</label>
-                          <input type="datetime-local" className="form-control" name="checkinClose" value={form.checkinClose} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="checkinClose" value={form.checkinClose} readOnly disabled />
                         </div>
 
                         <div className="col-md-6">
                           <label className="form-label">Boarding Closing Date</label>
-                          <input type="datetime-local" className="form-control" name="boardingClose" value={form.boardingClose} onChange={onFormChange} />
+                          <input type="datetime-local" className="form-control" name="boardingClose" value={form.boardingClose} readOnly disabled />
                         </div>
 
                         <div className="col-md-12">
                           <label className="form-label">Promotion</label>
-                          <select className="form-select" name="promotion" value={form.promotion} onChange={onFormChange}>
+                          <select className="form-select" name="promotion" value={form.promotion} disabled>
                             <option value="">None</option>
                             <option value="discount10">Discount 10%</option>
                             <option value="earlybird">Early Bird</option>
@@ -999,11 +1042,11 @@ export default function CompanyEditTrip() {
 
                         <div className="col-12">
                           <label className="form-label">Remarks/Notes</label>
-                          <textarea className="form-control" rows="3" name="remarks" value={form.remarks} onChange={onFormChange}></textarea>
+                          <textarea className="form-control" rows="3" name="remarks" value={form.remarks} readOnly disabled></textarea>
                         </div>
 
                         <div className="d-flex justify-content-end mt-3">
-                          <button type="submit" className="btn btn-turquoise">Save Trip</button>
+                          <button type="button" className="btn btn-secondary" disabled>All fields are read-only</button>
                         </div>
                       </form>
                     </div>
@@ -1041,7 +1084,7 @@ export default function CompanyEditTrip() {
                             return (
                               <div className="mb-3" key={p.id}>
                                 <div className="capacity-grid align-items-center">
-                                  <select className="form-select" value={p.cabin} onChange={(e) => updatePassenger(p.id, "cabin", e.target.value)}>
+                                  <select className="form-select" value={p.cabin} onChange={(e) => updatePassenger(p.id, "cabin", e.target.value)} disabled={!p.isNew}>
                                     <option value="">-- Select Cabin --</option>
                                     {selectedTripCapacity.passenger.map((pc) => (
                                       <option key={pc.cabinId} value={pc.cabinName}>
@@ -1049,8 +1092,10 @@ export default function CompanyEditTrip() {
                                       </option>
                                     ))}
                                   </select>
-                                  <input type="number" className="form-control" placeholder="Seats" value={p.seats} onChange={(e) => updatePassenger(p.id, "seats", e.target.value)} />
-                                  <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removePassenger(p.id)}>Remove</button>
+                                  <input type="number" className="form-control" placeholder="Seats" value={p.seats} onChange={(e) => updatePassenger(p.id, "seats", e.target.value)} disabled={!p.isNew} />
+                                  {p.isNew && (
+                                    <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removePassenger(p.id)}>Remove</button>
+                                  )}
                                 </div>
                                 {selectedCabin && (
                                   <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
@@ -1061,7 +1106,12 @@ export default function CompanyEditTrip() {
                             );
                           })}
                         </div>
-                        <button type="button" id="addPassengerLine" className="btn btn-sm btn-outline-secondary" onClick={addPassenger}>Add Line</button>
+                        {(() => {
+                          const totalPassengerCapacity = selectedTripCapacity.passenger.reduce((sum, pc) => sum + pc.remainingSeat, 0);
+                          return (
+                            <button type="button" id="addPassengerLine" className="btn btn-sm btn-outline-secondary" onClick={addPassenger} disabled={totalPassengerCapacity < 1}>Add Line</button>
+                          );
+                        })()}
 
                         <h5 className="mt-4">Cargo Availability</h5>
                         <div id="cargo-availability-container">
@@ -1070,7 +1120,7 @@ export default function CompanyEditTrip() {
                             return (
                               <div className="mb-3" key={c.id}>
                                 <div className="capacity-grid align-items-center">
-                                  <select className="form-select" value={c.type} onChange={(e) => updateCargo(c.id, "type", e.target.value)}>
+                                  <select className="form-select" value={c.type} onChange={(e) => updateCargo(c.id, "type", e.target.value)} disabled={!c.isNew}>
                                     <option value="">-- Select Hold --</option>
                                     {selectedTripCapacity.cargo.map((cc) => (
                                       <option key={cc.cabinId} value={cc.cabinName}>
@@ -1078,8 +1128,10 @@ export default function CompanyEditTrip() {
                                       </option>
                                     ))}
                                   </select>
-                                  <input type="number" className="form-control" placeholder="Spots" value={c.spots} onChange={(e) => updateCargo(c.id, "spots", e.target.value)} />
-                                  <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removeCargo(c.id)}>Remove</button>
+                                  <input type="number" className="form-control" placeholder="Spots" value={c.spots} onChange={(e) => updateCargo(c.id, "spots", e.target.value)} disabled={!c.isNew} />
+                                  {c.isNew && (
+                                    <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removeCargo(c.id)}>Remove</button>
+                                  )}
                                 </div>
                                 {selectedHold && (
                                   <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
@@ -1090,7 +1142,12 @@ export default function CompanyEditTrip() {
                             );
                           })}
                         </div>
-                        <button type="button" id="addCargoLine" className="btn btn-sm btn-outline-secondary" onClick={addCargo}>Add Line</button>
+                        {(() => {
+                          const totalCargoCapacity = selectedTripCapacity.cargo.reduce((sum, cc) => sum + cc.remainingSeat, 0);
+                          return (
+                            <button type="button" id="addCargoLine" className="btn btn-sm btn-outline-secondary" onClick={addCargo} disabled={totalCargoCapacity < 1}>Add Line</button>
+                          );
+                        })()}
 
                         <h5 className="mt-4">Vehicle Availability</h5>
                         <div id="vehicle-availability-container">
@@ -1099,7 +1156,7 @@ export default function CompanyEditTrip() {
                             return (
                               <div className="mb-3" key={v.id}>
                                 <div className="capacity-grid align-items-center">
-                                  <select className="form-select" value={v.type} onChange={(e) => updateVehicle(v.id, "type", e.target.value)}>
+                                  <select className="form-select" value={v.type} onChange={(e) => updateVehicle(v.id, "type", e.target.value)} disabled={!v.isNew}>
                                     <option value="">-- Select Vehicle Type --</option>
                                     {selectedTripCapacity.vehicle.map((vc) => (
                                       <option key={vc.cabinId} value={vc.cabinName}>
@@ -1107,8 +1164,10 @@ export default function CompanyEditTrip() {
                                       </option>
                                     ))}
                                   </select>
-                                  <input type="number" className="form-control" placeholder="Spots" value={v.spots} onChange={(e) => updateVehicle(v.id, "spots", e.target.value)} />
-                                  <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removeVehicle(v.id)}>Remove</button>
+                                  <input type="number" className="form-control" placeholder="Spots" value={v.spots} onChange={(e) => updateVehicle(v.id, "spots", e.target.value)} disabled={!v.isNew} />
+                                  {v.isNew && (
+                                    <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removeVehicle(v.id)}>Remove</button>
+                                  )}
                                 </div>
                                 {selectedVehicle && (
                                   <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
@@ -1119,7 +1178,12 @@ export default function CompanyEditTrip() {
                             );
                           })}
                         </div>
-                        <button type="button" id="addVehicleLine" className="btn btn-sm btn-outline-secondary" onClick={addVehicle}>Add Line</button>
+                        {(() => {
+                          const totalVehicleCapacity = selectedTripCapacity.vehicle.reduce((sum, vc) => sum + vc.remainingSeat, 0);
+                          return (
+                            <button type="button" id="addVehicleLine" className="btn btn-sm btn-outline-secondary" onClick={addVehicle} disabled={totalVehicleCapacity < 1}>Add Line</button>
+                          );
+                        })()}
 
                         <div className="text-end mt-3">
                           <button type="button" className="btn btn-success" onClick={onSaveAvailability}>Save Availability</button>
