@@ -353,6 +353,36 @@ export const tripsApi = {
   },
 
   /**
+   * Fetch ticketing rules for a trip
+   * @param {string} tripId - Trip ID
+   */
+  getTicketingRules: async (tripId) => {
+    try {
+      if (!tripId || tripId === "undefined") {
+        throw new Error("Invalid trip ID")
+      }
+
+      console.log("[v0] Fetching ticketing rules for trip:", tripId)
+
+      const response = await apiFetch(`${BASE_URL}/${tripId}/ticketing-rules`, {
+        method: "GET",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch ticketing rules")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Ticketing rules fetched successfully:", data)
+      return data
+    } catch (error) {
+      console.error("[v0] Get Ticketing Rules Error:", error.message)
+      throw error
+    }
+  },
+
+  /**
    * Update ticketing rules for a trip
    * @param {string} tripId - Trip ID
    * @param {Array} payload - Array of ticketing rules with ruleType and rule ID

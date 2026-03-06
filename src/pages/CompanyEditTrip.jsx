@@ -27,6 +27,7 @@ export default function CompanyEditTrip() {
     REFUND: [],
     REISSUE: []
   });
+  const [assignedTripRules, setAssignedTripRules] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [selectedTripCapacity, setSelectedTripCapacity] = useState({
     passenger: [],
@@ -143,7 +144,7 @@ export default function CompanyEditTrip() {
 
       // Fetch all ticketing rule types
       try {
-        const [voidRulesRes, refundRulesRes, reissueRulesRes] = await Promise.all([
+        const [voidRulesRes, refundRulesRes, reissueRulesRes, tripRulesRes] = await Promise.all([
           ticketingRuleApi.getTicketingRules(1, 100, { ruleType: "VOID" }).catch(err => {
             console.error("[v0] Error fetching VOID rules:", err);
             return { data: [] };
@@ -155,6 +156,10 @@ export default function CompanyEditTrip() {
           ticketingRuleApi.getTicketingRules(1, 100, { ruleType: "REISSUE" }).catch(err => {
             console.error("[v0] Error fetching REISSUE rules:", err);
             return { data: [] };
+          }),
+          tripsApi.getTicketingRules(tripId).catch(err => {
+            console.error("[v0] Error fetching trip's ticketing rules:", err);
+            return { data: { ticketingRules: [] } };
           })
         ]);
 
@@ -163,6 +168,13 @@ export default function CompanyEditTrip() {
           REFUND: refundRulesRes?.data || [],
           REISSUE: reissueRulesRes?.data || []
         });
+
+        // Set assigned trip rules
+        const tripRulesData = tripRulesRes?.data || {};
+        if (tripRulesData.ticketingRules && tripRulesData.ticketingRules.length > 0) {
+          console.log("[v0] Trip ticketing rules loaded:", tripRulesData.ticketingRules);
+          setAssignedTripRules(tripRulesData.ticketingRules);
+        }
       } catch (err) {
         console.error("[v0] Error fetching ticketing rules:", err);
       }
@@ -205,8 +217,9 @@ export default function CompanyEditTrip() {
             id: makeId("r_"),
             trip: tripId,
             ruleType: tr.ruleType === "VOID" ? "Void" : tr.ruleType === "REFUND" ? "Refund" : "Reissue",
-            ruleName: tr.rule || ""
+            ruleName: typeof tr.rule === "object" ? tr.rule.ruleName : tr.rule || ""
           }));
+          console.log("[v0] Prefilled trip rules:", prefillRules);
           setTripRules(prefillRules);
         }
       }
@@ -1244,7 +1257,7 @@ export default function CompanyEditTrip() {
 
                     {/* Trip Ticketing Rules */}
                     <div id="tripTicketingRulesTab" className={mainTab === "ticketing" ? "" : "hidden"}>
-                      <h5 className="mb-3">Trip Ticketing Rules</h5>
+                      <h5 className="mb-3">Trip Ticketing Rules{assignedTripRules.length > 0 && <span className="badge bg-success ms-2">{assignedTripRules.length} rules assigned</span>}</h5>
 
                       <div id="trip-rules-container">
                         {tripRules.map((rule) => (
