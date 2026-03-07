@@ -111,7 +111,7 @@ export default function TripsListTable() {
           <div className="list-btn" style={{ justifySelf: "end" }}>
             <ul className="filter-list">
               <li>
-                <Can action="create">
+                <Can action="create" path="/company/ship-trip/trips">
                   <Link className="btn btn-turquoise" to="/company/ship-trip/add-trip">
                     <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Trip
                   </Link>
@@ -166,10 +166,10 @@ export default function TripsListTable() {
                             <td>{t.ship?.name}</td>
                             <td>{t.status}</td>
                             <td className="action-buttons">
-                              <Can action="update" path="/company/fleet-management/trips">
+                              <Can action="update" path="/company/ship-trip/trips">
                                 <Link to={`/company/ship-trip/edit-trip/${t._id}`} className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></Link>
                               </Can>
-                              <Can action="delete" path="/company/fleet-management/trips">
+                              <Can action="delete" path="/company/ship-trip/trips">
                                 <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTrip(t._id, t.tripCode)}><i className="bi bi-trash" /></button>
                               </Can>
                             </td>
