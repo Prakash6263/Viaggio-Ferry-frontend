@@ -10,6 +10,7 @@ import { tripsApi } from "../api/tripsApi";
 import { partnerApi } from "../api/partnerApi";
 import { ticketingRuleApi } from "../api/ticketingRuleApi";
 import Swal from "sweetalert2";
+import EditTripTabsContainer from "../components/trips/editTrip/EditTripTabsContainer";
 
 const makeId = (prefix = "") => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -1002,9 +1003,6 @@ export default function CompanyEditTrip() {
         return hasRuleType && hasRuleId;
       });
 
-      console.log("[v0] Validating rules. Total rules:", tripRules.length, "Valid rules:", rulesWithValidSelection.length);
-      console.log("[v0] All rules:", tripRules);
-
       if (rulesWithValidSelection.length === 0) {
         Swal.fire({
           icon: "warning",
@@ -1023,27 +1021,40 @@ export default function CompanyEditTrip() {
         }
       });
 
+      // Build complete payload with all rule data from API
       const ticketingRulesPayload = {
         ticketingRules: rulesWithValidSelection.map(rule => {
           const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
+          
+          // Get the full rule object from ticketingRulesByType to send complete payload
+          const ruleTypeMapping = {
+            "VOID": ticketingRulesByType.VOID,
+            "REFUND": ticketingRulesByType.REFUND,
+            "REISSUE": ticketingRulesByType.REISSUE
+          };
+          
+          const availableRules = ruleTypeMapping[ruleTypeKey] || [];
+          const fullRuleObject = availableRules.find(r => r._id === rule.ruleId);
+          
+          console.log("[v0] Processing rule:", rule);
+          console.log("[v0] Rule type key:", ruleTypeKey);
+          console.log("[v0] Full rule object found:", fullRuleObject);
+          console.log("[v0] Sending rule object:", fullRuleObject || { _id: rule.ruleId, ruleName: rule.ruleName });
+          
           return {
             ruleType: ruleTypeKey,
-            rule: rule.ruleId
+            rule: fullRuleObject ? fullRuleObject._id : rule.ruleId
           };
         })
       };
 
-      console.log("[v0] Saving ticketing rules with payload:", ticketingRulesPayload);
-      console.log("[v0] Sending ALL rules (existing + new):", rulesWithValidSelection);
-
+      console.log("[v0] Final ticketing rules payload:", ticketingRulesPayload);
       const response = await tripsApi.updateTicketingRules(tripId, ticketingRulesPayload);
-
-      console.log("[v0] Ticketing rules saved successfully:", response);
 
       // Keep all valid rules and add empty rule for adding more
       const updatedRules = [
         ...rulesWithValidSelection,
-        { id: makeId("r_"), trip: "", ruleType: "Refund", ruleId: "", ruleName: "" }
+        { id: makeId("r_"), trip: "", ruleType: "Refund", ruleId: "", ruleName: "", isFromBackend: false }
       ];
       setTripRules(updatedRules);
 
@@ -1086,512 +1097,51 @@ export default function CompanyEditTrip() {
                   </div>
                 </div>
                 <div className="card-body">
-                  {/* preserve small style block from original for capacity-grid etc. */}
-                  <style>{`
-                    .hidden { display: none !important; }
-                    .capacity-grid { display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 1rem; }
-                    @media (max-width: 767px) { .capacity-grid { grid-template-columns: 1fr; } }
-                    .allocation-section { border: 1px solid var(--text-border); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-                    .agent-block { border: 1px solid var(--text-border); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-                  `}</style>
-
-                  <div>
-                    {/* Main Tabs */}
-                    <ul className="nav nav-tabs mb-3">
-                      <li className="nav-item">
-                        <button
-                          id="tripDetailsBtn"
-                          className={`nav-link tab-button ${mainTab === "details" ? "active" : ""}`}
-                          onClick={() => setMainTab("details")}
-                        >
-                          Trip Details
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          id="availabilityBtn"
-                          className={`nav-link tab-button ${mainTab === "availability" ? "active" : ""}`}
-                          onClick={() => setMainTab("availability")}
-                        >
-                          Availability Management
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          id="tripTicketingRulesBtn"
-                          className={`nav-link tab-button ${mainTab === "ticketing" ? "active" : ""}`}
-                          onClick={() => setMainTab("ticketing")}
-                        >
-                          Trip Ticketing Rules
-                        </button>
-                      </li>
-                    </ul>
-
-                    {/* Trip Details */}
-                    <div id="tripDetailsTab" className={mainTab === "details" ? "" : "hidden"}>
-                      <form className="row g-3" onSubmit={onSaveTrip}>
-                        <div className="col-md-6">
-                          <label className="form-label">Trip Name/Code</label>
-                          <input type="text" className="form-control" name="code" value={form.code} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Assign Vessel</label>
-                          <select className="form-select" name="vessel" value={form.vessel} disabled>
-                            <option value="">-- Select a Ship --</option>
-                            {ships.map((ship) => (
-                              <option key={ship._id} value={ship._id}>
-                                {ship.name}
-                              </option>
-                            ))}
-                          </select>
-                          {loadingData && <small className="text-muted">Loading ships...</small>}
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Departure Port</label>
-                          <select className="form-select" name="departurePort" value={form.departurePort} disabled>
-                            <option value="">-- Select a Port --</option>
-                            {ports.map((port) => (
-                              <option key={port._id} value={port._id}>
-                                {port.name}
-                              </option>
-                            ))}
-                          </select>
-                          {loadingData && <small className="text-muted">Loading ports...</small>}
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Arrival Port</label>
-                          <select className="form-select" name="arrivalPort" value={form.arrivalPort} disabled>
-                            <option value="">-- Select a Port --</option>
-                            {ports.map((port) => (
-                              <option key={port._id} value={port._id}>
-                                {port.name}
-                              </option>
-                            ))}
-                          </select>
-                          {loadingData && <small className="text-muted">Loading ports...</small>}
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Departure Date & Time</label>
-                          <input type="datetime-local" className="form-control" name="departureAt" value={form.departureAt} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Arrival Date & Time</label>
-                          <input type="datetime-local" className="form-control" name="arrivalAt" value={form.arrivalAt} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Status</label>
-                          <select className="form-select" name="status" value={form.status} onChange={onStatusChange}>
-                            <option value="SCHEDULED">Scheduled</option>
-                            <option value="ONGOING">Ongoing</option>
-                            <option value="COMPLETED">Completed</option>
-                          </select>
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Booking Opening Date</label>
-                          <input type="datetime-local" className="form-control" name="bookingOpen" value={form.bookingOpen} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Booking Closing Date</label>
-                          <input type="datetime-local" className="form-control" name="bookingClose" value={form.bookingClose} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Check-in Opening Date</label>
-                          <input type="datetime-local" className="form-control" name="checkinOpen" value={form.checkinOpen} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Check-in Closing Date</label>
-                          <input type="datetime-local" className="form-control" name="checkinClose" value={form.checkinClose} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label">Boarding Closing Date</label>
-                          <input type="datetime-local" className="form-control" name="boardingClose" value={form.boardingClose} readOnly disabled />
-                        </div>
-
-                        <div className="col-md-12">
-                          <label className="form-label">Promotion</label>
-                          <select className="form-select" name="promotion" value={form.promotion} disabled>
-                            <option value="">None</option>
-                            <option value="discount10">Discount 10%</option>
-                            <option value="earlybird">Early Bird</option>
-                          </select>
-                        </div>
-
-                        <div className="col-12">
-                          <label className="form-label">Remarks/Notes</label>
-                          <textarea className="form-control" rows="3" name="remarks" value={form.remarks} readOnly disabled></textarea>
-                        </div>
-
-                        <div className="d-flex justify-content-end mt-3">
-                          <button type="button" className="btn btn-secondary" disabled>All fields are read-only</button>
-                        </div>
-                      </form>
-                    </div>
-
-                    {/* Availability Management */}
-                    <div id="availabilityTab" className={mainTab === "availability" ? "" : "hidden"}>
-                      {/* inner tabs */}
-                      <ul className="nav nav-tabs mb-3">
-                        <li className="nav-item">
-                          <button
-                            id="addAvailabilityBtn"
-                            className={`nav-link tab-button ${availInnerTab === "add" ? "active" : ""}`}
-                            onClick={() => setAvailInnerTab("add")}
-                          >
-                            Add Availability
-                          </button>
-                        </li>
-                        <li className="nav-item">
-                          <button
-                            id="allocateAvailabilityBtn"
-                            className={`nav-link tab-button ${availInnerTab === "allocate" ? "active" : ""}`}
-                            onClick={() => setAvailInnerTab("allocate")}
-                          >
-                            Allocate to Agent
-                          </button>
-                        </li>
-                      </ul>
-
-                      {/* Add Availability Content */}
-                      <div id="addAvailabilityContent" className={availInnerTab === "add" ? "" : "hidden"}>
-                        <h5 className="mb-3">Passenger Availability</h5>
-                        <div id="passenger-availability-container">
-                          {passengers.map((p) => {
-                            const selectedCabin = selectedTripCapacity.passenger.find(pc => pc.cabinName === p.cabin);
-                            return (
-                              <div className="mb-3" key={p.id}>
-                                <div className="capacity-grid align-items-center">
-                                  <select className="form-select" value={p.cabin} onChange={(e) => updatePassenger(p.id, "cabin", e.target.value)} disabled={!p.isNew}>
-                                    <option value="">-- Select Cabin --</option>
-                                    {selectedTripCapacity.passenger.map((pc) => (
-                                      <option key={pc.cabinId} value={pc.cabinName}>
-                                        {pc.cabinName} (Total: {pc.totalSeat}, Remaining: {pc.remainingSeat})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <input type="number" className="form-control" placeholder="Seats" value={p.seats} onChange={(e) => updatePassenger(p.id, "seats", e.target.value)} disabled={!p.isNew} />
-                                  {p.isNew && (
-                                    <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removePassenger(p.id)}>Remove</button>
-                                  )}
-                                </div>
-                                {selectedCabin && (
-                                  <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                    Remaining Seats: {selectedCabin.remainingSeat}
-                                  </small>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {(() => {
-                          const totalPassengerCapacity = selectedTripCapacity.passenger.reduce((sum, pc) => sum + pc.remainingSeat, 0);
-                          return (
-                            <button type="button" id="addPassengerLine" className="btn btn-sm btn-outline-secondary" onClick={addPassenger} disabled={totalPassengerCapacity < 1}>Add Line</button>
-                          );
-                        })()}
-
-                        <h5 className="mt-4">Cargo Availability</h5>
-                        <div id="cargo-availability-container">
-                          {cargo.map((c) => {
-                            const selectedHold = selectedTripCapacity.cargo.find(cc => cc.cabinName === c.type);
-                            return (
-                              <div className="mb-3" key={c.id}>
-                                <div className="capacity-grid align-items-center">
-                                  <select className="form-select" value={c.type} onChange={(e) => updateCargo(c.id, "type", e.target.value)} disabled={!c.isNew}>
-                                    <option value="">-- Select Hold --</option>
-                                    {selectedTripCapacity.cargo.map((cc) => (
-                                      <option key={cc.cabinId} value={cc.cabinName}>
-                                        {cc.cabinName} (Total: {cc.totalSeat}, Remaining: {cc.remainingSeat})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <input type="number" className="form-control" placeholder="Spots" value={c.spots} onChange={(e) => updateCargo(c.id, "spots", e.target.value)} disabled={!c.isNew} />
-                                  {c.isNew && (
-                                    <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removeCargo(c.id)}>Remove</button>
-                                  )}
-                                </div>
-                                {selectedHold && (
-                                  <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                    Remaining Spots: {selectedHold.remainingSeat}
-                                  </small>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {(() => {
-                          const totalCargoCapacity = selectedTripCapacity.cargo.reduce((sum, cc) => sum + cc.remainingSeat, 0);
-                          return (
-                            <button type="button" id="addCargoLine" className="btn btn-sm btn-outline-secondary" onClick={addCargo} disabled={totalCargoCapacity < 1}>Add Line</button>
-                          );
-                        })()}
-
-                        <h5 className="mt-4">Vehicle Availability</h5>
-                        <div id="vehicle-availability-container">
-                          {vehicles.map((v) => {
-                            const selectedVehicle = selectedTripCapacity.vehicle.find(vc => vc.cabinName === v.type);
-                            return (
-                              <div className="mb-3" key={v.id}>
-                                <div className="capacity-grid align-items-center">
-                                  <select className="form-select" value={v.type} onChange={(e) => updateVehicle(v.id, "type", e.target.value)} disabled={!v.isNew}>
-                                    <option value="">-- Select Vehicle Type --</option>
-                                    {selectedTripCapacity.vehicle.map((vc) => (
-                                      <option key={vc.cabinId} value={vc.cabinName}>
-                                        {vc.cabinName} (Total: {vc.totalSeat}, Remaining: {vc.remainingSeat})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <input type="number" className="form-control" placeholder="Spots" value={v.spots} onChange={(e) => updateVehicle(v.id, "spots", e.target.value)} disabled={!v.isNew} />
-                                  {v.isNew && (
-                                    <button type="button" className="btn btn-sm btn-danger remove-btn" onClick={() => removeVehicle(v.id)}>Remove</button>
-                                  )}
-                                </div>
-                                {selectedVehicle && (
-                                  <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                    Remaining Spots: {selectedVehicle.remainingSeat}
-                                  </small>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {(() => {
-                          const totalVehicleCapacity = selectedTripCapacity.vehicle.reduce((sum, vc) => sum + vc.remainingSeat, 0);
-                          return (
-                            <button type="button" id="addVehicleLine" className="btn btn-sm btn-outline-secondary" onClick={addVehicle} disabled={totalVehicleCapacity < 1}>Add Line</button>
-                          );
-                        })()}
-
-                        <div className="text-end mt-3">
-                          <button type="button" className="btn btn-success" onClick={onSaveAvailability}>Save Availability</button>
-                        </div>
-                      </div>
-
-                      {/* Allocate to Agent */}
-                      <div id="allocateAvailabilityContent" className={availInnerTab === "allocate" ? "" : "hidden"}>
-                        <div id="agent-allocation-container">
-                          {agents.map((agent) => (
-                            <div className="agent-block" key={agent.id}>
-                              <div className="d-flex justify-content-between align-items-center mb-3">
-                                <h6>Agent Details</h6>
-                                <div>
-                                  {!agent.isNew && (
-                                    <button type="button" className="btn btn-sm btn-primary update-agent" onClick={() => updateExistingAgentAllocation(agent)}>Update Allocation</button>
-                                  )}
-                                  {agent.isNew && (
-                                    <button type="button" className="btn btn-sm btn-danger remove-agent" onClick={() => removeAgent(agent.id)}>Remove Agent</button>
-                                  )}
-                                </div>
-                              </div>
-
-                              <select className="form-select mb-3" value={agent.agentName} onChange={(e) => {
-                                const selectedPartner = partners.find(p => p.name === e.target.value);
-                                setAgents((a) => a.map((ag) =>
-                                  ag.id === agent.id
-                                    ? { ...ag, agentName: e.target.value, agentId: selectedPartner?._id || "" }
-                                    : ag
-                                ));
-                              }} disabled={!agent.isNew}>
-                                <option value="">-- Select a Partner --</option>
-                                {partners.map((partner) => (
-                                  <option key={partner._id} value={partner.name}>
-                                    {partner.name}
-                                  </option>
-                                ))}
-                              </select>
-
-                              <div className="allocation-section">
-                                <h6>Passenger Allocation</h6>
-                                <div className="passenger-lines">
-                                  {agent.passengerLines.map((line) => {
-                                    const selectedPassenger = selectedTripAvailability.passenger.find(p => p.cabin._id === line.select);
-                                    return (
-                                      <div className="mb-3" key={line.id}>
-                                        <div className="capacity-grid align-items-center">
-                                          <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)} disabled={!line.isNew}>
-                                            <option value="">Select</option>
-                                            {selectedTripAvailability.passenger.map((p) => (
-                                              <option key={p.cabin._id} value={p.cabin._id}>
-                                                {p.cabin.name} (Remaining: {p.remainingSeats})
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} disabled={!line.isNew} />
-                                          {line.isNew && (
-                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "passenger", line.id)}>Remove</button>
-                                          )}
-                                        </div>
-                                        {selectedPassenger && (
-                                          <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                            Remaining: {selectedPassenger.remainingSeats}
-                                          </small>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {(() => {
-                                  const totalPassengerRemaining = selectedTripAvailability.passenger.reduce((sum, p) => sum + p.remainingSeats, 0);
-                                  return (
-                                    <button type="button" className="btn btn-sm btn-outline-secondary add-passenger-line" onClick={() => addAgentLine(agent.id, "passenger")} disabled={totalPassengerRemaining < 1}>Add Passenger Line</button>
-                                  );
-                                })()}
-                              </div>
-
-                              <div className="allocation-section">
-                                <h6>Cargo Allocation</h6>
-                                <div className="cargo-lines">
-                                  {agent.cargoLines.map((line) => {
-                                    const selectedCargo = selectedTripAvailability.cargo.find(c => c.cabin._id === line.select);
-                                    return (
-                                      <div className="mb-3" key={line.id}>
-                                        <div className="capacity-grid align-items-center">
-                                          <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)} disabled={!line.isNew}>
-                                            <option value="">Select</option>
-                                            {selectedTripAvailability.cargo.map((c) => (
-                                              <option key={c.cabin._id} value={c.cabin._id}>
-                                                {c.cabin.name} (Remaining: {c.remainingSeats})
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} disabled={!line.isNew} />
-                                          {line.isNew && (
-                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "cargo", line.id)}>Remove</button>
-                                          )}
-                                        </div>
-                                        {selectedCargo && (
-                                          <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                            Remaining: {selectedCargo.remainingSeats}
-                                          </small>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {(() => {
-                                  const totalCargoRemaining = selectedTripAvailability.cargo.reduce((sum, c) => sum + c.remainingSeats, 0);
-                                  return (
-                                    <button type="button" className="btn btn-sm btn-outline-secondary add-cargo-line" onClick={() => addAgentLine(agent.id, "cargo")} disabled={totalCargoRemaining < 1}>Add Cargo Line</button>
-                                  );
-                                })()}
-                              </div>
-
-                              <div className="allocation-section">
-                                <h6>Vehicle Allocation</h6>
-                                <div className="vehicle-lines">
-                                  {agent.vehicleLines.map((line) => {
-                                    const selectedVehicle = selectedTripAvailability.vehicle.find(v => v.cabin._id === line.select);
-                                    return (
-                                      <div className="mb-3" key={line.id}>
-                                        <div className="capacity-grid align-items-center">
-                                          <select className="form-select" value={line.select} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)} disabled={!line.isNew}>
-                                            <option value="">Select</option>
-                                            {selectedTripAvailability.vehicle.map((v) => (
-                                              <option key={v.cabin._id} value={v.cabin._id}>
-                                                {v.cabin.name} (Remaining: {v.remainingSeats})
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} disabled={!line.isNew} />
-                                          {line.isNew && (
-                                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}>Remove</button>
-                                          )}
-                                        </div>
-                                        {selectedVehicle && (
-                                          <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
-                                            Remaining: {selectedVehicle.remainingSeats}
-                                          </small>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {(() => {
-                                  const totalVehicleRemaining = selectedTripAvailability.vehicle.reduce((sum, v) => sum + v.remainingSeats, 0);
-                                  return (
-                                    <button type="button" className="btn btn-sm btn-outline-secondary add-vehicle-line" onClick={() => addAgentLine(agent.id, "vehicle")} disabled={totalVehicleRemaining < 1}>Add Vehicle Line</button>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          ))}
-                          <button type="button" id="addAgentLine" className="btn btn-sm btn-outline-secondary" onClick={addAgent}>Add Another Agent</button>
-
-                          <div className="text-end mt-3">
-                            <button type="button" className="btn btn-success" onClick={onSaveAgentAllocations}>Save Allocation</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Trip Ticketing Rules */}
-                    <div id="tripTicketingRulesTab" className={mainTab === "ticketing" ? "" : "hidden"}>
-                      <h5 className="mb-3">Trip Ticketing Rules{assignedTripRules.length > 0 && <span className="badge bg-success ms-2">{assignedTripRules.length} rules assigned</span>}</h5>
-
-                      <div id="trip-rules-container">
-                        {tripRules.map((rule) => (
-                          <div className="capacity-grid align-items-center mb-2" key={rule.id}>
-                            <select className="form-select" value={rule.ruleType} onChange={(e) => {
-                              updateTripRule(rule.id, "ruleType", e.target.value);
-                              handleRuleTypeChange(rule.id, e.target.value);
-                            }}>
-                              <option value="">Select Type</option>
-                              <option value="Void">Void</option>
-                              <option value="Refund">Refund</option>
-                              <option value="Reissue">Reissue</option>
-                            </select>
-
-                            <select className="form-select" name="rulename" value={rule.ruleId} onChange={(e) => {
-                              const selectedRuleId = e.target.value;
-                              const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
-                              const availableRules = ticketingRulesByType[ruleTypeKey] || [];
-                              const selectedRule = availableRules.find(tr => tr._id === selectedRuleId);
-                              updateTripRule(rule.id, "ruleId", selectedRuleId);
-                              if (selectedRule) {
-                                updateTripRule(rule.id, "ruleName", selectedRule.ruleName);
-                              }
-                            }}>
-                              {!rule.isFromBackend && !rule.ruleId && <option value="">Select Rule</option>}
-                              {rule.ruleType &&
-                                (ticketingRulesByType[
-                                  rule.ruleType === "Void"
-                                    ? "VOID"
-                                    : rule.ruleType === "Refund"
-                                      ? "REFUND"
-                                      : "REISSUE"
-                                ] || []).map((ticketRule) => (
-                                  <option key={ticketRule._id} value={ticketRule._id}>
-                                    {ticketRule.ruleName}
-                                  </option>
-                                ))}
-                            </select>
-
-                            {!rule.isFromBackend && (
-                              <button type="button" className="btn btn-sm btn-danger remove-trip-rule" onClick={() => removeTripRule(rule.id)}>Remove</button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      <button type="button" id="addTripRuleLine" className="btn btn-outline-secondary btn-sm mt-2" onClick={addTripRule}>Add Line</button>
-
-                      <div className="d-flex justify-content-end mt-3">
-                        <button type="button" className="btn btn-success" onClick={onSaveTicketingRules}>Save Rules</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* (end content) */}
+                  <EditTripTabsContainer
+                    mainTab={mainTab}
+                    setMainTab={setMainTab}
+                    availInnerTab={availInnerTab}
+                    setAvailInnerTab={setAvailInnerTab}
+                    form={form}
+                    onFormChange={onFormChange}
+                    onStatusChange={onStatusChange}
+                    ships={ships}
+                    ports={ports}
+                    loadingData={loadingData}
+                    passengers={passengers}
+                    cargo={cargo}
+                    vehicles={vehicles}
+                    selectedTripCapacity={selectedTripCapacity}
+                    selectedTripAvailability={selectedTripAvailability}
+                    updatePassenger={updatePassenger}
+                    removePassenger={removePassenger}
+                    addPassenger={addPassenger}
+                    updateCargo={updateCargo}
+                    removeCargo={removeCargo}
+                    addCargo={addCargo}
+                    updateVehicle={updateVehicle}
+                    removeVehicle={removeVehicle}
+                    addVehicle={addVehicle}
+                    onSaveAvailability={onSaveAvailability}
+                    agents={agents}
+                    partners={partners}
+                    setAgents={setAgents}
+                    removeAgent={removeAgent}
+                    removeAgentLine={removeAgentLine}
+                    updateAgentLine={updateAgentLine}
+                    addAgentLine={addAgentLine}
+                    addAgent={addAgent}
+                    updateExistingAgentAllocation={updateExistingAgentAllocation}
+                    onSaveAgentAllocations={onSaveAgentAllocations}
+                    tripRules={tripRules}
+                    ticketingRulesByType={ticketingRulesByType}
+                    assignedTripRules={assignedTripRules}
+                    updateTripRule={updateTripRule}
+                    handleRuleTypeChange={handleRuleTypeChange}
+                    removeTripRule={removeTripRule}
+                    addTripRule={addTripRule}
+                    onSaveTicketingRules={onSaveTicketingRules}
+                  />
                 </div>
               </div>
             </div>
