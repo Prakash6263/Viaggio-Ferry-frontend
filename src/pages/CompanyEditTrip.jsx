@@ -619,7 +619,7 @@ export default function CompanyEditTrip() {
       console.log("[v0] Fetching allocations for trip:", tripId);
       const response = await tripsApi.getAgentAllocationsByTrip(tripId);
       console.log("[v0] Agent allocations fetched:", response);
-      const allocationsData = response?.data?.data || [];
+      const allocationsData = response.data || [];
       setAgentAllocations(allocationsData);
 
       // Prefill the form with fetched allocations
