@@ -62,7 +62,7 @@ export default function EditAllocateAgentTab({
                             </option>
                           ))}
                         </select>
-                        <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} disabled={!line.isNew} />
+                        <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} />
                         {line.isNew && (
                           <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "passenger", line.id)}>Remove</button>
                         )}
@@ -100,7 +100,7 @@ export default function EditAllocateAgentTab({
                             </option>
                           ))}
                         </select>
-                        <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} disabled={!line.isNew} />
+                        <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} />
                         {line.isNew && (
                           <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "cargo", line.id)}>Remove</button>
                         )}
@@ -138,7 +138,7 @@ export default function EditAllocateAgentTab({
                             </option>
                           ))}
                         </select>
-                        <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} disabled={!line.isNew} />
+                        <input className="form-control" placeholder="Qty" value={line.qty} onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} />
                         {line.isNew && (
                           <button type="button" className="btn btn-sm btn-danger" onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}>Remove</button>
                         )}

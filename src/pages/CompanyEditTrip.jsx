@@ -1,5 +1,6 @@
 // src/pages/CompanyEditTrip.jsx
 import React, { useState, useEffect } from "react";
+import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
@@ -493,6 +494,124 @@ export default function CompanyEditTrip() {
     setAgents(prefilteredAgents);
   };
 
+  // Refetch trip data and availability after updates
+  const fetchTripData = async () => {
+    try {
+      console.log("[v0] Starting refetch of trip data for trip:", tripId);
+      const [tripDataRes, availabilityRes, tripRulesRes] = await Promise.all([
+        tripsApi.getTripById(tripId).catch(err => {
+          console.error("[v0] Error refetching trip:", err.message);
+          return null;
+        }),
+        tripsApi.getAvailabilities(tripId).catch(err => {
+          console.error("[v0] Error refetching availabilities:", err.message);
+          return null;
+        }),
+        tripsApi.getTicketingRules(tripId).catch(err => {
+          console.error("[v0] Error refetching trip's ticketing rules:", err.message);
+          return { data: { ticketingRules: [] } };
+        })
+      ]);
+
+      // Update form with trip data
+      if (tripDataRes) {
+        const tripData = tripDataRes.data || tripDataRes;
+        console.log("[v0] Trip data refetched:", tripData);
+
+        setForm({
+          trip: tripId,
+          code: tripData.tripCode || "",
+          vessel: tripData.ship?._id || "",
+          departurePort: tripData.departurePort?._id || "",
+          arrivalPort: tripData.arrivalPort?._id || "",
+          departureAt: tripData.departureDateTime ? new Date(tripData.departureDateTime).toISOString().slice(0, 16) : "",
+          arrivalAt: tripData.arrivalDateTime ? new Date(tripData.arrivalDateTime).toISOString().slice(0, 16) : "",
+          status: tripData.status || "SCHEDULED",
+          bookingOpen: tripData.bookingOpeningDate ? new Date(tripData.bookingOpeningDate).toISOString().slice(0, 16) : "",
+          bookingClose: tripData.bookingClosingDate ? new Date(tripData.bookingClosingDate).toISOString().slice(0, 16) : "",
+          checkinOpen: tripData.checkInOpeningDate ? new Date(tripData.checkInOpeningDate).toISOString().slice(0, 16) : "",
+          checkinClose: tripData.checkInClosingDate ? new Date(tripData.checkInClosingDate).toISOString().slice(0, 16) : "",
+          boardingClose: tripData.boardingClosingDate ? new Date(tripData.boardingClosingDate).toISOString().slice(0, 16) : "",
+          promotion: tripData.promotion || "",
+          remarks: tripData.remarks || ""
+        });
+
+        // Set trip capacity
+        if (tripData.tripCapacityDetails) {
+          setSelectedTripCapacity({
+            passenger: tripData.tripCapacityDetails.passenger || [],
+            cargo: tripData.tripCapacityDetails.cargo || [],
+            vehicle: tripData.tripCapacityDetails.vehicle || []
+          });
+        }
+      }
+
+      // Update availability data
+      if (availabilityRes) {
+        const availData = availabilityRes.data || availabilityRes;
+        console.log("[v0] Availability data refetched:", availData);
+
+        if (Array.isArray(availData)) {
+          setAvailabilitiesList(availData);
+          if (availData.length > 0) {
+            const firstAvail = availData[0];
+            setSelectedAvailabilityId(firstAvail._id || "");
+
+            // Process passengers
+            const passengerData = firstAvail.availabilityTypes?.find(a => a.type === "passenger");
+            const processedPassengers = passengerData?.cabins?.map(cabin => ({
+              id: makeId("p_"),
+              trip: tripId,
+              cabin: cabin.cabin?.name || cabin.cabin || "",
+              seats: cabin.seats?.toString() || "",
+              isNew: false
+            })) || [{ id: makeId("p_"), trip: "", cabin: "", seats: "", isNew: true }];
+            setPassengers(processedPassengers);
+
+            // Process cargo
+            const cargoData = firstAvail.availabilityTypes?.find(a => a.type === "cargo");
+            const processedCargo = cargoData?.cabins?.map(cabin => ({
+              id: makeId("c_"),
+              trip: tripId,
+              type: cabin.cabin?.name || cabin.cabin || "",
+              spots: cabin.seats?.toString() || "",
+              isNew: false
+            })) || [{ id: makeId("c_"), trip: "", type: "", spots: "", isNew: true }];
+            setCargo(processedCargo);
+
+            // Process vehicles
+            const vehicleData = firstAvail.availabilityTypes?.find(a => a.type === "vehicle");
+            const processedVehicles = vehicleData?.cabins?.map(cabin => ({
+              id: makeId("v_"),
+              trip: tripId,
+              type: cabin.cabin?.name || cabin.cabin || "",
+              spots: cabin.seats?.toString() || "",
+              isNew: false
+            })) || [{ id: makeId("v_"), trip: "", type: "", spots: "", isNew: true }];
+            setVehicles(processedVehicles);
+
+            // Process trip availability for allocations
+            setSelectedTripAvailability({
+              passenger: firstAvail.availabilityTypes?.find(a => a.type === "passenger")?.cabins || [],
+              cargo: firstAvail.availabilityTypes?.find(a => a.type === "cargo")?.cabins || [],
+              vehicle: firstAvail.availabilityTypes?.find(a => a.type === "vehicle")?.cabins || []
+            });
+          }
+        }
+      }
+
+      // Update ticketing rules
+      const tripRulesData = tripRulesRes?.data || {};
+      if (tripRulesData.ticketingRules && tripRulesData.ticketingRules.length > 0) {
+        console.log("[v0] Trip ticketing rules refetched:", tripRulesData.ticketingRules);
+        setAssignedTripRules(tripRulesData.ticketingRules);
+      }
+    } catch (error) {
+      console.error("[v0] Error refetching trip data:", error.message);
+    }
+    console.log("[v0] Trip data refetch cycle completed");
+  };
+
   // Fetch agent allocations for trip
   const fetchAgentAllocations = async () => {
     try {
@@ -504,8 +623,11 @@ export default function CompanyEditTrip() {
       setAgentAllocations(allocationsData);
 
       // Prefill the form with fetched allocations
-      if (allocationsData.length > 0) {
+      if (allocationsData && allocationsData.length > 0) {
+        console.log("[v0] Prefilling agents from fetched allocations");
         prefillAgentsFromAllocations(allocationsData);
+      } else {
+        console.log("[v0] No allocations found, keeping current agents");
       }
     } catch (error) {
       console.error("[v0] Error fetching allocations:", error);
@@ -513,6 +635,7 @@ export default function CompanyEditTrip() {
       setAgentAllocations([]);
     } finally {
       setLoadingAllocations(false);
+      console.log("[v0] Allocation fetch completed");
     }
   };
 
@@ -739,6 +862,14 @@ export default function CompanyEditTrip() {
         text: "Availability updated successfully!",
         confirmButtonText: "OK"
       });
+
+      // Refetch trip data and agent allocations to update UI
+      setLoadingData(true);
+      await Promise.all([
+        fetchTripData(),
+        fetchAgentAllocations()
+      ]);
+      setLoadingData(false);
     } catch (error) {
       console.error("[v0] Error saving availability:", error);
       Swal.fire({
@@ -982,8 +1113,15 @@ export default function CompanyEditTrip() {
         confirmButtonText: "OK"
       });
 
-      // Reload allocations to refresh the data
-      fetchAgentAllocations();
+      // Reload allocations and trip data to refresh the data
+      console.log("[v0] Refetching data after agent allocation update");
+      setLoadingData(true);
+      await Promise.all([
+        fetchTripData(),
+        fetchAgentAllocations()
+      ]);
+      setLoadingData(false);
+      console.log("[v0] Data refetch completed and form updated");
     } catch (error) {
       console.error("[v0] Error updating agent allocation:", error);
       Swal.fire({
@@ -1064,6 +1202,13 @@ export default function CompanyEditTrip() {
         text: "Ticketing rules saved successfully!",
         confirmButtonText: "OK"
       });
+
+      // Refetch trip data to update UI with latest rules
+      console.log("[v0] Refetching trip data after ticketing rules update");
+      setLoadingData(true);
+      await fetchTripData();
+      setLoadingData(false);
+      console.log("[v0] Trip data refetch completed and form updated");
     } catch (error) {
       console.error("[v0] Error saving ticketing rules:", error);
       Swal.fire({
@@ -1097,7 +1242,23 @@ export default function CompanyEditTrip() {
                   </div>
                 </div>
                 <div className="card-body">
-                  <EditTripTabsContainer
+                  {loadingData && (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+                      <CirclesWithBar
+                        height="100"
+                        width="100"
+                        color="#05468f"
+                        outerCircleColor="#05468f"
+                        innerCircleColor="#05468f"
+                        barColor="#05468f"
+                        ariaLabel="circles-with-bar-loading"
+                        visible={true}
+                      />
+                    </div>
+                  )}
+
+                  {!loadingData && (
+                    <EditTripTabsContainer
                     mainTab={mainTab}
                     setMainTab={setMainTab}
                     availInnerTab={availInnerTab}
@@ -1141,7 +1302,8 @@ export default function CompanyEditTrip() {
                     removeTripRule={removeTripRule}
                     addTripRule={addTripRule}
                     onSaveTicketingRules={onSaveTicketingRules}
-                  />
+                      />
+                    )}
                 </div>
               </div>
             </div>

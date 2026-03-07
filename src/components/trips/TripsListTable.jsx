@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import { CirclesWithBar } from "react-loader-spinner";
 import Can from "../Can";
 import CanDisable from "../CanDisable";
 import { tripsApi } from "../../api/tripsApi";
@@ -125,47 +126,60 @@ export default function TripsListTable() {
         <div className="col-sm-12">
           <div className="card-table card p-2">
             <div className="card-body">
-              <div className="table-responsive">
-                <table ref={tableRef} id="tripsTable" className="table table-bordered" style={{ width: "100%" }}>
-                  <thead>
-                    <tr>
-                      <th>Trip Name</th>
-                      <th>Departure / Arrival</th>
-                      <th>Vessel</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
+              {loading && (
+                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+                  <CirclesWithBar
+                    height="100"
+                    width="100"
+                    color="#05468f"
+                    outerCircleColor="#05468f"
+                    innerCircleColor="#05468f"
+                    barColor="#05468f"
+                    ariaLabel="circles-with-bar-loading"
+                    visible={true}
+                  />
+                </div>
+              )}
+
+              {!loading && (
+                <div className="table-responsive">
+                  <table ref={tableRef} id="tripsTable" className="table table-bordered" style={{ width: "100%" }}>
+                    <thead>
                       <tr>
-                        <td colSpan="5" className="text-center">Loading trips...</td>
+                        <th>Trip Name</th>
+                        <th>Departure / Arrival</th>
+                        <th>Vessel</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
-                    ) : trips.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="text-center">No trips found</td>
-                      </tr>
-                    ) : (
-                      trips.map(t => (
-                        <tr key={t._id}>
-                          <td>{t.tripCode}</td>
-                          <td>{`${t.departurePort?.name} → ${t.arrivalPort?.name}`}</td>
-                          <td>{t.ship?.name}</td>
-                          <td>{t.status}</td>
-                          <td className="action-buttons">
-                            <Can action="update" path="/company/fleet-management/trips">
-                              <Link to={`/company/ship-trip/edit-trip/${t._id}`} className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></Link>
-                            </Can>
-                            <Can action="delete" path="/company/fleet-management/trips">
-                              <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTrip(t._id, t.tripCode)}><i className="bi bi-trash" /></button>
-                            </Can>
-                          </td>
+                    </thead>
+                    <tbody>
+                      {trips.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="text-center">No trips found</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ) : (
+                        trips.map(t => (
+                          <tr key={t._id}>
+                            <td>{t.tripCode}</td>
+                            <td>{`${t.departurePort?.name} → ${t.arrivalPort?.name}`}</td>
+                            <td>{t.ship?.name}</td>
+                            <td>{t.status}</td>
+                            <td className="action-buttons">
+                              <Can action="update" path="/company/fleet-management/trips">
+                                <Link to={`/company/ship-trip/edit-trip/${t._id}`} className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></Link>
+                              </Can>
+                              <Can action="delete" path="/company/fleet-management/trips">
+                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTrip(t._id, t.tripCode)}><i className="bi bi-trash" /></button>
+                              </Can>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>

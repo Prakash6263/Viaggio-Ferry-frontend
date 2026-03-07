@@ -1,5 +1,6 @@
 // src/pages/CompanyAddTrip.jsx
 import React, { useState, useEffect } from "react";
+import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
@@ -792,16 +793,33 @@ export default function CompanyAddTrip() {
                   </div>
                 </div>
                 <div className="card-body">
-                  {/* preserve small style block from original for capacity-grid etc. */}
-                  <style>{`
-                    .hidden { display: none !important; }
-                    .capacity-grid { display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 1rem; }
-                    @media (max-width: 767px) { .capacity-grid { grid-template-columns: 1fr; } }
-                    .allocation-section { border: 1px solid var(--text-border); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-                    .agent-block { border: 1px solid var(--text-border); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
-                  `}</style>
+                  {loadingData && (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+                      <CirclesWithBar
+                        height="100"
+                        width="100"
+                        color="#05468f"
+                        outerCircleColor="#05468f"
+                        innerCircleColor="#05468f"
+                        barColor="#05468f"
+                        ariaLabel="circles-with-bar-loading"
+                        visible={true}
+                      />
+                    </div>
+                  )}
 
-                  <TripTabsContainer
+                  {!loadingData && (
+                    <>
+                      {/* preserve small style block from original for capacity-grid etc. */}
+                      <style>{`
+                        .hidden { display: none !important; }
+                        .capacity-grid { display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 1rem; }
+                        @media (max-width: 767px) { .capacity-grid { grid-template-columns: 1fr; } }
+                        .allocation-section { border: 1px solid var(--text-border); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+                        .agent-block { border: 1px solid var(--text-border); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+                      `}</style>
+
+                      <TripTabsContainer
                     mainTab={mainTab}
                     setMainTab={setMainTab}
                     availInnerTab={availInnerTab}
@@ -845,7 +863,9 @@ export default function CompanyAddTrip() {
                     updateTripRule={updateTripRule}
                     handleRuleTypeChange={handleRuleTypeChange}
                     onSaveTicketingRules={onSaveTicketingRules}
-                  />
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             </div>
