@@ -1116,10 +1116,8 @@ export default function CompanyEditTrip() {
       // Reload allocations and trip data to refresh the data
       console.log("[v0] Refetching data after agent allocation update");
       setLoadingData(true);
-      await Promise.all([
-        fetchTripData(),
-        fetchAgentAllocations()
-      ]);
+      await fetchTripData();
+      await fetchAgentAllocations();
       setLoadingData(false);
       console.log("[v0] Data refetch completed and form updated");
     } catch (error) {
