@@ -4,13 +4,14 @@ import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { shipsApi } from "../api/shipsApi";
 import { portsApi } from "../api/portsApi";
 import { tripsApi } from "../api/tripsApi";
 import { partnerApi } from "../api/partnerApi";
 import { ticketingRuleApi } from "../api/ticketingRuleApi";
 import Swal from "sweetalert2";
+import Can from "../components/Can";
 import EditTripTabsContainer from "../components/trips/editTrip/EditTripTabsContainer";
 
 const makeId = (prefix = "") => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -1116,10 +1117,8 @@ export default function CompanyEditTrip() {
       // Reload allocations and trip data to refresh the data
       console.log("[v0] Refetching data after agent allocation update");
       setLoadingData(true);
-      await Promise.all([
-        fetchTripData(),
-        fetchAgentAllocations()
-      ]);
+      await fetchTripData();
+      await fetchAgentAllocations();
       setLoadingData(false);
       console.log("[v0] Data refetch completed and form updated");
     } catch (error) {
@@ -1163,22 +1162,22 @@ export default function CompanyEditTrip() {
       const ticketingRulesPayload = {
         ticketingRules: rulesWithValidSelection.map(rule => {
           const ruleTypeKey = rule.ruleType === "Void" ? "VOID" : rule.ruleType === "Refund" ? "REFUND" : "REISSUE";
-          
+
           // Get the full rule object from ticketingRulesByType to send complete payload
           const ruleTypeMapping = {
             "VOID": ticketingRulesByType.VOID,
             "REFUND": ticketingRulesByType.REFUND,
             "REISSUE": ticketingRulesByType.REISSUE
           };
-          
+
           const availableRules = ruleTypeMapping[ruleTypeKey] || [];
           const fullRuleObject = availableRules.find(r => r._id === rule.ruleId);
-          
+
           console.log("[v0] Processing rule:", rule);
           console.log("[v0] Rule type key:", ruleTypeKey);
           console.log("[v0] Full rule object found:", fullRuleObject);
           console.log("[v0] Sending rule object:", fullRuleObject || { _id: rule.ruleId, ruleName: rule.ruleName });
-          
+
           return {
             ruleType: ruleTypeKey,
             rule: fullRuleObject ? fullRuleObject._id : rule.ruleId
@@ -1225,13 +1224,15 @@ export default function CompanyEditTrip() {
       <Sidebar />
 
       <PageWrapper>
-        <div className="content container-fluid">
-          {/* Back Button */}
-          <div className="mb-3">
-            <button className="btn btn-turquoise" onClick={() => navigate(-1)}>
-              <i className="bi bi-arrow-left"></i> Back to List
-            </button>
-          </div>
+        {/* UPDATE action - uses LIST route path for permission check */}
+        <Can action="update" path="/company/ship-trip/trips">
+          <div className="content container-fluid">
+            {/* Back Button */}
+            <div className="mb-3">
+              <Link to="/company/ship-trip/trips" className="btn btn-turquoise">
+                <i className="bi bi-arrow-left"></i> Back to List
+              </Link>
+            </div>
 
           <div className="row g-4">
             <div className="col-md-12">
@@ -1259,56 +1260,57 @@ export default function CompanyEditTrip() {
 
                   {!loadingData && (
                     <EditTripTabsContainer
-                    mainTab={mainTab}
-                    setMainTab={setMainTab}
-                    availInnerTab={availInnerTab}
-                    setAvailInnerTab={setAvailInnerTab}
-                    form={form}
-                    onFormChange={onFormChange}
-                    onStatusChange={onStatusChange}
-                    ships={ships}
-                    ports={ports}
-                    loadingData={loadingData}
-                    passengers={passengers}
-                    cargo={cargo}
-                    vehicles={vehicles}
-                    selectedTripCapacity={selectedTripCapacity}
-                    selectedTripAvailability={selectedTripAvailability}
-                    updatePassenger={updatePassenger}
-                    removePassenger={removePassenger}
-                    addPassenger={addPassenger}
-                    updateCargo={updateCargo}
-                    removeCargo={removeCargo}
-                    addCargo={addCargo}
-                    updateVehicle={updateVehicle}
-                    removeVehicle={removeVehicle}
-                    addVehicle={addVehicle}
-                    onSaveAvailability={onSaveAvailability}
-                    agents={agents}
-                    partners={partners}
-                    setAgents={setAgents}
-                    removeAgent={removeAgent}
-                    removeAgentLine={removeAgentLine}
-                    updateAgentLine={updateAgentLine}
-                    addAgentLine={addAgentLine}
-                    addAgent={addAgent}
-                    updateExistingAgentAllocation={updateExistingAgentAllocation}
-                    onSaveAgentAllocations={onSaveAgentAllocations}
-                    tripRules={tripRules}
-                    ticketingRulesByType={ticketingRulesByType}
-                    assignedTripRules={assignedTripRules}
-                    updateTripRule={updateTripRule}
-                    handleRuleTypeChange={handleRuleTypeChange}
-                    removeTripRule={removeTripRule}
-                    addTripRule={addTripRule}
-                    onSaveTicketingRules={onSaveTicketingRules}
-                      />
-                    )}
+                      mainTab={mainTab}
+                      setMainTab={setMainTab}
+                      availInnerTab={availInnerTab}
+                      setAvailInnerTab={setAvailInnerTab}
+                      form={form}
+                      onFormChange={onFormChange}
+                      onStatusChange={onStatusChange}
+                      ships={ships}
+                      ports={ports}
+                      loadingData={loadingData}
+                      passengers={passengers}
+                      cargo={cargo}
+                      vehicles={vehicles}
+                      selectedTripCapacity={selectedTripCapacity}
+                      selectedTripAvailability={selectedTripAvailability}
+                      updatePassenger={updatePassenger}
+                      removePassenger={removePassenger}
+                      addPassenger={addPassenger}
+                      updateCargo={updateCargo}
+                      removeCargo={removeCargo}
+                      addCargo={addCargo}
+                      updateVehicle={updateVehicle}
+                      removeVehicle={removeVehicle}
+                      addVehicle={addVehicle}
+                      onSaveAvailability={onSaveAvailability}
+                      agents={agents}
+                      partners={partners}
+                      setAgents={setAgents}
+                      removeAgent={removeAgent}
+                      removeAgentLine={removeAgentLine}
+                      updateAgentLine={updateAgentLine}
+                      addAgentLine={addAgentLine}
+                      addAgent={addAgent}
+                      updateExistingAgentAllocation={updateExistingAgentAllocation}
+                      onSaveAgentAllocations={onSaveAgentAllocations}
+                      tripRules={tripRules}
+                      ticketingRulesByType={ticketingRulesByType}
+                      assignedTripRules={assignedTripRules}
+                      updateTripRule={updateTripRule}
+                      handleRuleTypeChange={handleRuleTypeChange}
+                      removeTripRule={removeTripRule}
+                      addTripRule={addTripRule}
+                      onSaveTicketingRules={onSaveTicketingRules}
+                    />
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </Can>
       </PageWrapper>
     </div>
   );

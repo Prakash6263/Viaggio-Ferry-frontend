@@ -4,13 +4,14 @@ import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { shipsApi } from "../api/shipsApi";
 import { portsApi } from "../api/portsApi";
 import { tripsApi } from "../api/tripsApi";
 import { partnerApi } from "../api/partnerApi";
 import { ticketingRuleApi } from "../api/ticketingRuleApi";
 import Swal from "sweetalert2";
+import Can from "../components/Can";
 import TripTabsContainer from "../components/trips/TripTabsContainer";
 
 const makeId = (prefix = "") => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2,8)}`;
@@ -776,13 +777,15 @@ export default function CompanyAddTrip() {
       <Sidebar />
 
       <PageWrapper>
-        <div className="content container-fluid">
-          {/* Back Button */}
-          <div className="mb-3">
-            <button className="btn btn-turquoise" onClick={() => navigate(-1)}>
-              <i className="bi bi-arrow-left"></i> Back to List
-            </button>
-          </div>
+        {/* CREATE action - uses LIST route path for permission check */}
+        <Can action="create" path="/company/ship-trip/trips">
+          <div className="content container-fluid">
+            {/* Back Button */}
+            <div className="mb-3">
+              <Link to="/company/ship-trips/trips" className="btn btn-turquoise">
+                <i className="bi bi-arrow-left"></i> Back to List
+              </Link>
+            </div>
 
           <div className="row g-4">
             <div className="col-md-12">
@@ -870,7 +873,8 @@ export default function CompanyAddTrip() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </Can>
       </PageWrapper>
     </div>
   );
