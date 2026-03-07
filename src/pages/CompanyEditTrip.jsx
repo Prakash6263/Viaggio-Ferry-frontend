@@ -1225,11 +1225,11 @@ export default function CompanyEditTrip() {
 
       <PageWrapper>
         {/* UPDATE action - uses LIST route path for permission check */}
-        <Can action="update" path="/company/ship-trips/trips">
+        <Can action="update" path="/company/ship-trip/trips">
           <div className="content container-fluid">
             {/* Back Button */}
             <div className="mb-3">
-              <Link to="/company/ship-trips/trips" className="btn btn-turquoise">
+              <Link to="/company/ship-trip/trips" className="btn btn-turquoise">
                 <i className="bi bi-arrow-left"></i> Back to List
               </Link>
             </div>

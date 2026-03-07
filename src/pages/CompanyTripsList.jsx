@@ -12,7 +12,7 @@ export default function CompanyTripsList() {
       <Sidebar />
       <PageWrapper>
         {/* READ action - shows entire trips list if user has read permission */}
-        <Can action="read" path="/company/ship-trips/trips">
+        <Can action="read" path="/company/ship-trip/trips">
           <TripsListTable />
         </Can>
       </PageWrapper>

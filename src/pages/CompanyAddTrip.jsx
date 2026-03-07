@@ -778,7 +778,7 @@ export default function CompanyAddTrip() {
 
       <PageWrapper>
         {/* CREATE action - uses LIST route path for permission check */}
-        <Can action="create" path="/company/ship-trips/trips">
+        <Can action="create" path="/company/ship-trip/trips">
           <div className="content container-fluid">
             {/* Back Button */}
             <div className="mb-3">
