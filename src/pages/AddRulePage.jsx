@@ -5,6 +5,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { companyApi } from "../api/companyapi";
 import { usersApi } from "../api/usersApi";
+import { partnerApi } from "../api/partnerApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -27,6 +28,8 @@ export default function AddRulePage() {
   const [appliedLayer, setAppliedLayer] = useState("");
   const [loading, setLoading] = useState(true);
   const [loginRole, setLoginRole] = useState(null);
+  const [childPartners, setChildPartners] = useState([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
   
   // Determine login role from JWT token
   useEffect(() => {
@@ -79,6 +82,27 @@ export default function AddRulePage() {
       initializeUserData();
     }
   }, [loginRole]);
+  
+  // Fetch child partners from API
+  useEffect(() => {
+    const fetchChildPartners = async () => {
+      try {
+        setLoadingPartners(true);
+        const response = await partnerApi.getChildPartners(1, 100, "Active");
+        
+        if (response.success && response.data) {
+          setChildPartners(response.data);
+          console.log("[v0] Child partners loaded:", response.data.length, "partners");
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load child partners:", error.message);
+      } finally {
+        setLoadingPartners(false);
+      }
+    };
+    
+    fetchChildPartners();
+  }, []);
   
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
   const [value, setValue] = useState("");
@@ -169,9 +193,18 @@ export default function AddRulePage() {
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
-                      <select className="form-select" value={partnerSelection} onChange={e=>setPartnerSelection(e.target.value)}>
-                        <option>All Child Partners</option>
-                        <option>Selected Partners</option>
+                      <select 
+                        className="form-select" 
+                        value={partnerSelection} 
+                        onChange={e=>setPartnerSelection(e.target.value)}
+                        disabled={loadingPartners}
+                      >
+                        <option value="All Child Partners">All Child Partners</option>
+                        {childPartners && childPartners.map((partner) => (
+                          <option key={partner._id} value={partner.name}>
+                            {partner.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

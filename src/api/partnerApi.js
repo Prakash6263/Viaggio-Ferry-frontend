@@ -49,4 +49,9 @@ export const partnerApi = {
   getMarinePartners: async (page = 1, limit = 10) => {
     return apiRequest(`/api/partners/layer/Marine?status=Active&page=${page}&limit=${limit}`)
   },
+
+  // 8. Get child partners
+  getChildPartners: async (page = 1, limit = 10, status = "Active") => {
+    return apiRequest(`/api/partners/children?page=${page}&limit=${limit}&status=${status}`)
+  },
 }
