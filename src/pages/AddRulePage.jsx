@@ -5,6 +5,8 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { companyApi } from "../api/companyapi";
 import { usersApi } from "../api/usersApi";
+import { partnerApi } from "../api/partnerApi";
+import { portsApi } from "../api/portsApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -27,6 +29,8 @@ export default function AddRulePage() {
   const [appliedLayer, setAppliedLayer] = useState("");
   const [loading, setLoading] = useState(true);
   const [loginRole, setLoginRole] = useState(null);
+  const [childPartners, setChildPartners] = useState([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
   
   // Determine login role from JWT token
   useEffect(() => {
@@ -80,9 +84,55 @@ export default function AddRulePage() {
     }
   }, [loginRole]);
   
+  // Fetch child partners from API
+  useEffect(() => {
+    const fetchChildPartners = async () => {
+      try {
+        setLoadingPartners(true);
+        const response = await partnerApi.getChildPartners(1, 100, "Active");
+        
+        if (response.success && response.data) {
+          setChildPartners(response.data);
+          console.log("[v0] Child partners loaded:", response.data.length, "partners");
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load child partners:", error.message);
+      } finally {
+        setLoadingPartners(false);
+      }
+    };
+    
+    fetchChildPartners();
+  }, []);
+  
+  // Fetch ports from API
+  useEffect(() => {
+    const fetchPorts = async () => {
+      try {
+        setLoadingPorts(true);
+        const response = await portsApi.getPorts(1, 100);
+        
+        if (response.success && response.data && response.data.ports) {
+          setPorts(response.data.ports);
+          console.log("[v0] Ports loaded:", response.data.ports.length, "ports");
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load ports:", error.message);
+      } finally {
+        setLoadingPorts(false);
+      }
+    };
+    
+    fetchPorts();
+  }, []);
+  
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
   const [value, setValue] = useState("");
   const [valueType, setValueType] = useState("%");
+  const [visaType, setVisaType] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [ports, setPorts] = useState([]);
+  const [loadingPorts, setLoadingPorts] = useState(false);
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
@@ -104,7 +154,7 @@ export default function AddRulePage() {
     const onSave = (e) => {
       e.preventDefault();
       const payload = {
-        ruleName, ruleType, provider, appliedLayer, partnerSelection, value, valueType,
+        ruleName, ruleType, provider, appliedLayer, partnerSelection, value, valueType, visaType, effectiveDate,
         services: { passenger, cargo, vehicle },
         passengerCabins, passengerTypes, cargoTypes, vehicleTypes, routes
       };
@@ -158,20 +208,32 @@ export default function AddRulePage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
-                      <input 
-                        className="form-control" 
+                      <select 
+                        className="form-select" 
                         value={appliedLayer} 
-                        readOnly 
-                        placeholder={loading ? "Loading..." : "No layer"}
-                        disabled={loading}
-                        title="Layer is automatically set based on your user role"
-                      />
+                        onChange={e=>setAppliedLayer(e.target.value)}
+                      >
+                        <option value="">Select Layer</option>
+                        <option value="Marine">Marine</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Selling">Selling</option>
+                        <option value="company">company</option>
+                      </select>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
-                      <select className="form-select" value={partnerSelection} onChange={e=>setPartnerSelection(e.target.value)}>
-                        <option>All Child Partners</option>
-                        <option>Selected Partners</option>
+                      <select 
+                        className="form-select" 
+                        value={partnerSelection} 
+                        onChange={e=>setPartnerSelection(e.target.value)}
+                        disabled={loadingPartners}
+                      >
+                        <option value="All Child Partners">All Child Partners</option>
+                        {childPartners && childPartners.map((partner) => (
+                          <option key={partner._id} value={partner.name}>
+                            {partner.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -274,11 +336,27 @@ export default function AddRulePage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Visa Type</label>
-                      <select className="form-select"><option value="">Select Visa Type</option><option value="tourist">Tourist</option></select>
+                      <select 
+                        className="form-select"
+                        value={visaType}
+                        onChange={e => setVisaType(e.target.value)}
+                      >
+                        <option value="">Select Visa Type</option>
+                        <option value="Tourist">Tourist</option>
+                        <option value="Transit">Transit</option>
+                        <option value="Business">Business</option>
+                        <option value="Student">Student</option>
+                        <option value="Work">Work</option>
+                      </select>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Effective Date</label>
-                      <input type="date" className="form-control" />
+                      <input 
+                        type="date" 
+                        className="form-control"
+                        value={effectiveDate}
+                        onChange={e => setEffectiveDate(e.target.value)}
+                      />
                     </div>
                   </div>
 
@@ -288,8 +366,32 @@ export default function AddRulePage() {
                     <div id="routes">
                       {routes.map((r, idx) => (
                         <div className="input-group mb-2" key={idx}>
-                          <input className="form-control" value={r.from} onChange={e=>updateItem(setRoutes, routes, idx, { ...r, from: e.target.value })} placeholder="From" />
-                          <input className="form-control" value={r.to} onChange={e=>updateItem(setRoutes, routes, idx, { ...r, to: e.target.value })} placeholder="To" />
+                          <select 
+                            className="form-select" 
+                            value={r.from} 
+                            onChange={e=>updateItem(setRoutes, routes, idx, { ...r, from: e.target.value })}
+                            disabled={loadingPorts}
+                          >
+                            <option value="">From</option>
+                            {ports && ports.map((port) => (
+                              <option key={port._id} value={port.name}>
+                                {port.name}
+                              </option>
+                            ))}
+                          </select>
+                          <select 
+                            className="form-select" 
+                            value={r.to} 
+                            onChange={e=>updateItem(setRoutes, routes, idx, { ...r, to: e.target.value })}
+                            disabled={loadingPorts}
+                          >
+                            <option value="">To</option>
+                            {ports && ports.map((port) => (
+                              <option key={port._id} value={port.name}>
+                                {port.name}
+                              </option>
+                            ))}
+                          </select>
                           <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setRoutes, routes, idx)}>&times;</button>
                         </div>
                       ))}
