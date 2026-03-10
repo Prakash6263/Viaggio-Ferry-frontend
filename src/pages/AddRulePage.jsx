@@ -3,69 +3,82 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
-import { useSidebar } from "../context/SidebarContext";
 import { companyApi } from "../api/companyapi";
+import { usersApi } from "../api/usersApi";
+
+// Helper function to decode JWT and get role
+const getLoginRoleFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
+
+    const decoded = JSON.parse(atob(token.split(".")[1]))
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
+  } catch (error) {
+    console.error("[v0] Error decoding token:", error)
+    return null
+  }
+}
 
 export default function AddRulePage() {
-  const { user } = useSidebar();
-  
   const [ruleName, setRuleName] = useState("");
   const [ruleType, setRuleType] = useState("Markup");
   const [provider, setProvider] = useState("");
   const [appliedLayer, setAppliedLayer] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loginRole, setLoginRole] = useState(null);
   
-  // Initialize provider and layer from API and user data
+  // Determine login role from JWT token
+  useEffect(() => {
+    const role = getLoginRoleFromToken();
+    setLoginRole(role);
+  }, []);
+  
+  // Initialize provider and layer from API based on login role (same pattern as Header)
   useEffect(() => {
     const initializeUserData = async () => {
       try {
         setLoading(true);
         
-        // Fetch user profile from API
-        const profileResponse = await companyApi.getUserProfile();
-        
-        if (profileResponse.success && profileResponse.data) {
-          const userData = profileResponse.data;
+        if (loginRole === "user") {
+          // For user login: Get company name from user's company object and user's layer
+          const response = await usersApi.getCurrentProfile();
           
-          // Determine provider name
-          let providerName = "";
-          if (userData.company && userData.company.companyName) {
-            // If user is part of a company, use company name
-            providerName = userData.company.companyName;
-          } else if (userData.companyName) {
-            // If this is a company self-login, use company name
-            providerName = userData.companyName;
-          } else if (userData.fullName) {
-            // Fallback to user's full name
-            providerName = userData.fullName;
-          } else {
-            providerName = "Unknown";
+          if (response.success && response.data) {
+            const userData = response.data;
+            const providerName = userData.company?.companyName || "Unknown";
+            const userLayer = userData.layer || userData.role || "Company";
+            
+            setProvider(providerName);
+            setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+            
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
           }
+        } else if (loginRole === "company") {
+          // For company login: Get company name and set layer as "Company"
+          const response = await companyApi.getCompanyProfile();
           
-          // Determine layer - capitalize first letter
-          let userLayer = userData.layer || userData.role || "Company";
-          userLayer = userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase();
-          
-          setProvider(providerName);
-          setAppliedLayer(userLayer);
-          
-          console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
+          if (response.data) {
+            const companyData = response.data;
+            const providerName = companyData.companyName || "Unknown";
+            
+            setProvider(providerName);
+            setAppliedLayer("Company");
+            
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company");
+          }
         }
       } catch (error) {
-        console.error("[v0] Failed to load user profile:", error.message);
-        // Fallback to sidebar user data if API fails
-        if (user && user.company) {
-          setProvider(user.company.companyName || "Unknown");
-          const userLayer = user.layer || "Company";
-          setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
-        }
+        console.error("[v0] Failed to load profile data:", error.message);
       } finally {
         setLoading(false);
       }
     };
     
-    initializeUserData();
-  }, [user]);
+    if (loginRole) {
+      initializeUserData();
+    }
+  }, [loginRole]);
   
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
   const [value, setValue] = useState("");
