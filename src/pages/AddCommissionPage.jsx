@@ -1,7 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
+import { companyApi } from "../api/companyapi";
+import { usersApi } from "../api/usersApi";
+import { partnerApi } from "../api/partnerApi";
+
+// Helper function to decode JWT and get role
+const getLoginRoleFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
+
+    const decoded = JSON.parse(atob(token.split(".")[1]))
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
+  } catch (error) {
+    console.error("[v0] Error decoding token:", error)
+    return null
+  }
+}
 
 /**
  * AddCommissionPage
@@ -12,6 +29,93 @@ import { PageWrapper } from "../components/layout/PageWrapper";
  * - this approach keeps generated DOM structure identical to HTML/CSS expectations
  */
 export default function AddCommissionPage() {
+  const [ruleName, setRuleName] = useState("");
+  const [provider, setProvider] = useState("");
+  const [appliedLayer, setAppliedLayer] = useState("");
+  const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
+  const [value, setValue] = useState("");
+  const [valueType, setValueType] = useState("%");
+  const [visaType, setVisaType] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loginRole, setLoginRole] = useState(null);
+  const [childPartners, setChildPartners] = useState([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
+  const [loading2, setLoading2] = useState(false);
+
+  // Determine login role from JWT token
+  useEffect(() => {
+    const role = getLoginRoleFromToken();
+    setLoginRole(role);
+  }, []);
+
+  // Initialize provider and layer from API based on login role
+  useEffect(() => {
+    const initializeUserData = async () => {
+      try {
+        setLoading(true);
+        
+        if (loginRole === "user") {
+          // For user login: Get company name from user's company object and user's layer
+          const response = await usersApi.getCurrentProfile();
+          
+          if (response.success && response.data) {
+            const userData = response.data;
+            const providerName = userData.company?.companyName || "Unknown";
+            const userLayer = userData.layer || userData.role || "Company";
+            
+            setProvider(providerName);
+            setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+            
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
+          }
+        } else if (loginRole === "company") {
+          // For company login: Get company name and set layer as "Company"
+          const response = await companyApi.getCompanyProfile();
+          
+          if (response.data) {
+            const companyData = response.data;
+            const providerName = companyData.companyName || "Unknown";
+            
+            setProvider(providerName);
+            setAppliedLayer("Company");
+            
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company");
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load profile data:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (loginRole) {
+      initializeUserData();
+    }
+  }, [loginRole]);
+
+  // Fetch child partners from API
+  useEffect(() => {
+    const fetchChildPartners = async () => {
+      try {
+        setLoadingPartners(true);
+        const response = await partnerApi.getChildPartners(1, 100, "Active");
+        
+        if (response.success && response.data) {
+          setChildPartners(response.data);
+          console.log("[v0] Child partners loaded:", response.data.length, "partners");
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load child partners:", error.message);
+      } finally {
+        setLoadingPartners(false);
+      }
+    };
+    
+    fetchChildPartners();
+  }, []);
+
   useEffect(() => {
     // Helper: toggle section visibility by class 'd-none'
     const passengerCheckbox = document.getElementById("chkPassenger");
@@ -134,35 +238,57 @@ export default function AddCommissionPage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Rule Name</label>
-                      <input type="text" className="form-control" placeholder="Enter rule name" />
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        placeholder="Enter rule name"
+                        value={ruleName}
+                        onChange={e => setRuleName(e.target.value)}
+                      />
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Commission Provider</label>
-                      <select className="form-select">
-                        <option>Company A</option>
-                        <option>Partner 1</option>
-                      </select>
+                      <input 
+                        className="form-control" 
+                        value={provider} 
+                        readOnly 
+                        placeholder={loading ? "Loading..." : "No provider"}
+                        disabled={loading}
+                        title="Provider is automatically set to your company/profile name"
+                      />
                     </div>
                   </div>
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
-                      <select className="form-select">
-                        <option>Company</option>
-                        <option>Marine Agent</option>
-                        <option>Commercial Agent</option>
-                        <option>Selling Agent</option>
+                      <select 
+                        className="form-select"
+                        value={appliedLayer}
+                        onChange={e => setAppliedLayer(e.target.value)}
+                      >
+                        <option value="">Select Layer</option>
+                        <option value="Company">Company</option>
+                        <option value="Branch">Branch</option>
+                        <option value="Marine">Marine</option>
+                        <option value="Admin">Admin</option>
                       </select>
                     </div>
 
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
-                      <select className="form-select">
-                        <option>All Child Partners</option>
-                        <option>Partner1</option>
-                        <option>Partner2</option>
-                        <option>Partner3</option>
+                      <select 
+                        className="form-select"
+                        value={partnerSelection}
+                        onChange={e => setPartnerSelection(e.target.value)}
+                        disabled={loadingPartners}
+                      >
+                        <option value="All Child Partners">All Child Partners</option>
+                        {childPartners && childPartners.map((partner) => (
+                          <option key={partner._id} value={partner.name}>
+                            {partner.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -170,8 +296,20 @@ export default function AddCommissionPage() {
                   <div className="mb-3">
                     <label className="form-label">Commission Value</label>
                     <div className="input-group">
-                      <input type="number" className="form-control" id="valueInput" placeholder="Enter value" />
-                      <select id="valueType" style={{ border: "1px solid #dee2e6" }}>
+                      <input 
+                        type="number" 
+                        className="form-control" 
+                        id="valueInput" 
+                        placeholder="Enter value"
+                        value={value}
+                        onChange={e => setValue(e.target.value)}
+                      />
+                      <select 
+                        id="valueType" 
+                        style={{ border: "1px solid #dee2e6" }}
+                        value={valueType}
+                        onChange={e => setValueType(e.target.value)}
+                      >
                         <option value="%">%</option>
                         <option value="fixed">Fixed</option>
                       </select>
@@ -264,7 +402,11 @@ export default function AddCommissionPage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Visa Type</label>
-                      <select className="form-select">
+                      <select 
+                        className="form-select"
+                        value={visaType}
+                        onChange={e => setVisaType(e.target.value)}
+                      >
                         <option value="">Select Visa Type</option>
                         <option value="tourist">Tourist</option>
                         <option value="transit">Transit</option>
@@ -275,7 +417,12 @@ export default function AddCommissionPage() {
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Effective Date</label>
-                      <input type="date" className="form-control" />
+                      <input 
+                        type="date" 
+                        className="form-control"
+                        value={effectiveDate}
+                        onChange={e => setEffectiveDate(e.target.value)}
+                      />
                     </div>
                   </div>
 

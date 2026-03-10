@@ -182,14 +182,17 @@ export default function AddRulePage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
-                      <input 
-                        className="form-control" 
+                      <select 
+                        className="form-select" 
                         value={appliedLayer} 
-                        readOnly 
-                        placeholder={loading ? "Loading..." : "No layer"}
-                        disabled={loading}
-                        title="Layer is automatically set based on your user role"
-                      />
+                        onChange={e=>setAppliedLayer(e.target.value)}
+                      >
+                        <option value="">Select Layer</option>
+                        <option value="Company">Company</option>
+                        <option value="Branch">Branch</option>
+                        <option value="Marine">Marine</option>
+                        <option value="Admin">Admin</option>
+                      </select>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
