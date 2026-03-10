@@ -6,6 +6,7 @@ import { PageWrapper } from "../components/layout/PageWrapper";
 import { companyApi } from "../api/companyapi";
 import { usersApi } from "../api/usersApi";
 import { partnerApi } from "../api/partnerApi";
+import { portApi } from "../api/portApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -104,9 +105,34 @@ export default function AddRulePage() {
     fetchChildPartners();
   }, []);
   
+  // Fetch ports from API
+  useEffect(() => {
+    const fetchPorts = async () => {
+      try {
+        setLoadingPorts(true);
+        const response = await portApi.getPorts(1, 100);
+        
+        if (response.success && response.data && response.data.ports) {
+          setPorts(response.data.ports);
+          console.log("[v0] Ports loaded:", response.data.ports.length, "ports");
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load ports:", error.message);
+      } finally {
+        setLoadingPorts(false);
+      }
+    };
+    
+    fetchPorts();
+  }, []);
+  
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
   const [value, setValue] = useState("");
   const [valueType, setValueType] = useState("%");
+  const [visaType, setVisaType] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [ports, setPorts] = useState([]);
+  const [loadingPorts, setLoadingPorts] = useState(false);
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
@@ -128,7 +154,7 @@ export default function AddRulePage() {
     const onSave = (e) => {
       e.preventDefault();
       const payload = {
-        ruleName, ruleType, provider, appliedLayer, partnerSelection, value, valueType,
+        ruleName, ruleType, provider, appliedLayer, partnerSelection, value, valueType, visaType, effectiveDate,
         services: { passenger, cargo, vehicle },
         passengerCabins, passengerTypes, cargoTypes, vehicleTypes, routes
       };
@@ -310,11 +336,27 @@ export default function AddRulePage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Visa Type</label>
-                      <select className="form-select"><option value="">Select Visa Type</option><option value="tourist">Tourist</option></select>
+                      <select 
+                        className="form-select"
+                        value={visaType}
+                        onChange={e => setVisaType(e.target.value)}
+                      >
+                        <option value="">Select Visa Type</option>
+                        <option value="Tourist">Tourist</option>
+                        <option value="Transit">Transit</option>
+                        <option value="Business">Business</option>
+                        <option value="Student">Student</option>
+                        <option value="Work">Work</option>
+                      </select>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Effective Date</label>
-                      <input type="date" className="form-control" />
+                      <input 
+                        type="date" 
+                        className="form-control"
+                        value={effectiveDate}
+                        onChange={e => setEffectiveDate(e.target.value)}
+                      />
                     </div>
                   </div>
 
@@ -324,8 +366,32 @@ export default function AddRulePage() {
                     <div id="routes">
                       {routes.map((r, idx) => (
                         <div className="input-group mb-2" key={idx}>
-                          <input className="form-control" value={r.from} onChange={e=>updateItem(setRoutes, routes, idx, { ...r, from: e.target.value })} placeholder="From" />
-                          <input className="form-control" value={r.to} onChange={e=>updateItem(setRoutes, routes, idx, { ...r, to: e.target.value })} placeholder="To" />
+                          <select 
+                            className="form-select" 
+                            value={r.from} 
+                            onChange={e=>updateItem(setRoutes, routes, idx, { ...r, from: e.target.value })}
+                            disabled={loadingPorts}
+                          >
+                            <option value="">From</option>
+                            {ports && ports.map((port) => (
+                              <option key={port._id} value={port.name}>
+                                {port.name}
+                              </option>
+                            ))}
+                          </select>
+                          <select 
+                            className="form-select" 
+                            value={r.to} 
+                            onChange={e=>updateItem(setRoutes, routes, idx, { ...r, to: e.target.value })}
+                            disabled={loadingPorts}
+                          >
+                            <option value="">To</option>
+                            {ports && ports.map((port) => (
+                              <option key={port._id} value={port.name}>
+                                {port.name}
+                              </option>
+                            ))}
+                          </select>
                           <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setRoutes, routes, idx)}>&times;</button>
                         </div>
                       ))}

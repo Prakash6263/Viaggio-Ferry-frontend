@@ -5,6 +5,7 @@ import { PageWrapper } from "../components/layout/PageWrapper";
 import { companyApi } from "../api/companyapi";
 import { usersApi } from "../api/usersApi";
 import { partnerApi } from "../api/partnerApi";
+import { portApi } from "../api/portApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -42,6 +43,8 @@ export default function AddCommissionPage() {
   const [childPartners, setChildPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [loading2, setLoading2] = useState(false);
+  const [ports, setPorts] = useState([]);
+  const [loadingPorts, setLoadingPorts] = useState(false);
 
   // Determine login role from JWT token
   useEffect(() => {
@@ -114,6 +117,27 @@ export default function AddCommissionPage() {
     };
     
     fetchChildPartners();
+  }, []);
+
+  // Fetch ports from API
+  useEffect(() => {
+    const fetchPorts = async () => {
+      try {
+        setLoadingPorts(true);
+        const response = await portApi.getPorts(1, 100);
+        
+        if (response.success && response.data && response.data.ports) {
+          setPorts(response.data.ports);
+          console.log("[v0] Ports loaded:", response.data.ports.length, "ports");
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load ports:", error.message);
+      } finally {
+        setLoadingPorts(false);
+      }
+    };
+    
+    fetchPorts();
   }, []);
 
   useEffect(() => {
@@ -430,8 +454,22 @@ export default function AddCommissionPage() {
                     <label className="form-label">Route</label>
                     <div id="routes">
                       <div className="input-group mb-2">
-                        <input type="text" className="form-control" placeholder="Muscat" />
-                        <input type="text" className="form-control" placeholder="Dubai" />
+                        <select className="form-select" disabled={loadingPorts}>
+                          <option value="">From</option>
+                          {ports && ports.map((port) => (
+                            <option key={port._id} value={port.name}>
+                              {port.name}
+                            </option>
+                          ))}
+                        </select>
+                        <select className="form-select" disabled={loadingPorts}>
+                          <option value="">To</option>
+                          {ports && ports.map((port) => (
+                            <option key={port._id} value={port.name}>
+                              {port.name}
+                            </option>
+                          ))}
+                        </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
                     </div>
