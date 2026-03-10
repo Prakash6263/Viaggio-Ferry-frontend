@@ -4,6 +4,7 @@ import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { useSidebar } from "../context/SidebarContext";
+import { companyApi } from "../api/companyapi";
 
 export default function AddRulePage() {
   const { user } = useSidebar();
@@ -12,20 +13,58 @@ export default function AddRulePage() {
   const [ruleType, setRuleType] = useState("Markup");
   const [provider, setProvider] = useState("");
   const [appliedLayer, setAppliedLayer] = useState("");
+  const [loading, setLoading] = useState(true);
   
-  // Initialize provider and layer from user data
+  // Initialize provider and layer from API and user data
   useEffect(() => {
-    if (user) {
-      // Set provider to logged-in user's name
-      const userName = user.name || user.email || "Unknown User";
-      setProvider(userName);
-      
-      // Set applied layer to user's layer/role
-      const userLayer = user.layer || user.role || user.userType || "Company";
-      setAppliedLayer(userLayer);
-      
-      console.log("[v0] User data loaded - Name:", userName, "Layer:", userLayer);
-    }
+    const initializeUserData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch user profile from API
+        const profileResponse = await companyApi.getUserProfile();
+        
+        if (profileResponse.success && profileResponse.data) {
+          const userData = profileResponse.data;
+          
+          // Determine provider name
+          let providerName = "";
+          if (userData.company && userData.company.companyName) {
+            // If user is part of a company, use company name
+            providerName = userData.company.companyName;
+          } else if (userData.companyName) {
+            // If this is a company self-login, use company name
+            providerName = userData.companyName;
+          } else if (userData.fullName) {
+            // Fallback to user's full name
+            providerName = userData.fullName;
+          } else {
+            providerName = "Unknown";
+          }
+          
+          // Determine layer - capitalize first letter
+          let userLayer = userData.layer || userData.role || "Company";
+          userLayer = userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase();
+          
+          setProvider(providerName);
+          setAppliedLayer(userLayer);
+          
+          console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load user profile:", error.message);
+        // Fallback to sidebar user data if API fails
+        if (user && user.company) {
+          setProvider(user.company.companyName || "Unknown");
+          const userLayer = user.layer || "Company";
+          setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeUserData();
   }, [user]);
   
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
@@ -96,8 +135,9 @@ export default function AddRulePage() {
                         className="form-control" 
                         value={provider} 
                         readOnly 
-                        placeholder="Loading user information..."
-                        title="Provider is automatically set to your user name"
+                        placeholder={loading ? "Loading..." : "No provider"}
+                        disabled={loading}
+                        title="Provider is automatically set to your company/profile name"
                       />
                     </div>
                   </div>
@@ -109,7 +149,8 @@ export default function AddRulePage() {
                         className="form-control" 
                         value={appliedLayer} 
                         readOnly 
-                        placeholder="Loading user layer..."
+                        placeholder={loading ? "Loading..." : "No layer"}
+                        disabled={loading}
                         title="Layer is automatically set based on your user role"
                       />
                     </div>

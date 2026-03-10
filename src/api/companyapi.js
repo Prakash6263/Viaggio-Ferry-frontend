@@ -24,6 +24,27 @@ export const companyApi = {
     }
   },
 
+  // Fetch user profile info (from companies endpoint)
+  getUserProfile: async () => {
+    try {
+      const response = await apiFetch("/api/companies/", {
+        method: "GET",
+        waitForToken: true,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch user profile")
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("[v0] Get User Profile Error:", error.message)
+      throw error
+    }
+  },
+
   updateCompanyProfile: async (companyId, formData) => {
     try {
       const token = localStorage.getItem("authToken")
