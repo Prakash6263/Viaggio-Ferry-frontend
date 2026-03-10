@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { CirclesWithBar } from "react-loader-spinner";
 import Can from "../Can";
@@ -12,7 +12,7 @@ export default function TripsListTable() {
   const tableRef = useRef(null);
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const navigate = useNavigate();
   // Fetch trips on mount
   useEffect(() => {
     fetchTrips();
@@ -167,7 +167,7 @@ export default function TripsListTable() {
                             <td>{t.status}</td>
                             <td className="action-buttons">
                               <Can action="update" path="/company/ship-trip/trips">
-                                <Link to={`/company/ship-trip/edit-trip/${t._id}`} className="btn btn-sm btn-outline-primary me-1"><i className="bi bi-pencil" /></Link>
+                                <button className="btn btn-sm btn-outline-primary" onClick={() => navigate(`/company/ship-trip/edit-trip/${t._id}`)}><i className="bi bi-pencil" /></button>
                               </Can>
                               <Can action="delete" path="/company/ship-trip/trips">
                                 <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTrip(t._id, t.tripCode)}><i className="bi bi-trash" /></button>
