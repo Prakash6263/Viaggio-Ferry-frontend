@@ -188,10 +188,10 @@ export default function AddRulePage() {
                         onChange={e=>setAppliedLayer(e.target.value)}
                       >
                         <option value="">Select Layer</option>
-                        <option value="Company">Company</option>
-                        <option value="Branch">Branch</option>
                         <option value="Marine">Marine</option>
-                        <option value="Admin">Admin</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Selling">Selling</option>
+                        <option value="company">company</option>
                       </select>
                     </div>
                     <div className="col-md-6">

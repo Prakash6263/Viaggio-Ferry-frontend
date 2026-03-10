@@ -268,10 +268,10 @@ export default function AddCommissionPage() {
                         onChange={e => setAppliedLayer(e.target.value)}
                       >
                         <option value="">Select Layer</option>
-                        <option value="Company">Company</option>
-                        <option value="Branch">Branch</option>
                         <option value="Marine">Marine</option>
-                        <option value="Admin">Admin</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Selling">Selling</option>
+                        <option value="company">company</option>
                       </select>
                     </div>
 
@@ -408,11 +408,11 @@ export default function AddCommissionPage() {
                         onChange={e => setVisaType(e.target.value)}
                       >
                         <option value="">Select Visa Type</option>
-                        <option value="tourist">Tourist</option>
-                        <option value="transit">Transit</option>
-                        <option value="business">Business</option>
-                        <option value="student">Student</option>
-                        <option value="work">Work</option>
+                        <option value="Tourist">Tourist</option>
+                        <option value="Transit">Transit</option>
+                        <option value="Business">Business</option>
+                        <option value="Student">Student</option>
+                        <option value="Work">Work</option>
                       </select>
                     </div>
                     <div className="col-md-6">
