@@ -1,34 +1,105 @@
   // src/pages/AddRulePage.jsx
-  import React, { useState } from "react";
-  import Header from "../components/layout/Header";
-  import { Sidebar } from "../components/layout/Sidebar";
-  import { PageWrapper } from "../components/layout/PageWrapper";
+import React, { useState, useEffect } from "react";
+import Header from "../components/layout/Header";
+import { Sidebar } from "../components/layout/Sidebar";
+import { PageWrapper } from "../components/layout/PageWrapper";
+import { companyApi } from "../api/companyapi";
+import { usersApi } from "../api/usersApi";
 
-  export default function AddRulePage() {
-    const [ruleName, setRuleName] = useState("");
-    const [ruleType, setRuleType] = useState("Markup");
-    const [provider, setProvider] = useState("Company A");
-    const [appliedLayer, setAppliedLayer] = useState("Company");
-    const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
-    const [value, setValue] = useState("");
-    const [valueType, setValueType] = useState("%");
+// Helper function to decode JWT and get role
+const getLoginRoleFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
 
-    // service checkboxes
-    const [passenger, setPassenger] = useState(false);
-    const [cargo, setCargo] = useState(false);
-    const [vehicle, setVehicle] = useState(false);
+    const decoded = JSON.parse(atob(token.split(".")[1]))
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
+  } catch (error) {
+    console.error("[v0] Error decoding token:", error)
+    return null
+  }
+}
 
-    // dynamic lists
-    const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
-    const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
-    const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
-    const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
-    const [routes, setRoutes] = useState([ { from: "Muscat", to: "Dubai" } ]);
+export default function AddRulePage() {
+  const [ruleName, setRuleName] = useState("");
+  const [ruleType, setRuleType] = useState("Markup");
+  const [provider, setProvider] = useState("");
+  const [appliedLayer, setAppliedLayer] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loginRole, setLoginRole] = useState(null);
+  
+  // Determine login role from JWT token
+  useEffect(() => {
+    const role = getLoginRoleFromToken();
+    setLoginRole(role);
+  }, []);
+  
+  // Initialize provider and layer from API based on login role (same pattern as Header)
+  useEffect(() => {
+    const initializeUserData = async () => {
+      try {
+        setLoading(true);
+        
+        if (loginRole === "user") {
+          // For user login: Get company name from user's company object and user's layer
+          const response = await usersApi.getCurrentProfile();
+          
+          if (response.success && response.data) {
+            const userData = response.data;
+            const providerName = userData.company?.companyName || "Unknown";
+            const userLayer = userData.layer || userData.role || "Company";
+            
+            setProvider(providerName);
+            setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+            
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
+          }
+        } else if (loginRole === "company") {
+          // For company login: Get company name and set layer as "Company"
+          const response = await companyApi.getCompanyProfile();
+          
+          if (response.data) {
+            const companyData = response.data;
+            const providerName = companyData.companyName || "Unknown";
+            
+            setProvider(providerName);
+            setAppliedLayer("Company");
+            
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company");
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load profile data:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (loginRole) {
+      initializeUserData();
+    }
+  }, [loginRole]);
+  
+  const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
+  const [value, setValue] = useState("");
+  const [valueType, setValueType] = useState("%");
 
-    // helpers for add/remove
-    const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
-    const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
-    const updateItem = (setter, arr, idx, val) => setter(arr.map((a,i) => i===idx ? val : a));
+  // service checkboxes
+  const [passenger, setPassenger] = useState(false);
+  const [cargo, setCargo] = useState(false);
+  const [vehicle, setVehicle] = useState(false);
+
+  // dynamic lists
+  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
+  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
+  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
+  const [routes, setRoutes] = useState([ { from: "Muscat", to: "Dubai" } ]);
+
+  // helpers for add/remove
+  const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
+  const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
+  const updateItem = (setter, arr, idx, val) => setter(arr.map((a,i) => i===idx ? val : a));
 
     const onSave = (e) => {
       e.preventDefault();
@@ -73,20 +144,28 @@
                     </div>
                     <div className="col-md-4">
                       <label className="form-label">Provider</label>
-                      <select className="form-select" value={provider} onChange={e=>setProvider(e.target.value)}>
-                        <option>Company A</option>
-                        <option>Partner 1</option>
-                      </select>
+                      <input 
+                        className="form-control" 
+                        value={provider} 
+                        readOnly 
+                        placeholder={loading ? "Loading..." : "No provider"}
+                        disabled={loading}
+                        title="Provider is automatically set to your company/profile name"
+                      />
                     </div>
                   </div>
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
-                      <select className="form-select" value={appliedLayer} onChange={e=>setAppliedLayer(e.target.value)}>
-                        <option>Company</option>
-                        <option>Branch</option>
-                      </select>
+                      <input 
+                        className="form-control" 
+                        value={appliedLayer} 
+                        readOnly 
+                        placeholder={loading ? "Loading..." : "No layer"}
+                        disabled={loading}
+                        title="Layer is automatically set based on your user role"
+                      />
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
