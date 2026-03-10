@@ -1,34 +1,53 @@
   // src/pages/AddRulePage.jsx
-  import React, { useState } from "react";
-  import Header from "../components/layout/Header";
-  import { Sidebar } from "../components/layout/Sidebar";
-  import { PageWrapper } from "../components/layout/PageWrapper";
+import React, { useState, useEffect } from "react";
+import Header from "../components/layout/Header";
+import { Sidebar } from "../components/layout/Sidebar";
+import { PageWrapper } from "../components/layout/PageWrapper";
+import { useSidebar } from "../context/SidebarContext";
 
-  export default function AddRulePage() {
-    const [ruleName, setRuleName] = useState("");
-    const [ruleType, setRuleType] = useState("Markup");
-    const [provider, setProvider] = useState("Company A");
-    const [appliedLayer, setAppliedLayer] = useState("Company");
-    const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
-    const [value, setValue] = useState("");
-    const [valueType, setValueType] = useState("%");
+export default function AddRulePage() {
+  const { user } = useSidebar();
+  
+  const [ruleName, setRuleName] = useState("");
+  const [ruleType, setRuleType] = useState("Markup");
+  const [provider, setProvider] = useState("");
+  const [appliedLayer, setAppliedLayer] = useState("");
+  
+  // Initialize provider and layer from user data
+  useEffect(() => {
+    if (user) {
+      // Set provider to logged-in user's name
+      const userName = user.name || user.email || "Unknown User";
+      setProvider(userName);
+      
+      // Set applied layer to user's layer/role
+      const userLayer = user.layer || user.role || user.userType || "Company";
+      setAppliedLayer(userLayer);
+      
+      console.log("[v0] User data loaded - Name:", userName, "Layer:", userLayer);
+    }
+  }, [user]);
+  
+  const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
+  const [value, setValue] = useState("");
+  const [valueType, setValueType] = useState("%");
 
-    // service checkboxes
-    const [passenger, setPassenger] = useState(false);
-    const [cargo, setCargo] = useState(false);
-    const [vehicle, setVehicle] = useState(false);
+  // service checkboxes
+  const [passenger, setPassenger] = useState(false);
+  const [cargo, setCargo] = useState(false);
+  const [vehicle, setVehicle] = useState(false);
 
-    // dynamic lists
-    const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
-    const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
-    const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
-    const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
-    const [routes, setRoutes] = useState([ { from: "Muscat", to: "Dubai" } ]);
+  // dynamic lists
+  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
+  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
+  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
+  const [routes, setRoutes] = useState([ { from: "Muscat", to: "Dubai" } ]);
 
-    // helpers for add/remove
-    const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
-    const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
-    const updateItem = (setter, arr, idx, val) => setter(arr.map((a,i) => i===idx ? val : a));
+  // helpers for add/remove
+  const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
+  const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
+  const updateItem = (setter, arr, idx, val) => setter(arr.map((a,i) => i===idx ? val : a));
 
     const onSave = (e) => {
       e.preventDefault();
@@ -73,20 +92,26 @@
                     </div>
                     <div className="col-md-4">
                       <label className="form-label">Provider</label>
-                      <select className="form-select" value={provider} onChange={e=>setProvider(e.target.value)}>
-                        <option>Company A</option>
-                        <option>Partner 1</option>
-                      </select>
+                      <input 
+                        className="form-control" 
+                        value={provider} 
+                        readOnly 
+                        placeholder="Loading user information..."
+                        title="Provider is automatically set to your user name"
+                      />
                     </div>
                   </div>
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
-                      <select className="form-select" value={appliedLayer} onChange={e=>setAppliedLayer(e.target.value)}>
-                        <option>Company</option>
-                        <option>Branch</option>
-                      </select>
+                      <input 
+                        className="form-control" 
+                        value={appliedLayer} 
+                        readOnly 
+                        placeholder="Loading user layer..."
+                        title="Layer is automatically set based on your user role"
+                      />
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
