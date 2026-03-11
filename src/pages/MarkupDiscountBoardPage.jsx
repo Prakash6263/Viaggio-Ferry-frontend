@@ -495,24 +495,25 @@ export default function MarkupDiscountBoardPage() {
       setLoading(true);
       setError(null);
       
-      // Build filters object
-      const filters = {
-        page: filterOverrides.page || page,
-        limit: filterOverrides.limit || limit,
-        ...(filterOverrides.search !== undefined ? { search: filterOverrides.search } : searchTerm && { search: searchTerm }),
-        ...(filterOverrides.layer !== undefined ? { layer: filterOverrides.layer } : selectedLayer && { layer: selectedLayer }),
-        ...(filterOverrides.ruleType !== undefined ? { ruleType: filterOverrides.ruleType } : selectedRuleType && { ruleType: selectedRuleType }),
-        ...(filterOverrides.status !== undefined ? { status: filterOverrides.status } : selectedStatus && { status: selectedStatus }),
-      };
+      const currentPage = filterOverrides.page || page;
+      const currentLimit = filterOverrides.limit || limit;
       
-      console.log("[v0] Fetching markup/discount rules with filters...", filters);
+      // Build filter options - only include non-empty filters
+      const filterOptions = {};
+      const search = filterOverrides.search !== undefined ? filterOverrides.search : searchTerm;
+      const layer = filterOverrides.layer !== undefined ? filterOverrides.layer : selectedLayer;
+      const ruleType = filterOverrides.ruleType !== undefined ? filterOverrides.ruleType : selectedRuleType;
+      const status = filterOverrides.status !== undefined ? filterOverrides.status : selectedStatus;
       
-      const response = await markupDiscountApi.getRules(filters.page, filters.limit, {
-        search: filters.search,
-        layer: filters.layer,
-        ruleType: filters.ruleType,
-        status: filters.status,
-      });
+      // Only add to filterOptions if value is not empty
+      if (search && search.trim()) filterOptions.search = search;
+      if (layer) filterOptions.layer = layer;
+      if (ruleType) filterOptions.ruleType = ruleType;
+      if (status) filterOptions.status = status;
+      
+      console.log("[v0] Fetching markup/discount rules...", { page: currentPage, limit: currentLimit, filters: filterOptions });
+      
+      const response = await markupDiscountApi.getRules(currentPage, currentLimit, filterOptions);
       console.log("[v0] API Response:", response);
 
       if (response.success && response.data) {
