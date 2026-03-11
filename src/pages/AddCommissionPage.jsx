@@ -53,6 +53,20 @@ export default function AddCommissionPage() {
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
+  const [showCabinDropdown, setShowCabinDropdown] = useState(false);
+  const [selectedCabins, setSelectedCabins] = useState([]);
+  const [commissionType, setCommissionType] = useState("Markup");
+  const [markup, setMarkup] = useState("");
+  const [discount, setDiscount] = useState("");
+
+  // Handle cabin selection with checkmarks
+  const handleCabinToggle = (cabinId) => {
+    setSelectedCabins(prev => 
+      prev.includes(cabinId) 
+        ? prev.filter(id => id !== cabinId)
+        : [...prev, cabinId]
+    );
+  };
 
   // Determine login role from JWT token
   useEffect(() => {
@@ -456,6 +470,152 @@ export default function AddCommissionPage() {
                         <option value="fixed">Fixed</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Markup</label>
+                    <input 
+                      type="number" 
+                      className="form-control" 
+                      id="markupInput" 
+                      placeholder="Enter markup value"
+                      value={markup || ''}
+                      onChange={e => setMarkup(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Discount</label>
+                    <input 
+                      type="number" 
+                      className="form-control" 
+                      id="discountInput" 
+                      placeholder="Enter discount value"
+                      value={discount || ''}
+                      onChange={e => setDiscount(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Cabin Selection Button with Dropdown */}
+                  <div className="mb-3" style={{ position: "relative" }}>
+                    <label className="form-label d-block">Select Cabins</label>
+                    <button 
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setShowCabinDropdown(!showCabinDropdown)}
+                      style={{ width: "100%", textAlign: "left", position: "relative" }}
+                    >
+                      <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>
+                          {selectedCabins.length > 0 ? `${selectedCabins.length} Cabin(s) Selected` : "Select Cabins"}
+                        </span>
+                        <i className={`fa fa-chevron-${showCabinDropdown ? 'up' : 'down'}`}></i>
+                      </span>
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showCabinDropdown && (
+                      <div style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "#fff",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "4px",
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
+                        zIndex: 1050,
+                        maxHeight: "350px",
+                        overflowY: "auto",
+                        marginTop: "5px"
+                      }}>
+                        {loadingCabins ? (
+                          <div style={{ padding: "15px", textAlign: "center" }}>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Loading cabins...
+                          </div>
+                        ) : cabins && cabins.length > 0 ? (
+                          cabins.map((cabin) => (
+                            <div 
+                              key={cabin._id}
+                              style={{
+                                padding: "10px 15px",
+                                borderBottom: "1px solid #f0f0f0",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px"
+                              }}
+                              onClick={() => handleCabinToggle(cabin._id)}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f8f9fa"}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                            >
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                checked={selectedCabins.includes(cabin._id)}
+                                onChange={() => {}}
+                                style={{ cursor: "pointer", margin: 0 }}
+                              />
+                              <label style={{ cursor: "pointer", marginBottom: 0, flex: 1 }}>
+                                <strong>{cabin.name || cabin.cabinName}</strong>
+                                <div style={{ fontSize: "0.85em", color: "#666", marginTop: "2px" }}>
+                                  Type: {cabin.type}
+                                </div>
+                              </label>
+                              {selectedCabins.includes(cabin._id) && (
+                                <i className="fa fa-check" style={{ color: "#28a745", fontSize: "16px" }}></i>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{ padding: "15px", textAlign: "center", color: "#666" }}>
+                            No cabins available
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Selected Cabins Display */}
+                    {selectedCabins.length > 0 && (
+                      <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                        {cabins.filter(c => selectedCabins.includes(c._id)).map((cabin) => (
+                          <span 
+                            key={cabin._id}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              backgroundColor: "#d4edda",
+                              border: "1px solid #28a745",
+                              borderRadius: "4px",
+                              padding: "6px 12px",
+                              fontSize: "0.9em"
+                            }}
+                          >
+                            <i className="fa fa-check" style={{ color: "#28a745" }}></i>
+                            {cabin.name || cabin.cabinName}
+                            <button
+                              type="button"
+                              onClick={() => handleCabinToggle(cabin._id)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#28a745",
+                                cursor: "pointer",
+                                fontSize: "18px",
+                                padding: 0,
+                                marginLeft: "4px",
+                                display: "flex",
+                                alignItems: "center"
+                              }}
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-3">
