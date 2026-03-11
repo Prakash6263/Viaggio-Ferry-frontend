@@ -40,7 +40,7 @@ export default function Cabin() {
                     <Can action="create" path="/company/settings/cabin">
                       <Link
                         className="btn btn-turquoise"
-                        to="/company/settings/add-cabin"
+                        to={`/company/settings/add-cabin?type=${activeTab}`}
                       >
                         <i
                           className="fa fa-plus-circle me-2"
