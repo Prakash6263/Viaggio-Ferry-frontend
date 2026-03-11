@@ -344,44 +344,6 @@ export default function AddRulePage() {
                 {/* Passenger Section */}
                 {passenger && (
                   <div id="passengerSection" className="mb-3">
-                    <label className="form-label">Select Cabin</label>
-                    <select
-                      className="form-select mb-3"
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setPassengerCabins, passengerCabins, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingCabins}
-                    >
-                      <option value="">Select Cabin to Add</option>
-                      {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                          {cabin.name || cabin.cabinName}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Select Payload Type</label>
-                    <select
-                      className="form-select mb-3"
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setPassengerTypes, passengerTypes, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
                     <label className="form-label">Passenger Cabins</label>
                     <div id="passengerCabins">
                       {passengerCabins.map((val, idx) => (
@@ -423,44 +385,6 @@ export default function AddRulePage() {
                 {/* Cargo Section */}
                 {cargo && (
                   <div id="cargoSection" className="mb-3">
-                    <label className="form-label">Select Cabin</label>
-                    <select
-                      className="form-select mb-3"
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setCargoTypes, cargoTypes, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingCabins}
-                    >
-                      <option value="">Select Cabin to Add</option>
-                      {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
-                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                          {cabin.name || cabin.cabinName}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Select Payload Type</label>
-                    <select
-                      className="form-select mb-3"
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setCargoPayloadTypes, cargoPayloadTypes, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
                     <label className="form-label">Cargo Types</label>
                     <div id="cargoTypes">
                       {cargoTypes.map((val, idx) => (
@@ -484,44 +408,6 @@ export default function AddRulePage() {
                 {/* Vehicle Section */}
                 {vehicle && (
                   <div id="vehicleSection" className="mb-3">
-                    <label className="form-label">Select Cabin</label>
-                    <select
-                      className="form-select mb-3"
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setVehicleTypes, vehicleTypes, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingCabins}
-                    >
-                      <option value="">Select Cabin to Add</option>
-                      {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
-                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                          {cabin.name || cabin.cabinName}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Select Payload Type</label>
-                    <select
-                      className="form-select mb-3"
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setVehiclePayloadTypes, vehiclePayloadTypes, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
                     <label className="form-label">Vehicle Types</label>
                     <div id="vehicleTypes">
                       {vehicleTypes.map((val, idx) => (
