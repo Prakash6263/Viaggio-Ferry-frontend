@@ -26,13 +26,15 @@ const getLoginRoleFromToken = () => {
 
 export default function AddRulePage() {
   const [ruleName, setRuleName] = useState("");
-  const [ruleType, setRuleType] = useState("Markup");
+  const [ruleType, setRuleType] = useState("");
+  const [ruleTypes, setRuleTypes] = useState([]);
   const [provider, setProvider] = useState("");
   const [appliedLayer, setAppliedLayer] = useState("");
   const [loading, setLoading] = useState(true);
   const [loginRole, setLoginRole] = useState(null);
   const [childPartners, setChildPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
+  const [loadingRuleTypes, setLoadingRuleTypes] = useState(false);
   
   // Determine login role from JWT token
   useEffect(() => {
@@ -86,6 +88,25 @@ export default function AddRulePage() {
     }
   }, [loginRole]);
   
+  // Fetch rule types - currently no API endpoint, placeholder for future implementation
+  useEffect(() => {
+    const fetchRuleTypes = async () => {
+      try {
+        setLoadingRuleTypes(true);
+        // TODO: Replace with actual API call when available
+        // For now, rule types can be added via API when implemented
+        setRuleTypes([]);
+        console.log("[v0] Rule types loading - no API endpoint configured yet");
+      } catch (error) {
+        console.error("[v0] Failed to load rule types:", error.message);
+      } finally {
+        setLoadingRuleTypes(false);
+      }
+    };
+    
+    fetchRuleTypes();
+  }, []);
+
   // Fetch child partners from API
   useEffect(() => {
     const fetchChildPartners = async () => {
@@ -214,11 +235,11 @@ export default function AddRulePage() {
   const [vehicle, setVehicle] = useState(false);
 
   // dynamic lists
-  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
-  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
-  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
-  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
-  const [routes, setRoutes] = useState([ { from: "Muscat", to: "Dubai" } ]);
+  const [passengerCabins, setPassengerCabins] = useState([]);
+  const [passengerTypes, setPassengerTypes] = useState([]);
+  const [cargoTypes, setCargoTypes] = useState([]);
+  const [vehicleTypes, setVehicleTypes] = useState([]);
+  const [routes, setRoutes] = useState([]);
 
   // helpers for add/remove
   const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
@@ -261,9 +282,18 @@ export default function AddRulePage() {
                     </div>
                     <div className="col-md-4">
                       <label className="form-label">Rule Type</label>
-                      <select className="form-select" value={ruleType} onChange={e=>setRuleType(e.target.value)}>
-                        <option>Markup</option>
-                        <option>Discount</option>
+                      <select 
+                        className="form-select" 
+                        value={ruleType} 
+                        onChange={e=>setRuleType(e.target.value)}
+                        disabled={loadingRuleTypes}
+                      >
+                        <option value="">{loadingRuleTypes ? "Loading..." : "Select Rule Type"}</option>
+                        {ruleTypes && ruleTypes.map((type) => (
+                          <option key={type._id} value={type.name || type.type}>
+                            {type.name || type.type}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="col-md-4">

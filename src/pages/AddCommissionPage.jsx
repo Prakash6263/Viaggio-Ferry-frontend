@@ -257,14 +257,50 @@ export default function AddCommissionPage() {
     const addVehicleTypeBtn = document.getElementById("addVehicleType");
     const addRouteBtn = document.getElementById("addRoute");
 
-    const onAddPassengerCabin = () =>
-      addField("passengerCabins", "<option>Economy</option><option>Business</option><option>First</option>");
-    const onAddPassengerType = () =>
-      addField("passengerTypes", "<option>Adult</option><option>Child</option><option>Infant</option><option>Student</option><option>Senior</option>");
-    const onAddCargoType = () =>
-      addField("cargoTypes", "<option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>");
-    const onAddVehicleType = () =>
-      addField("vehicleTypes", "<option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>");
+    const onAddPassengerCabin = () => {
+      const container = document.getElementById("passengerCabins");
+      if (!container) return;
+      const div = document.createElement("div");
+      div.className = "input-group mb-2";
+      div.innerHTML = `<select class="form-select">
+        <option value="">Select Cabin</option>
+      </select>
+        <button class="btn btn-outline-danger remove-field">&times;</button>`;
+      container.appendChild(div);
+    };
+    const onAddPassengerType = () => {
+      const container = document.getElementById("passengerTypes");
+      if (!container) return;
+      const div = document.createElement("div");
+      div.className = "input-group mb-2";
+      div.innerHTML = `<select class="form-select">
+        <option value="">Select Payload Type</option>
+      </select>
+        <button class="btn btn-outline-danger remove-field">&times;</button>`;
+      container.appendChild(div);
+    };
+    const onAddCargoType = () => {
+      const container = document.getElementById("cargoTypes");
+      if (!container) return;
+      const div = document.createElement("div");
+      div.className = "input-group mb-2";
+      div.innerHTML = `<select class="form-select">
+        <option value="">Select Payload Type</option>
+      </select>
+        <button class="btn btn-outline-danger remove-field">&times;</button>`;
+      container.appendChild(div);
+    };
+    const onAddVehicleType = () => {
+      const container = document.getElementById("vehicleTypes");
+      if (!container) return;
+      const div = document.createElement("div");
+      div.className = "input-group mb-2";
+      div.innerHTML = `<select class="form-select">
+        <option value="">Select Payload Type</option>
+      </select>
+        <button class="btn btn-outline-danger remove-field">&times;</button>`;
+      container.appendChild(div);
+    };
     const onAddRoute = () => {
       const container = document.getElementById("routes");
       if (!container) return;
