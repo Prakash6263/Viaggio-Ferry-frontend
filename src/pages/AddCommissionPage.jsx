@@ -403,7 +403,7 @@ export default function AddCommissionPage() {
                       className="form-select mb-3" 
                       onChange={e => {
                         if (e.target.value) {
-                          addItem(setCargoCabins, cargoCabins, e.target.value);
+                          addItem(setCargoPayloadTypes, cargoPayloadTypes, e.target.value);
                           e.target.value = "";
                         }
                       }}
@@ -417,7 +417,17 @@ export default function AddCommissionPage() {
                       ))}
                     </select>
 
-                    <label className="form-label">Cargo Cabins</label>
+                    <label className="form-label">Cargo Payload Types</label>
+                    <div id="cargoPayloadTypes">
+                      {cargoPayloadTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setCargoPayloadTypes, cargoPayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <label className="form-label mt-3">Cargo Cabins</label>
                     <div id="cargoCabins">
                       {cargoCabins.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
@@ -426,7 +436,7 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setCargoCabins, cargoCabins, "General Cargo")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setCargoCabins, cargoCabins, "")}>+ Add Cabin</button>
                   </div>
                 )}
 
@@ -457,7 +467,7 @@ export default function AddCommissionPage() {
                       className="form-select mb-3" 
                       onChange={e => {
                         if (e.target.value) {
-                          addItem(setVehicleCabins, vehicleCabins, e.target.value);
+                          addItem(setVehiclePayloadTypes, vehiclePayloadTypes, e.target.value);
                           e.target.value = "";
                         }
                       }}
@@ -471,7 +481,17 @@ export default function AddCommissionPage() {
                       ))}
                     </select>
 
-                    <label className="form-label">Vehicle Cabins</label>
+                    <label className="form-label">Vehicle Payload Types</label>
+                    <div id="vehiclePayloadTypes">
+                      {vehiclePayloadTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setVehiclePayloadTypes, vehiclePayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <label className="form-label mt-3">Vehicle Cabins</label>
                     <div id="vehicleCabins">
                       {vehicleCabins.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
@@ -480,7 +500,7 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setVehicleCabins, vehicleCabins, "Car")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setVehicleCabins, vehicleCabins, "")}>+ Add Cabin</button>
                   </div>
                 )}
 
