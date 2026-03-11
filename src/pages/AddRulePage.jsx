@@ -505,17 +505,17 @@ export default function AddRulePage() {
 
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
-                    <label className="form-label">Applied to Layer</label>
+                    <label className="form-label">Applied Layer</label>
                     <select
                       className="form-select"
                       value={appliedLayer}
                       onChange={e => setAppliedLayer(e.target.value)}
                     >
                       <option value="">Select Layer</option>
-                      <option value="Marine">Marine</option>
-                      <option value="Commercial">Commercial</option>
-                      <option value="Selling">Selling</option>
-                      <option value="company">company</option>
+                      <option value="Company">Company</option>
+                      <option value="Marine Agent">Marine Agent</option>
+                      <option value="Commercial Agent">Commercial Agent</option>
+                      <option value="Selling Agent">Selling Agent</option>
                     </select>
                   </div>
                   <div className="col-md-6">
