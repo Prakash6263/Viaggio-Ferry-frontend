@@ -507,13 +507,10 @@ export default function AddCommissionPage() {
                     <label className="form-label">Passenger Cabins</label>
                     <div id="passengerCabins">
                       <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingCabins}>
-                          <option value="">Select Cabin</option>
-                          {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                            <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                              {cabin.name || cabin.cabinName}
-                            </option>
-                          ))}
+                        <select className="form-select">
+                          <option>Economy</option>
+                          <option>Business</option>
+                          <option>First</option>
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -523,13 +520,12 @@ export default function AddCommissionPage() {
                     <label className="form-label mt-3">Passenger Types</label>
                     <div id="passengerTypes">
                       <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPayloadTypes}>
-                          <option value="">Select Passenger Type</option>
-                          {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                            <option key={payloadType._id} value={payloadType.name}>
-                              {payloadType.name} ({payloadType.code})
-                            </option>
-                          ))}
+                        <select className="form-select">
+                          <option>Adult</option>
+                          <option>Child</option>
+                          <option>Infant</option>
+                          <option>Student</option>
+                          <option>Senior</option>
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -570,13 +566,12 @@ export default function AddCommissionPage() {
                     <label className="form-label">Cargo Types</label>
                     <div id="cargoTypes">
                       <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPayloadTypes}>
-                          <option value="">Select Cargo Type</option>
-                          {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
-                            <option key={payloadType._id} value={payloadType.name}>
-                              {payloadType.name} ({payloadType.code})
-                            </option>
-                          ))}
+                        <select className="form-select">
+                          <option>General Cargo</option>
+                          <option>Dangerous Goods</option>
+                          <option>Perishable Goods</option>
+                          <option>Livestock</option>
+                          <option>Refrigerated</option>
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -617,13 +612,12 @@ export default function AddCommissionPage() {
                     <label className="form-label">Vehicle Types</label>
                     <div id="vehicleTypes">
                       <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPayloadTypes}>
-                          <option value="">Select Vehicle Type</option>
-                          {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
-                            <option key={payloadType._id} value={payloadType.name}>
-                              {payloadType.name} ({payloadType.code})
-                            </option>
-                          ))}
+                        <select className="form-select">
+                          <option>Car</option>
+                          <option>Truck</option>
+                          <option>Motorcycle</option>
+                          <option>RV</option>
+                          <option>Trailer</option>
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>

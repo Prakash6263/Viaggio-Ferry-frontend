@@ -387,12 +387,7 @@ export default function AddRulePage() {
                         {passengerCabins.map((val, idx) => (
                           <div className="input-group mb-2" key={idx}>
                             <select className="form-select" value={val} onChange={e=>updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}>
-                              <option value="">Select Cabin</option>
-                              {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                                <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                                  {cabin.name || cabin.cabinName}
-                                </option>
-                              ))}
+                              <option>Economy</option><option>Business</option><option>First</option>
                             </select>
                             <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setPassengerCabins, passengerCabins, idx)}>&times;</button>
                           </div>
@@ -405,12 +400,7 @@ export default function AddRulePage() {
                         {passengerTypes.map((val, idx) => (
                           <div className="input-group mb-2" key={idx}>
                             <select className="form-select" value={val} onChange={e=>updateItem(setPassengerTypes, passengerTypes, idx, e.target.value)}>
-                              <option value="">Select Passenger Type</option>
-                              {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                                <option key={payloadType._id} value={payloadType.name}>
-                                  {payloadType.name} ({payloadType.code})
-                                </option>
-                              ))}
+                              <option>Adult</option><option>Child</option><option>Infant</option><option>Student</option><option>Senior</option>
                             </select>
                             <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setPassengerTypes, passengerTypes, idx)}>&times;</button>
                           </div>
@@ -466,12 +456,7 @@ export default function AddRulePage() {
                         {cargoTypes.map((val, idx) => (
                           <div className="input-group mb-2" key={idx}>
                             <select className="form-select" value={val} onChange={e=>updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}>
-                              <option value="">Select Cargo Type</option>
-                              {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
-                                <option key={payloadType._id} value={payloadType.name}>
-                                  {payloadType.name} ({payloadType.code})
-                                </option>
-                              ))}
+                              <option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>
                             </select>
                             <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setCargoTypes, cargoTypes, idx)}>&times;</button>
                           </div>
@@ -527,12 +512,7 @@ export default function AddRulePage() {
                         {vehicleTypes.map((val, idx) => (
                           <div className="input-group mb-2" key={idx}>
                             <select className="form-select" value={val} onChange={e=>updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}>
-                              <option value="">Select Vehicle Type</option>
-                              {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
-                                <option key={payloadType._id} value={payloadType.name}>
-                                  {payloadType.name} ({payloadType.code})
-                                </option>
-                              ))}
+                              <option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>
                             </select>
                             <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setVehicleTypes, vehicleTypes, idx)}>&times;</button>
                           </div>
