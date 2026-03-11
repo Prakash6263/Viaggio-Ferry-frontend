@@ -8,6 +8,7 @@ import { partnerApi } from "../api/partnerApi";
 import { portsApi } from "../api/portsApi";
 import { cabinsApi } from "../api/cabinsApi";
 import { payloadTypesApi } from "../api/payloadTypesApi";
+import { commissionApi } from "../api/commissionApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -246,27 +247,6 @@ export default function AddCommissionPage() {
     fetchPayloadTypes();
   }, []);
 
-  // Get commission API - need to import this
-  const commissionApi = {
-    createRule: async (payload) => {
-      const response = await fetch("/api/commission-rules", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create commission rule");
-      }
-
-      return await response.json();
-    }
-  };
-
   const onSave = async (e) => {
     e.preventDefault();
 
@@ -389,8 +369,7 @@ export default function AddCommissionPage() {
       routes: routesData,
       effectiveDate: new Date(effectiveDate).toISOString(),
       expiryDate: new Date(expiryDate).toISOString(),
-      priority: parseInt(priority),
-      status: "Active"
+      priority: parseInt(priority)
     };
 
     // Add partner ID only if partnerScope is SpecificPartner
