@@ -55,6 +55,7 @@ export default function AddCommissionPage() {
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
   const [showCabinDropdown, setShowCabinDropdown] = useState(false);
   const [selectedCabins, setSelectedCabins] = useState([]);
+  const [commissionType, setCommissionType] = useState("Markup");
 
   // Handle cabin selection with checkmarks
   const handleCabinToggle = (cabinId) => {
@@ -382,6 +383,9 @@ export default function AddCommissionPage() {
                 <div className="card-header">
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="card-title">Add New Commission Rule</h5>
+                    <span className={`badge ${commissionType === 'Markup' ? 'bg-warning text-dark' : 'bg-success'}`}>
+                      {commissionType}
+                    </span>
                   </div>
                 </div>
 
@@ -411,7 +415,19 @@ export default function AddCommissionPage() {
                   </div>
 
                   <div className="row g-3 mb-3">
-                    <div className="col-md-6">
+                    <div className="col-md-4">
+                      <label className="form-label">Commission Type</label>
+                      <select 
+                        className="form-select"
+                        value={commissionType}
+                        onChange={e => setCommissionType(e.target.value)}
+                      >
+                        <option value="Markup">Markup</option>
+                        <option value="Discount">Discount</option>
+                      </select>
+                    </div>
+
+                    <div className="col-md-4">
                       <label className="form-label">Applied to Layer</label>
                       <select 
                         className="form-select"
@@ -426,7 +442,7 @@ export default function AddCommissionPage() {
                       </select>
                     </div>
 
-                    <div className="col-md-6">
+                    <div className="col-md-4">
                       <label className="form-label">Partner</label>
                       <select 
                         className="form-select"
