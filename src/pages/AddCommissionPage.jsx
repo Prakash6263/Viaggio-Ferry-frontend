@@ -500,16 +500,7 @@ export default function AddCommissionPage() {
                     </select>
 
                     <label className="form-label">Passenger Cabins</label>
-                    <div id="passengerCabins">
-                      <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>Economy</option>
-                          <option>Business</option>
-                          <option>First</option>
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
-                    </div>
+                    <div id="passengerCabins"></div>
                     <button className="btn btn-sm btn-primary" id="addPassengerCabin">+ Add Cabin</button>
                   </div>
 
@@ -544,18 +535,7 @@ export default function AddCommissionPage() {
                     </select>
 
                     <label className="form-label">Cargo Cabins</label>
-                    <div id="cargoCabins">
-                      <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>General Cargo</option>
-                          <option>Dangerous Goods</option>
-                          <option>Perishable Goods</option>
-                          <option>Livestock</option>
-                          <option>Refrigerated</option>
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
-                    </div>
+                    <div id="cargoCabins"></div>
                     <button className="btn btn-sm btn-primary" id="addCargoCabin">+ Add Cabin</button>
                   </div>
 
@@ -590,18 +570,7 @@ export default function AddCommissionPage() {
                     </select>
 
                     <label className="form-label">Vehicle Cabins</label>
-                    <div id="vehicleCabins">
-                      <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>Car</option>
-                          <option>Truck</option>
-                          <option>Motorcycle</option>
-                          <option>RV</option>
-                          <option>Trailer</option>
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
-                    </div>
+                    <div id="vehicleCabins"></div>
                     <button className="btn btn-sm btn-primary" id="addVehicleCabin">+ Add Cabin</button>
                   </div>
 
