@@ -386,13 +386,18 @@ export default function AddRulePage() {
         return;
       }
 
+      // Determine partner scope and partner ID
+      const isSpecificPartner = partnerSelection !== "All Child Partners";
+      const partnerScopeValue = isSpecificPartner ? "SpecificPartner" : "AllChildPartners";
+
       // Build payload according to API spec and backend model
       const payload = {
         ruleName,
         provider: providerId,
         providerType,
         appliedLayer,
-        partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+        partnerScope: partnerScopeValue,
+        ...(isSpecificPartner && { partner: partnerSelection }),
         ruleType,
         ruleValue: parseInt(value),
         valueType: convertedValueType,
