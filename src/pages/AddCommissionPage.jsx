@@ -253,7 +253,9 @@ export default function AddCommissionPage() {
     // attach click handlers for add buttons
     const addPassengerCabinBtn = document.getElementById("addPassengerCabin");
     const addPassengerTypeBtn = document.getElementById("addPassengerType");
+    const addCargoCabinBtn = document.getElementById("addCargoCabin");
     const addCargoTypeBtn = document.getElementById("addCargoType");
+    const addVehicleCabinBtn = document.getElementById("addVehicleCabin");
     const addVehicleTypeBtn = document.getElementById("addVehicleType");
     const addRouteBtn = document.getElementById("addRoute");
 
@@ -261,8 +263,12 @@ export default function AddCommissionPage() {
       addField("passengerCabins", "<option>Economy</option><option>Business</option><option>First</option>");
     const onAddPassengerType = () =>
       addField("passengerTypes", "<option>Adult</option><option>Child</option><option>Infant</option><option>Student</option><option>Senior</option>");
+    const onAddCargoCabin = () =>
+      addField("cargoCabins", "<option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>");
     const onAddCargoType = () =>
       addField("cargoTypes", "<option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>");
+    const onAddVehicleCabin = () =>
+      addField("vehicleCabins", "<option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>");
     const onAddVehicleType = () =>
       addField("vehicleTypes", "<option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>");
     const onAddRoute = () => {
@@ -306,8 +312,8 @@ export default function AddCommissionPage() {
     };
 
     if (passengerCabinSelect) passengerCabinSelect.addEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
-    if (cargoCabinSelect) cargoCabinSelect.addEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoTypes"));
-    if (vehicleCabinSelect) vehicleCabinSelect.addEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleTypes"));
+    if (cargoCabinSelect) cargoCabinSelect.addEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoCabins"));
+    if (vehicleCabinSelect) vehicleCabinSelect.addEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleCabins"));
     
     if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
     if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
@@ -315,7 +321,9 @@ export default function AddCommissionPage() {
 
     if (addPassengerCabinBtn) addPassengerCabinBtn.addEventListener("click", onAddPassengerCabin);
     if (addPassengerTypeBtn) addPassengerTypeBtn.addEventListener("click", onAddPassengerType);
+    if (addCargoCabinBtn) addCargoCabinBtn.addEventListener("click", onAddCargoCabin);
     if (addCargoTypeBtn) addCargoTypeBtn.addEventListener("click", onAddCargoType);
+    if (addVehicleCabinBtn) addVehicleCabinBtn.addEventListener("click", onAddVehicleCabin);
     if (addVehicleTypeBtn) addVehicleTypeBtn.addEventListener("click", onAddVehicleType);
     if (addRouteBtn) addRouteBtn.addEventListener("click", onAddRoute);
 
@@ -333,14 +341,16 @@ export default function AddCommissionPage() {
     return () => {
       cleanups.forEach((fn) => fn && fn());
       if (passengerCabinSelect) passengerCabinSelect.removeEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
-      if (cargoCabinSelect) cargoCabinSelect.removeEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoTypes"));
-      if (vehicleCabinSelect) vehicleCabinSelect.removeEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleTypes"));
+      if (cargoCabinSelect) cargoCabinSelect.removeEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoCabins"));
+      if (vehicleCabinSelect) vehicleCabinSelect.removeEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleCabins"));
       if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
       if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
       if (vehiclePayloadTypeSelect) vehiclePayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(vehiclePayloadTypeSelect, "vehicleTypes"));
       if (addPassengerCabinBtn) addPassengerCabinBtn.removeEventListener("click", onAddPassengerCabin);
       if (addPassengerTypeBtn) addPassengerTypeBtn.removeEventListener("click", onAddPassengerType);
+      if (addCargoCabinBtn) addCargoCabinBtn.removeEventListener("click", onAddCargoCabin);
       if (addCargoTypeBtn) addCargoTypeBtn.removeEventListener("click", onAddCargoType);
+      if (addVehicleCabinBtn) addVehicleCabinBtn.removeEventListener("click", onAddVehicleCabin);
       if (addVehicleTypeBtn) addVehicleTypeBtn.removeEventListener("click", onAddVehicleType);
       if (addRouteBtn) addRouteBtn.removeEventListener("click", onAddRoute);
       document.removeEventListener("click", onDocumentClickForRemove);
@@ -563,7 +573,22 @@ export default function AddCommissionPage() {
                       ))}
                     </select>
 
-                    <label className="form-label">Cargo Types</label>
+                    <label className="form-label">Cargo Cabins</label>
+                    <div id="cargoCabins">
+                      <div className="input-group mb-2">
+                        <select className="form-select">
+                          <option>General Cargo</option>
+                          <option>Dangerous Goods</option>
+                          <option>Perishable Goods</option>
+                          <option>Livestock</option>
+                          <option>Refrigerated</option>
+                        </select>
+                        <button className="btn btn-outline-danger remove-field">&times;</button>
+                      </div>
+                    </div>
+                    <button className="btn btn-sm btn-primary" id="addCargoCabin">+ Add Cabin</button>
+                    <br />
+                    <label className="form-label mt-3">Cargo Types</label>
                     <div id="cargoTypes">
                       <div className="input-group mb-2">
                         <select className="form-select">
@@ -609,7 +634,22 @@ export default function AddCommissionPage() {
                       ))}
                     </select>
 
-                    <label className="form-label">Vehicle Types</label>
+                    <label className="form-label">Vehicle Cabins</label>
+                    <div id="vehicleCabins">
+                      <div className="input-group mb-2">
+                        <select className="form-select">
+                          <option>Car</option>
+                          <option>Truck</option>
+                          <option>Motorcycle</option>
+                          <option>RV</option>
+                          <option>Trailer</option>
+                        </select>
+                        <button className="btn btn-outline-danger remove-field">&times;</button>
+                      </div>
+                    </div>
+                    <button className="btn btn-sm btn-primary" id="addVehicleCabin">+ Add Cabin</button>
+                    <br />
+                    <label className="form-label mt-3">Vehicle Types</label>
                     <div id="vehicleTypes">
                       <div className="input-group mb-2">
                         <select className="form-select">
