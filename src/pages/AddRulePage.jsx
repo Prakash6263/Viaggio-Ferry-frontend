@@ -407,14 +407,23 @@ export default function AddRulePage() {
                     <div id="cargoPayloadTypes">
                       {cargoPayloadTypes && cargoPayloadTypes.map((payloadType, idx) => (
                         <div className="input-group mb-2" key={idx}>
-                          <select className="form-select" value={payloadType.name} disabled>
-                            <option value="">{payloadType.name} ({payloadType.code})</option>
+                          <select className="form-select" value={payloadType.name || ""} onChange={e => {
+                            const updated = [...cargoPayloadTypes];
+                            updated[idx] = { ...payloadType, name: e.target.value };
+                            setCargoPayloadTypes(updated);
+                          }}>
+                            <option value="">Select Cargo Type</option>
+                            {cargoPayloadTypes && cargoPayloadTypes.map((type) => (
+                              <option key={type._id} value={type.name}>
+                                {type.name} ({type.code})
+                              </option>
+                            ))}
                           </select>
                           <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setCargoPayloadTypes, cargoPayloadTypes, idx)}>&times;</button>
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoPayloadTypes, cargoPayloadTypes, {})}>+ Add Cargo Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoPayloadTypes, cargoPayloadTypes, {name: "", code: ""})}>+ Add Cargo Type</button>
                   </div>
                 )}
 
@@ -443,14 +452,23 @@ export default function AddRulePage() {
                     <div id="vehiclePayloadTypes">
                       {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType, idx) => (
                         <div className="input-group mb-2" key={idx}>
-                          <select className="form-select" value={payloadType.name} disabled>
-                            <option value="">{payloadType.name} ({payloadType.code})</option>
+                          <select className="form-select" value={payloadType.name || ""} onChange={e => {
+                            const updated = [...vehiclePayloadTypes];
+                            updated[idx] = { ...payloadType, name: e.target.value };
+                            setVehiclePayloadTypes(updated);
+                          }}>
+                            <option value="">Select Vehicle Type</option>
+                            {vehiclePayloadTypes && vehiclePayloadTypes.map((type) => (
+                              <option key={type._id} value={type.name}>
+                                {type.name} ({type.code})
+                              </option>
+                            ))}
                           </select>
                           <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setVehiclePayloadTypes, vehiclePayloadTypes, idx)}>&times;</button>
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehiclePayloadTypes, vehiclePayloadTypes, {})}>+ Add Vehicle Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehiclePayloadTypes, vehiclePayloadTypes, {name: "", code: ""})}>+ Add Vehicle Type</button>
                   </div>
                 )}
 
