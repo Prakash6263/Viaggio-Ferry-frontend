@@ -649,11 +649,34 @@ export default function AddRulePage() {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Effective Date</label>
-                    <input
-                      type="date"
+                    <input 
+                      type="date" 
                       className="form-control"
                       value={effectiveDate}
                       onChange={e => setEffectiveDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Expiry Date</label>
+                    <input 
+                      type="date" 
+                      className="form-control"
+                      value={expiryDate}
+                      onChange={e => setExpiryDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Priority</label>
+                    <input 
+                      type="number" 
+                      className="form-control"
+                      value={priority}
+                      onChange={e => setPriority(e.target.value)}
+                      min="1"
+                      max="100"
                     />
                   </div>
                 </div>
