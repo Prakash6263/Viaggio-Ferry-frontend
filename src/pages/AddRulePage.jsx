@@ -222,10 +222,10 @@ export default function AddRulePage() {
   const [vehicle, setVehicle] = useState(false);
 
   // dynamic lists
-  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [passengerCabins, setPassengerCabins] = useState([""]);
   const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
-  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
-  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
+  const [cargoTypes, setCargoTypes] = useState([""]);
+  const [vehicleTypes, setVehicleTypes] = useState([""]);
   const [routes, setRoutes] = useState([{ from: "Muscat", to: "Dubai" }]);
 
   // helpers for add/remove
@@ -323,40 +323,33 @@ export default function AddRulePage() {
 
       // Build service details according to API spec
       const serviceDetails = {
-        passenger: passenger ? passengerTypes.map((type) => {
+        passenger: passenger ? passengerTypes.map((type, index) => {
           const payloadType = passengerPayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => (c.name === passengerCabins[0] || c.cabinName === passengerCabins[0]) && c.type === 'passenger');
-          console.log("[v0] Passenger cabin lookup:", { type, cabinName: passengerCabins[0], foundCabin: cabin?._id });
-          if (!cabin?._id) {
-            throw new Error(`Passenger cabin not found: ${passengerCabins[0]}`);
+          const cabinId = passengerCabins[index];
+          if (!cabinId) {
+            throw new Error(`Passenger cabin is required for type: ${type}`);
           }
           return {
             payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id
+            cabinId: cabinId
           };
         }) : [],
-        cargo: cargo ? cargoTypes.map((type) => {
-          const payloadType = cargoPayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => (c.name === type || c.cabinName === type) && c.type === 'cargo');
-          console.log("[v0] Cargo cabin lookup:", { type, foundCabin: cabin?._id });
-          if (!cabin?._id) {
-            throw new Error(`Cargo cabin not found: ${type}`);
+        cargo: cargo ? cargoTypes.map((cabinId) => {
+          if (!cabinId) {
+            throw new Error(`Cargo cabin is required`);
           }
           return {
-            payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id
+            payloadTypeId: "",
+            cabinId: cabinId
           };
         }) : [],
-        vehicle: vehicle ? vehicleTypes.map((type) => {
-          const payloadType = vehiclePayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => (c.name === type || c.cabinName === type) && c.type === 'vehicle');
-          console.log("[v0] Vehicle cabin lookup:", { type, foundCabin: cabin?._id });
-          if (!cabin?._id) {
-            throw new Error(`Vehicle cabin not found: ${type}`);
+        vehicle: vehicle ? vehicleTypes.map((cabinId) => {
+          if (!cabinId) {
+            throw new Error(`Vehicle cabin is required`);
           }
           return {
-            payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id
+            payloadTypeId: "",
+            cabinId: cabinId
           };
         }) : []
       };
@@ -423,7 +416,6 @@ export default function AddRulePage() {
       };
 
       console.log("[v0] Submitting markup/discount rule:", payload);
-      console.log("[v0] Available cabins:", cabins.map(c => ({ id: c._id, name: c.name || c.cabinName, type: c.type })));
 
       try {
         setIsSubmitting(true);
@@ -568,8 +560,8 @@ export default function AddRulePage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                                {cabin.name || cabin.cabinName}
+                              <option key={cabin._id} value={cabin._id}>
+                                {cabin.name}
                               </option>
                             ))}
                           </select>
@@ -577,7 +569,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Passenger Types</label>
                     <div id="passengerTypes">
@@ -609,8 +601,8 @@ export default function AddRulePage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                                {cabin.name || cabin.cabinName}
+                              <option key={cabin._id} value={cabin._id}>
+                                {cabin.name}
                               </option>
                             ))}
                           </select>
@@ -618,7 +610,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "General Cargo")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Cargo Types</label>
                     <div id="cargoPayloadTypes">
@@ -654,8 +646,8 @@ export default function AddRulePage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                                {cabin.name || cabin.cabinName}
+                              <option key={cabin._id} value={cabin._id}>
+                                {cabin.name}
                               </option>
                             ))}
                           </select>
@@ -663,7 +655,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "Car")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Vehicle Types</label>
                     <div id="vehiclePayloadTypes">
