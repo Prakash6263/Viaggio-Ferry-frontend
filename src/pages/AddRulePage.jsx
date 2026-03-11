@@ -334,25 +334,33 @@ export default function AddRulePage() {
 
       // Build service details according to API spec
       const serviceDetails = {
-        passenger: passenger ? passengerCabins.map((cabinId) => {
-          const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
-          return {
-            payloadTypeId: payloadType?._id || "",
-            cabinId: cabinId || ""
-          };
-        }) : [],
-        cargo: cargo ? cargoTypes.map((cabinId) => {
-          return {
-            payloadTypeId: "",
-            cabinId: cabinId || ""
-          };
-        }) : [],
-        vehicle: vehicle ? vehicleTypes.map((cabinId) => {
-          return {
-            payloadTypeId: "",
-            cabinId: cabinId || ""
-          };
-        }) : []
+        passenger: passenger ? passengerCabins
+          .filter(cabinId => cabinId) // Filter out empty cabin IDs
+          .map((cabinId) => {
+            const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
+            // Only include if payloadTypeId exists, otherwise skip this entry
+            if (payloadType?._id) {
+              return {
+                payloadTypeId: payloadType._id,
+                cabinId: cabinId
+              };
+            }
+            return null;
+          })
+          .filter(item => item !== null) // Remove null entries
+        : [],
+        cargo: cargo ? cargoTypes
+          .filter(cabinId => cabinId) // Filter out empty cabin IDs
+          .map((cabinId) => ({
+            cabinId: cabinId
+          }))
+        : [],
+        vehicle: vehicle ? vehicleTypes
+          .filter(cabinId => cabinId) // Filter out empty cabin IDs
+          .map((cabinId) => ({
+            cabinId: cabinId
+          }))
+        : []
       };
 
       // Build routes according to API spec - only include valid routes
