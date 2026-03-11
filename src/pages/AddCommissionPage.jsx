@@ -62,16 +62,19 @@ export default function AddCommissionPage() {
   // Service checkboxes - matching AddRulePage pattern
   const [passenger, setPassenger] = useState(false);
   const [cargo, setCargo] = useState(false);
-  const [vehicle, setVehicle] = useState(false);
 
-  // Handle cabin selection with checkmarks
-  const handleCabinToggle = (cabinId) => {
-    setSelectedCabins(prev => 
-      prev.includes(cabinId) 
-        ? prev.filter(id => id !== cabinId)
-        : [...prev, cabinId]
-    );
-  };
+  // Passenger cabins and types
+  const [passengerCabins, setPassengerCabins] = useState([]);
+  const [passengerTypes, setPassengerTypes] = useState([]);
+  
+  // Cargo cabins and types
+  const [cargoCabins, setCargoTypes] = useState([]);
+  const [cargoTypes, setCargoPayloadTypes] = useState([]);
+
+  // Helper functions for add/remove/update items
+  const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
+  const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
+  const updateItem = (setter, arr, idx, val) => setter(arr.map((a, i) => i === idx ? val : a));
 
   // Determine login role from JWT token
   useEffect(() => {
@@ -511,83 +514,57 @@ export default function AddCommissionPage() {
                       <input className="form-check-input" type="checkbox" checked={cargo} onChange={e=>setCargo(e.target.checked)} id="chkCargo" />
                       <label className="form-check-label" htmlFor="chkCargo">Cargo</label>
                     </div>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input" type="checkbox" checked={vehicle} onChange={e=>setVehicle(e.target.checked)} id="chkVehicle" />
-                      <label className="form-check-label" htmlFor="chkVehicle">Vehicle</label>
-                    </div>
                   </div>
 
                   {/* Passenger Section */}
                   {passenger && (
-                  <div className="mb-3" style={{ backgroundColor: "#f8f9fa", padding: "15px", borderRadius: "4px" }}>
-                    <h6 className="mb-3">Passenger Commission Settings</h6>
-                    
-                    <div className="mb-3" style={{ position: "relative" }}>
-                      <label className="form-label d-block">Select Cabins</label>
-                      <button 
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => setShowCabinDropdown(!showCabinDropdown)}
-                        style={{ width: "100%", textAlign: "left" }}
-                      >
-                        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span>
-                            {selectedCabins.length > 0 ? `${selectedCabins.length} Cabin(s) Selected` : "Select Cabins"}
-                          </span>
-                          <i className={`fa fa-chevron-${showCabinDropdown ? 'up' : 'down'}`}></i>
-                        </span>
-                      </button>
+                  <div id="passengerSection" className="mb-3">
+                    <label className="form-label">Select Cabin</label>
+                    <select 
+                      className="form-select mb-3" 
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setPassengerCabins, passengerCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
+                      disabled={loadingCabins}
+                    >
+                      <option value="">Select Cabin to Add</option>
+                      {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
+                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                          {cabin.name || cabin.cabinName}
+                        </option>
+                      ))}
+                    </select>
 
-                      {/* Dropdown Menu */}
-                      {showCabinDropdown && (
-                        <div style={{
-                          position: "absolute",
-                          top: "100%",
-                          left: 0,
-                          right: 0,
-                          backgroundColor: "#fff",
-                          border: "1px solid #dee2e6",
-                          borderRadius: "4px",
-                          boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
-                          zIndex: 1050,
-                          maxHeight: "350px",
-                          overflowY: "auto",
-                          marginTop: "5px"
-                        }}>
-                          {loadingCabins ? (
-                            <div style={{ padding: "15px", textAlign: "center" }}>
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                              Loading cabins...
-                            </div>
-                          ) : cabins && cabins.filter(c => c.type === 'passenger').length > 0 ? (
-                            cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                              <div 
-                                key={cabin._id}
-                                style={{
-                                  padding: "10px 15px",
-                                  borderBottom: "1px solid #f0f0f0",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "10px"
-                                }}
-                                onClick={() => handleCabinToggle(cabin._id)}
-                                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f8f9fa"}
-                                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="form-check-input"
-                                  checked={selectedCabins.includes(cabin._id)}
-                                  onChange={() => {}}
-                                  style={{ cursor: "pointer", margin: 0 }}
-                                />
-                                <label style={{ cursor: "pointer", marginBottom: 0, flex: 1 }}>
-                                  <strong>{cabin.name || cabin.cabinName}</strong>
-                                </label>
-                                {selectedCabins.includes(cabin._id) && (
-                                  <i className="fa fa-check" style={{ color: "#28a745", fontSize: "16px" }}></i>
-                                )}
+                    <label className="form-label">Passenger Cabins</label>
+                    <div id="passengerCabins">
+                      {passengerCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={val} onChange={e=>updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}>
+                            <option>Economy</option><option>Business</option><option>First</option>
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setPassengerCabins, passengerCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
+
+                    <label className="form-label mt-3">Passenger Types</label>
+                    <div id="passengerTypes">
+                      {passengerTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={val} onChange={e=>updateItem(setPassengerTypes, passengerTypes, idx, e.target.value)}>
+                            <option>Adult</option><option>Child</option><option>Infant</option><option>Student</option><option>Senior</option>
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setPassengerTypes, passengerTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setPassengerTypes, passengerTypes, "Adult")}>+ Add Passenger Type</button>
+                  </div>
+                  )}
                               </div>
                             ))
                           ) : (
@@ -684,75 +661,53 @@ export default function AddCommissionPage() {
 
                   {/* Cargo Section */}
                   {cargo && (
-                  <div className="mb-3" style={{ backgroundColor: "#f8f9fa", padding: "15px", borderRadius: "4px" }}>
-                    <h6 className="mb-3">Cargo Commission Settings</h6>
-                    
-                    <div className="mb-3" style={{ position: "relative" }}>
-                      <label className="form-label d-block">Select Cabins</label>
-                      <button 
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => setShowCabinDropdown(!showCabinDropdown)}
-                        style={{ width: "100%", textAlign: "left" }}
+                    <div id="cargoSection" className="mb-3">
+                      <label className="form-label">Select Cabin</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setCargoTypes, cargoCabins, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingCabins}
                       >
-                        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span>
-                            {selectedCabins.length > 0 ? `${selectedCabins.length} Cabin(s) Selected` : "Select Cabins"}
-                          </span>
-                          <i className={`fa fa-chevron-${showCabinDropdown ? 'up' : 'down'}`}></i>
-                        </span>
-                      </button>
+                        <option value="">Select Cabin to Add</option>
+                        {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
+                          <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                            {cabin.name || cabin.cabinName}
+                          </option>
+                        ))}
+                      </select>
 
-                      {/* Dropdown Menu */}
-                      {showCabinDropdown && (
-                        <div style={{
-                          position: "absolute",
-                          top: "100%",
-                          left: 0,
-                          right: 0,
-                          backgroundColor: "#fff",
-                          border: "1px solid #dee2e6",
-                          borderRadius: "4px",
-                          boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
-                          zIndex: 1050,
-                          maxHeight: "350px",
-                          overflowY: "auto",
-                          marginTop: "5px"
-                        }}>
-                          {loadingCabins ? (
-                            <div style={{ padding: "15px", textAlign: "center" }}>
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                              Loading cabins...
-                            </div>
-                          ) : cabins && cabins.filter(c => c.type === 'cargo').length > 0 ? (
-                            cabins.filter(c => c.type === 'cargo').map((cabin) => (
-                              <div 
-                                key={cabin._id}
-                                style={{
-                                  padding: "10px 15px",
-                                  borderBottom: "1px solid #f0f0f0",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "10px"
-                                }}
-                                onClick={() => handleCabinToggle(cabin._id)}
-                                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f8f9fa"}
-                                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="form-check-input"
-                                  checked={selectedCabins.includes(cabin._id)}
-                                  onChange={() => {}}
-                                  style={{ cursor: "pointer", margin: 0 }}
-                                />
-                                <label style={{ cursor: "pointer", marginBottom: 0, flex: 1 }}>
-                                  <strong>{cabin.name || cabin.cabinName}</strong>
-                                </label>
-                                {selectedCabins.includes(cabin._id) && (
-                                  <i className="fa fa-check" style={{ color: "#28a745", fontSize: "16px" }}></i>
-                                )}
+                      <label className="form-label">Cargo Cabins</label>
+                      <div id="cargoCabins">
+                        {cargoCabins.map((val, idx) => (
+                          <div className="input-group mb-2" key={idx}>
+                            <select className="form-select" value={val} onChange={e=>updateItem(setCargoTypes, cargoCabins, idx, e.target.value)}>
+                              <option>General Cargo</option><option>Heavy Cargo</option><option>Dangerous Goods</option>
+                            </select>
+                            <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setCargoTypes, cargoCabins, idx)}>&times;</button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setCargoTypes, cargoCabins, "General Cargo")}>+ Add Cabin</button>
+
+                      <label className="form-label mt-3">Cargo Types</label>
+                      <div id="cargoTypes">
+                        {cargoTypes.map((val, idx) => (
+                          <div className="input-group mb-2" key={idx}>
+                            <select className="form-select" value={val} onChange={e=>updateItem(setCargoPayloadTypes, cargoTypes, idx, e.target.value)}>
+                              <option>Standard Cargo</option><option>Perishable</option><option>Fragile</option><option>Container</option>
+                            </select>
+                            <button type="button" className="btn btn-outline-danger remove-field" onClick={()=>removeItem(setCargoPayloadTypes, cargoTypes, idx)}>&times;</button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setCargoPayloadTypes, cargoTypes, "Standard Cargo")}>+ Add Cargo Type</button>
+                    </div>
+                  )}
                               </div>
                             ))
                           ) : (
@@ -834,77 +789,7 @@ export default function AddCommissionPage() {
                   </div>
                   )}
 
-                  {/* Vehicle Section */}
-                  {vehicle && (
-                  <div className="mb-3" style={{ backgroundColor: "#f8f9fa", padding: "15px", borderRadius: "4px" }}>
-                    <h6 className="mb-3">Vehicle Commission Settings</h6>
-                    
-                    <div className="mb-3" style={{ position: "relative" }}>
-                      <label className="form-label d-block">Select Cabins</label>
-                      <button 
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => setShowCabinDropdown(!showCabinDropdown)}
-                        style={{ width: "100%", textAlign: "left" }}
-                      >
-                        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span>
-                            {selectedCabins.length > 0 ? `${selectedCabins.length} Cabin(s) Selected` : "Select Cabins"}
-                          </span>
-                          <i className={`fa fa-chevron-${showCabinDropdown ? 'up' : 'down'}`}></i>
-                        </span>
-                      </button>
 
-                      {/* Dropdown Menu */}
-                      {showCabinDropdown && (
-                        <div style={{
-                          position: "absolute",
-                          top: "100%",
-                          left: 0,
-                          right: 0,
-                          backgroundColor: "#fff",
-                          border: "1px solid #dee2e6",
-                          borderRadius: "4px",
-                          boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
-                          zIndex: 1050,
-                          maxHeight: "350px",
-                          overflowY: "auto",
-                          marginTop: "5px"
-                        }}>
-                          {loadingCabins ? (
-                            <div style={{ padding: "15px", textAlign: "center" }}>
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                              Loading cabins...
-                            </div>
-                          ) : cabins && cabins.filter(c => c.type === 'vehicle').length > 0 ? (
-                            cabins.filter(c => c.type === 'vehicle').map((cabin) => (
-                              <div 
-                                key={cabin._id}
-                                style={{
-                                  padding: "10px 15px",
-                                  borderBottom: "1px solid #f0f0f0",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "10px"
-                                }}
-                                onClick={() => handleCabinToggle(cabin._id)}
-                                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f8f9fa"}
-                                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="form-check-input"
-                                  checked={selectedCabins.includes(cabin._id)}
-                                  onChange={() => {}}
-                                  style={{ cursor: "pointer", margin: 0 }}
-                                />
-                                <label style={{ cursor: "pointer", marginBottom: 0, flex: 1 }}>
-                                  <strong>{cabin.name || cabin.cabinName}</strong>
-                                </label>
-                                {selectedCabins.includes(cabin._id) && (
-                                  <i className="fa fa-check" style={{ color: "#28a745", fontSize: "16px" }}></i>
-                                )}
                               </div>
                             ))
                           ) : (
