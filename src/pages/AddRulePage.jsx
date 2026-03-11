@@ -385,15 +385,15 @@ export default function AddRulePage() {
                 {/* Cargo Section */}
                 {cargo && (
                   <div id="cargoSection" className="mb-3">
-                    <label className="form-label">Cargo Types</label>
-                    <div id="cargoTypes">
+                    <label className="form-label">Cargo Cabins</label>
+                    <div id="cargoCabins">
                       {cargoTypes.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
                           <select className="form-select" value={val} onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}>
-                            <option value="">Select Cargo Type</option>
-                            {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
-                              <option key={payloadType._id} value={payloadType.name}>
-                                {payloadType.name} ({payloadType.code})
+                            <option value="">Select Cabin</option>
+                            {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
+                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                                {cabin.name || cabin.cabinName}
                               </option>
                             ))}
                           </select>
@@ -401,22 +401,35 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "General Cargo")}>+ Add Cargo Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "General Cargo")}>+ Add Cabin</button>
+
+                    <label className="form-label mt-3">Cargo Types</label>
+                    <div id="cargoPayloadTypes">
+                      {cargoPayloadTypes && cargoPayloadTypes.map((payloadType, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={payloadType.name} disabled>
+                            <option value="">{payloadType.name} ({payloadType.code})</option>
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setCargoPayloadTypes, cargoPayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoPayloadTypes, cargoPayloadTypes, {})}>+ Add Cargo Type</button>
                   </div>
                 )}
 
                 {/* Vehicle Section */}
                 {vehicle && (
                   <div id="vehicleSection" className="mb-3">
-                    <label className="form-label">Vehicle Types</label>
-                    <div id="vehicleTypes">
+                    <label className="form-label">Vehicle Cabins</label>
+                    <div id="vehicleCabins">
                       {vehicleTypes.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
                           <select className="form-select" value={val} onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}>
-                            <option value="">Select Vehicle Type</option>
-                            {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
-                              <option key={payloadType._id} value={payloadType.name}>
-                                {payloadType.name} ({payloadType.code})
+                            <option value="">Select Cabin</option>
+                            {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
+                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                                {cabin.name || cabin.cabinName}
                               </option>
                             ))}
                           </select>
@@ -424,7 +437,20 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "Car")}>+ Add Vehicle Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "Car")}>+ Add Cabin</button>
+
+                    <label className="form-label mt-3">Vehicle Types</label>
+                    <div id="vehiclePayloadTypes">
+                      {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={payloadType.name} disabled>
+                            <option value="">{payloadType.name} ({payloadType.code})</option>
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setVehiclePayloadTypes, vehiclePayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehiclePayloadTypes, vehiclePayloadTypes, {})}>+ Add Vehicle Type</button>
                   </div>
                 )}
 
