@@ -325,26 +325,38 @@ export default function AddRulePage() {
       const serviceDetails = {
         passenger: passenger ? passengerTypes.map((type) => {
           const payloadType = passengerPayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => c.name === passengerCabins[0] || c.cabinName === passengerCabins[0]);
+          const cabin = cabins.find(c => (c.name === passengerCabins[0] || c.cabinName === passengerCabins[0]) && c.type === 'passenger');
+          console.log("[v0] Passenger cabin lookup:", { type, cabinName: passengerCabins[0], foundCabin: cabin?._id });
+          if (!cabin?._id) {
+            throw new Error(`Passenger cabin not found: ${passengerCabins[0]}`);
+          }
           return {
             payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id || ""
+            cabinId: cabin?._id
           };
         }) : [],
         cargo: cargo ? cargoTypes.map((type) => {
           const payloadType = cargoPayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
+          const cabin = cabins.find(c => (c.name === type || c.cabinName === type) && c.type === 'cargo');
+          console.log("[v0] Cargo cabin lookup:", { type, foundCabin: cabin?._id });
+          if (!cabin?._id) {
+            throw new Error(`Cargo cabin not found: ${type}`);
+          }
           return {
             payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id || ""
+            cabinId: cabin?._id
           };
         }) : [],
         vehicle: vehicle ? vehicleTypes.map((type) => {
           const payloadType = vehiclePayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
+          const cabin = cabins.find(c => (c.name === type || c.cabinName === type) && c.type === 'vehicle');
+          console.log("[v0] Vehicle cabin lookup:", { type, foundCabin: cabin?._id });
+          if (!cabin?._id) {
+            throw new Error(`Vehicle cabin not found: ${type}`);
+          }
           return {
             payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id || ""
+            cabinId: cabin?._id
           };
         }) : []
       };
@@ -411,6 +423,7 @@ export default function AddRulePage() {
       };
 
       console.log("[v0] Submitting markup/discount rule:", payload);
+      console.log("[v0] Available cabins:", cabins.map(c => ({ id: c._id, name: c.name || c.cabinName, type: c.type })));
 
       try {
         setIsSubmitting(true);
@@ -428,10 +441,11 @@ export default function AddRulePage() {
         }
       } catch (error) {
         console.error("[v0] Error creating rule:", error);
+        const errorMessage = error.response?.data?.errors?.join(", ") || error.message || "Failed to create rule. Please try again.";
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: error.message || "Failed to create rule. Please try again.",
+          text: errorMessage,
           confirmButtonColor: "#17a2b8"
         });
       } finally {
