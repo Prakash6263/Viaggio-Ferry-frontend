@@ -325,6 +325,7 @@ export default function AddCommissionPage() {
                 {/* Passenger Section */}
                 {passenger && (
                   <div id="passengerSection" className="mb-3">
+                    <h6>Passenger Cabins</h6>
                     <label className="form-label">Select Cabin</label>
                     <select 
                       className="form-select mb-3" 
@@ -343,27 +344,8 @@ export default function AddCommissionPage() {
                         </option>
                       ))}
                     </select>
+                    <button type="button" className="btn btn-sm btn-primary mb-3" onClick={()=>addItem(setPassengerCabins, passengerCabins, "")}>+ Add Cabin</button>
 
-                    <label className="form-label">Select Payload Type</label>
-                    <select 
-                      className="form-select mb-3" 
-                      onChange={e => {
-                        if (e.target.value) {
-                          addItem(setPassengerCabins, passengerCabins, e.target.value);
-                          e.target.value = "";
-                        }
-                      }}
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Passenger Cabins</label>
                     <div id="passengerCabins">
                       {passengerCabins.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
@@ -372,13 +354,43 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
+
+                    <h6 className="mt-4">Passenger Types</h6>
+                    <label className="form-label">Select Passenger Type</label>
+                    <select 
+                      className="form-select mb-3" 
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setPassengerPayloadTypes, passengerPayloadTypes, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
+                      disabled={loadingPayloadTypes}
+                    >
+                      <option value="">Select Passenger Type to Add</option>
+                      {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
+                        <option key={payloadType._id} value={payloadType.name}>
+                          {payloadType.name} ({payloadType.code})
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" className="btn btn-sm btn-primary mb-3" onClick={()=>addItem(setPassengerPayloadTypes, passengerPayloadTypes, "")}>+ Add Passenger Type</button>
+
+                    <div id="passengerTypes">
+                      {passengerPayloadTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setPassengerPayloadTypes, passengerPayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {/* Cargo Section */}
                 {cargo && (
                   <div id="cargoSection" className="mb-3">
+                    <h6>Cargo Cabins</h6>
                     <label className="form-label">Select Cabin</label>
                     <select 
                       className="form-select mb-3" 
@@ -397,8 +409,19 @@ export default function AddCommissionPage() {
                         </option>
                       ))}
                     </select>
+                    <button type="button" className="btn btn-sm btn-primary mb-3" onClick={()=>addItem(setCargoCabins, cargoCabins, "")}>+ Add Cabin</button>
 
-                    <label className="form-label">Select Payload Type</label>
+                    <div id="cargoCabins">
+                      {cargoCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setCargoCabins, cargoCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <h6 className="mt-4">Cargo Types</h6>
+                    <label className="form-label">Select Cargo Type</label>
                     <select 
                       className="form-select mb-3" 
                       onChange={e => {
@@ -409,15 +432,15 @@ export default function AddCommissionPage() {
                       }}
                       disabled={loadingPayloadTypes}
                     >
-                      <option value="">Select Payload Type to Add</option>
+                      <option value="">Select Cargo Type to Add</option>
                       {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
                         <option key={payloadType._id} value={payloadType.name}>
                           {payloadType.name} ({payloadType.code})
                         </option>
                       ))}
                     </select>
+                    <button type="button" className="btn btn-sm btn-primary mb-3" onClick={()=>addItem(setCargoPayloadTypes, cargoPayloadTypes, "")}>+ Add Cargo Type</button>
 
-                    <label className="form-label">Cargo Payload Types</label>
                     <div id="cargoPayloadTypes">
                       {cargoPayloadTypes.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
@@ -426,23 +449,13 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    
-                    <label className="form-label mt-3">Cargo Cabins</label>
-                    <div id="cargoCabins">
-                      {cargoCabins.map((val, idx) => (
-                        <div className="input-group mb-2" key={idx}>
-                          <input type="text" className="form-control" value={val} readOnly />
-                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setCargoCabins, cargoCabins, idx)}>&times;</button>
-                        </div>
-                      ))}
-                    </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setCargoCabins, cargoCabins, "")}>+ Add Cabin</button>
                   </div>
                 )}
 
                 {/* Vehicle Section */}
                 {vehicle && (
                   <div id="vehicleSection" className="mb-3">
+                    <h6>Vehicle Cabins</h6>
                     <label className="form-label">Select Cabin</label>
                     <select 
                       className="form-select mb-3" 
@@ -461,8 +474,19 @@ export default function AddCommissionPage() {
                         </option>
                       ))}
                     </select>
+                    <button type="button" className="btn btn-sm btn-primary mb-3" onClick={()=>addItem(setVehicleCabins, vehicleCabins, "")}>+ Add Cabin</button>
 
-                    <label className="form-label">Select Payload Type</label>
+                    <div id="vehicleCabins">
+                      {vehicleCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setVehicleCabins, vehicleCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <h6 className="mt-4">Vehicle Types</h6>
+                    <label className="form-label">Select Vehicle Type</label>
                     <select 
                       className="form-select mb-3" 
                       onChange={e => {
@@ -473,15 +497,15 @@ export default function AddCommissionPage() {
                       }}
                       disabled={loadingPayloadTypes}
                     >
-                      <option value="">Select Payload Type to Add</option>
+                      <option value="">Select Vehicle Type to Add</option>
                       {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
                         <option key={payloadType._id} value={payloadType.name}>
                           {payloadType.name} ({payloadType.code})
                         </option>
                       ))}
                     </select>
+                    <button type="button" className="btn btn-sm btn-primary mb-3" onClick={()=>addItem(setVehiclePayloadTypes, vehiclePayloadTypes, "")}>+ Add Vehicle Type</button>
 
-                    <label className="form-label">Vehicle Payload Types</label>
                     <div id="vehiclePayloadTypes">
                       {vehiclePayloadTypes.map((val, idx) => (
                         <div className="input-group mb-2" key={idx}>
@@ -490,17 +514,6 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    
-                    <label className="form-label mt-3">Vehicle Cabins</label>
-                    <div id="vehicleCabins">
-                      {vehicleCabins.map((val, idx) => (
-                        <div className="input-group mb-2" key={idx}>
-                          <input type="text" className="form-control" value={val} readOnly />
-                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setVehicleCabins, vehicleCabins, idx)}>&times;</button>
-                        </div>
-                      ))}
-                    </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setVehicleCabins, vehicleCabins, "")}>+ Add Cabin</button>
                   </div>
                 )}
 
