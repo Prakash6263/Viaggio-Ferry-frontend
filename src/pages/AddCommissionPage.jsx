@@ -53,18 +53,6 @@ export default function AddCommissionPage() {
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
-  const [showCabinDropdown, setShowCabinDropdown] = useState(false);
-  const [selectedCabins, setSelectedCabins] = useState([]);
-  const [commissionType, setCommissionType] = useState("Markup");
-
-  // Handle cabin selection with checkmarks
-  const handleCabinToggle = (cabinId) => {
-    setSelectedCabins(prev => 
-      prev.includes(cabinId) 
-        ? prev.filter(id => id !== cabinId)
-        : [...prev, cabinId]
-    );
-  };
 
   // Determine login role from JWT token
   useEffect(() => {
@@ -383,9 +371,6 @@ export default function AddCommissionPage() {
                 <div className="card-header">
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="card-title">Add New Commission Rule</h5>
-                    <span className={`badge ${commissionType === 'Markup' ? 'bg-warning text-dark' : 'bg-success'}`}>
-                      {commissionType}
-                    </span>
                   </div>
                 </div>
 
@@ -415,19 +400,7 @@ export default function AddCommissionPage() {
                   </div>
 
                   <div className="row g-3 mb-3">
-                    <div className="col-md-4">
-                      <label className="form-label">Commission Type</label>
-                      <select 
-                        className="form-select"
-                        value={commissionType}
-                        onChange={e => setCommissionType(e.target.value)}
-                      >
-                        <option value="Markup">Markup</option>
-                        <option value="Discount">Discount</option>
-                      </select>
-                    </div>
-
-                    <div className="col-md-4">
+                    <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
                       <select 
                         className="form-select"
@@ -442,7 +415,7 @@ export default function AddCommissionPage() {
                       </select>
                     </div>
 
-                    <div className="col-md-4">
+                    <div className="col-md-6">
                       <label className="form-label">Partner</label>
                       <select 
                         className="form-select"
@@ -484,120 +457,6 @@ export default function AddCommissionPage() {
                       </select>
                     </div>
                   </div>
-
-                  {/* Cabin Selection Button with Dropdown */}
-                  <div className="mb-3" style={{ position: "relative" }}>
-                    <label className="form-label d-block">Select Cabins for Commission</label>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                      <button 
-                        type="button"
-                        className="btn btn-turquoise"
-                        onClick={() => setShowCabinDropdown(!showCabinDropdown)}
-                        style={{ minWidth: "200px", textAlign: "left" }}
-                      >
-                        <i className="fa fa-cabin me-2"></i>
-                        {selectedCabins.length > 0 ? `${selectedCabins.length} Cabin(s) Selected` : "Select Cabins"}
-                        <i className={`fa fa-chevron-down ms-2`} style={{ float: "right" }}></i>
-                      </button>
-                      {selectedCabins.length > 0 && (
-                        <span className="badge bg-success">{selectedCabins.length}</span>
-                      )}
-                    </div>
-
-                    {/* Dropdown with Checkboxes */}
-                    {showCabinDropdown && (
-                      <div style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        backgroundColor: "#fff",
-                        border: "1px solid #dee2e6",
-                        borderRadius: "4px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        zIndex: 1000,
-                        minWidth: "300px",
-                        maxHeight: "400px",
-                        overflowY: "auto",
-                        marginTop: "5px"
-                      }}>
-                        {loadingCabins ? (
-                          <div style={{ padding: "15px", textAlign: "center" }}>
-                            <span className="spinner-border spinner-border-sm me-2"></span>
-                            Loading cabins...
-                          </div>
-                        ) : cabins && cabins.length > 0 ? (
-                          <div style={{ padding: "10px" }}>
-                            {cabins.map((cabin) => (
-                              <div key={cabin._id} style={{ padding: "8px 10px" }} className="d-flex align-items-center">
-                                <input
-                                  type="checkbox"
-                                  className="form-check-input"
-                                  id={`cabin-${cabin._id}`}
-                                  checked={selectedCabins.includes(cabin._id)}
-                                  onChange={() => handleCabinToggle(cabin._id)}
-                                  style={{ cursor: "pointer" }}
-                                />
-                                <label 
-                                  htmlFor={`cabin-${cabin._id}`}
-                                  style={{ cursor: "pointer", marginLeft: "8px", marginBottom: 0, flex: 1 }}
-                                >
-                                  {cabin.name || cabin.cabinName}
-                                  <span style={{ fontSize: "0.85em", color: "#666", marginLeft: "8px" }}>
-                                    ({cabin.type})
-                                  </span>
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{ padding: "15px", textAlign: "center", color: "#666" }}>
-                            No cabins available
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Selected Cabins Display */}
-                  {selectedCabins.length > 0 && (
-                    <div className="mb-3">
-                      <label className="form-label">Selected Cabins</label>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                        {cabins.filter(c => selectedCabins.includes(c._id)).map((cabin) => (
-                          <div 
-                            key={cabin._id}
-                            style={{
-                              backgroundColor: "#e8f4f8",
-                              border: "1px solid #20c997",
-                              borderRadius: "4px",
-                              padding: "6px 12px",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px"
-                            }}
-                          >
-                            <i className="fa fa-check" style={{ color: "#20c997" }}></i>
-                            <span>{cabin.name || cabin.cabinName}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleCabinToggle(cabin._id)}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                color: "#20c997",
-                                cursor: "pointer",
-                                fontSize: "18px",
-                                marginLeft: "4px",
-                                padding: 0
-                              }}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   <div className="mb-3">
                     <label className="form-label d-block">Service Types</label>
