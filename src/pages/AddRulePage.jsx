@@ -59,8 +59,9 @@ export default function AddRulePage() {
 
             setProvider(providerName);
             setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+            setCurrentUserId(userData._id || "");
 
-            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "UserID:", userData._id);
           }
         } else if (loginRole === "company") {
           // For company login: Get company name and set layer as "Company"
@@ -72,8 +73,9 @@ export default function AddRulePage() {
 
             setProvider(providerName);
             setAppliedLayer("Company");
+            setCurrentUserId(companyData._id || "");
 
-            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company");
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company", "CompanyID:", companyData._id);
           }
         }
       } catch (error) {
@@ -212,6 +214,7 @@ export default function AddRulePage() {
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState("");
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
@@ -356,20 +359,19 @@ export default function AddRulePage() {
         };
       });
 
-      // Determine provider ID and type based on partner selection
-      let providerId = "";
-      let providerType = "Partner";
-
-      if (partnerSelection === "All Child Partners") {
-        // Get first child partner ID
-        if (childPartners.length > 0) {
-          providerId = childPartners[0]._id;
-        }
-      } else {
-        // Find selected partner by name
-        const selectedPartner = childPartners.find(p => p.name === partnerSelection);
-        providerId = selectedPartner?._id || "";
+      // Use the currently logged-in user's ID as provider
+      if (!currentUserId) {
+        Swal.fire({
+          icon: "warning",
+          title: "Error",
+          text: "User not loaded. Please refresh and try again.",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
       }
+
+      const providerId = currentUserId;
+      let providerType = "User";
 
       // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
       const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
