@@ -482,15 +482,37 @@ export default function MarkupDiscountBoardPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalRules, setTotalRules] = useState(0);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLayer, setSelectedLayer] = useState("");
+  const [selectedRuleType, setSelectedRuleType] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
-  // Fetch rules from API
-  const fetchRules = async () => {
+  // Fetch rules from API with filters
+  const fetchRules = async (filterOverrides = {}) => {
     try {
       setLoading(true);
       setError(null);
-      console.log("[v0] Fetching markup/discount rules from API...", { page, limit });
       
-      const response = await markupDiscountApi.getRules(page, limit);
+      // Build filters object
+      const filters = {
+        page: filterOverrides.page || page,
+        limit: filterOverrides.limit || limit,
+        ...(filterOverrides.search !== undefined ? { search: filterOverrides.search } : searchTerm && { search: searchTerm }),
+        ...(filterOverrides.layer !== undefined ? { layer: filterOverrides.layer } : selectedLayer && { layer: selectedLayer }),
+        ...(filterOverrides.ruleType !== undefined ? { ruleType: filterOverrides.ruleType } : selectedRuleType && { ruleType: selectedRuleType }),
+        ...(filterOverrides.status !== undefined ? { status: filterOverrides.status } : selectedStatus && { status: selectedStatus }),
+      };
+      
+      console.log("[v0] Fetching markup/discount rules with filters...", filters);
+      
+      const response = await markupDiscountApi.getRules(filters.page, filters.limit, {
+        search: filters.search,
+        layer: filters.layer,
+        ruleType: filters.ruleType,
+        status: filters.status,
+      });
       console.log("[v0] API Response:", response);
 
       if (response.success && response.data) {
@@ -594,10 +616,10 @@ export default function MarkupDiscountBoardPage() {
     }
   };
 
-  // Fetch rules on mount and when page/limit changes
+  // Fetch rules on mount and when filters change
   useEffect(() => {
     fetchRules();
-  }, [page, limit]);
+  }, [page, limit, searchTerm, selectedLayer, selectedRuleType, selectedStatus]);
 
   return (
     <div className="main-wrapper">
@@ -752,26 +774,78 @@ export default function MarkupDiscountBoardPage() {
                     <div className="tab-pane fade show active" id="rule-list">
                       <div className="row mb-3 g-2">
                         <div className="col-md-3">
-                          <input type="text" className="form-control" placeholder="Search rules..." />
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            placeholder="Search rules..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
                         </div>
                         <div className="col-md-3">
-                          <select className="form-select">
-                            <option>All Providers</option>
-                            <option value="partner">Partner</option>
-                            <option value="company">Company</option>
+                          <select 
+                            className="form-select"
+                            value={selectedRuleType}
+                            onChange={(e) => setSelectedRuleType(e.target.value)}
+                          >
+                            <option value="">All Types</option>
+                            <option value="Markup">Markup</option>
+                            <option value="Discount">Discount</option>
                           </select>
                         </div>
                         <div className="col-md-3">
-                          <select className="form-select">
-                            <option>All Layers</option>
+                          <select 
+                            className="form-select"
+                            value={selectedLayer}
+                            onChange={(e) => setSelectedLayer(e.target.value)}
+                          >
+                            <option value="">All Layers</option>
+                            <option value="Company">Company</option>
+                            <option value="Marine Agent">Marine Agent</option>
+                            <option value="Commercial Agent">Commercial Agent</option>
+                            <option value="Selling Agent">Selling Agent</option>
+                            <option value="Salesman">Salesman</option>
                           </select>
                         </div>
                         <div className="col-md-3">
-                          <select className="form-select">
-                            <option>All Statuses</option>
+                          <select 
+                            className="form-select"
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                          >
+                            <option value="">All Statuses</option>
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                           </select>
+                        </div>
+                      </div>
+
+                      {/* Pagination and Per-Page Controls */}
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                          <label htmlFor="limit" className="form-label me-2">
+                            Entries per page:
+                          </label>
+                          <select 
+                            id="limit"
+                            className="form-select d-inline-block"
+                            style={{ width: "auto" }}
+                            value={limit}
+                            onChange={(e) => {
+                              setLimit(parseInt(e.target.value));
+                              setPage(1); // Reset to page 1 when changing limit
+                            }}
+                          >
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                          </select>
+                        </div>
+                        <div>
+                          <span className="text-muted">
+                            Showing {rules.length > 0 ? (page - 1) * limit + 1 : 0} to {Math.min(page * limit, totalRules)} of {totalRules} entries
+                          </span>
                         </div>
                       </div>
 
