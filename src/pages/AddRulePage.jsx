@@ -284,6 +284,30 @@ export default function AddRulePage() {
         return;
       }
 
+      // Validate ruleType matches backend RULE_TYPES
+      const validRuleTypes = ["Markup", "Discount"];
+      if (!ruleType || !validRuleTypes.includes(ruleType)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Rule Type must be Markup or Discount",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Validate appliedLayer matches backend APPLIED_LAYERS
+      const validAppliedLayers = ["Company", "Marine Agent", "Commercial Agent", "Selling Agent"];
+      if (!appliedLayer || !validAppliedLayers.includes(appliedLayer)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Applied Layer is invalid",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
       if (!passenger && !cargo && !vehicle) {
         Swal.fire({
           icon: "warning",
@@ -347,7 +371,20 @@ export default function AddRulePage() {
         providerId = selectedPartner?._id || "";
       }
 
-      // Build payload according to API spec
+      // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
+      const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
+      
+      if (!["percentage", "fixed"].includes(convertedValueType)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Value Type must be percentage or fixed",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Build payload according to API spec and backend model
       const payload = {
         ruleName,
         provider: providerId,
@@ -356,13 +393,14 @@ export default function AddRulePage() {
         partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
         ruleType,
         ruleValue: parseInt(value),
-        valueType: valueType === "%" ? "percentage" : "fixed",
+        valueType: convertedValueType,
         visaType,
         serviceDetails,
         routes: routesData,
         effectiveDate: new Date(effectiveDate).toISOString(),
         expiryDate: new Date(expiryDate).toISOString(),
-        priority: parseInt(priority)
+        priority: parseInt(priority),
+        status: "Active"
       };
 
       console.log("[v0] Submitting markup/discount rule:", payload);
