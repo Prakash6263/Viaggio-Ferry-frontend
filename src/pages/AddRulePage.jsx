@@ -7,6 +7,8 @@ import { companyApi } from "../api/companyapi";
 import { usersApi } from "../api/usersApi";
 import { partnerApi } from "../api/partnerApi";
 import { portsApi } from "../api/portsApi";
+import { cabinsApi } from "../api/cabinsApi";
+import { payloadTypesApi } from "../api/payloadTypesApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -125,6 +127,72 @@ export default function AddRulePage() {
     
     fetchPorts();
   }, []);
+
+  // Fetch cabins from API - fetch all cabins for markup/discount rules
+  useEffect(() => {
+    const fetchCabins = async () => {
+      try {
+        setLoadingCabins(true);
+        const response = await cabinsApi.getCabins(1, 100, "", "");
+        
+        // Handle different response formats
+        let cabinsList = [];
+        if (response?.data?.cabins && Array.isArray(response.data.cabins)) {
+          cabinsList = response.data.cabins;
+        } else if (Array.isArray(response?.data)) {
+          cabinsList = response.data;
+        } else if (Array.isArray(response)) {
+          cabinsList = response;
+        }
+        
+        setCabins(cabinsList);
+        console.log("[v0] Cabins loaded:", cabinsList.length, "cabins");
+      } catch (error) {
+        console.error("[v0] Failed to load cabins:", error.message);
+        setCabins([]);
+      } finally {
+        setLoadingCabins(false);
+      }
+    };
+    
+    fetchCabins();
+  }, []);
+
+  // Fetch payload types for all categories
+  useEffect(() => {
+    const fetchPayloadTypes = async () => {
+      try {
+        setLoadingPayloadTypes(true);
+        
+        // Fetch passenger payload types
+        const passengerResponse = await payloadTypesApi.getPayloadTypes(1, 100, "passenger");
+        const passengerTypes = passengerResponse?.data?.payloadTypes || [];
+        setPassengerPayloadTypes(passengerTypes);
+        console.log("[v0] Passenger payload types loaded:", passengerTypes.length);
+        
+        // Fetch cargo payload types
+        const cargoResponse = await payloadTypesApi.getPayloadTypes(1, 100, "cargo");
+        const cargoTypes = cargoResponse?.data?.payloadTypes || [];
+        setCargoPayloadTypes(cargoTypes);
+        console.log("[v0] Cargo payload types loaded:", cargoTypes.length);
+        
+        // Fetch vehicle payload types
+        const vehicleResponse = await payloadTypesApi.getPayloadTypes(1, 100, "vehicle");
+        const vehicleTypes = vehicleResponse?.data?.payloadTypes || [];
+        setVehiclePayloadTypes(vehicleTypes);
+        console.log("[v0] Vehicle payload types loaded:", vehicleTypes.length);
+      } catch (error) {
+        console.error("[v0] Failed to load payload types:", error.message);
+        setPassengerPayloadTypes([]);
+        setCargoPayloadTypes([]);
+        setVehiclePayloadTypes([]);
+      } finally {
+        setLoadingPayloadTypes(false);
+      }
+    };
+    
+    fetchPayloadTypes();
+  }, []);
   
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
   const [value, setValue] = useState("");
@@ -133,6 +201,12 @@ export default function AddRulePage() {
   const [effectiveDate, setEffectiveDate] = useState("");
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
+  const [cabins, setCabins] = useState([]);
+  const [loadingCabins, setLoadingCabins] = useState(false);
+  const [passengerPayloadTypes, setPassengerPayloadTypes] = useState([]);
+  const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
+  const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
+  const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
@@ -238,6 +312,8 @@ export default function AddRulePage() {
                     </div>
                   </div>
 
+
+
                   <div className="mb-3">
                     <label className="form-label">Commission Value</label>
                     <div className="input-group">
@@ -268,6 +344,44 @@ export default function AddRulePage() {
                   {/* Passenger Section */}
                   {passenger && (
                     <div id="passengerSection" className="mb-3">
+                      <label className="form-label">Select Cabin</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setPassengerCabins, passengerCabins, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingCabins}
+                      >
+                        <option value="">Select Cabin to Add</option>
+                        {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
+                          <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                            {cabin.name || cabin.cabinName}
+                          </option>
+                        ))}
+                      </select>
+
+                      <label className="form-label">Select Payload Type</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setPassengerTypes, passengerTypes, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingPayloadTypes}
+                      >
+                        <option value="">Select Payload Type to Add</option>
+                        {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
+                          <option key={payloadType._id} value={payloadType.name}>
+                            {payloadType.name} ({payloadType.code})
+                          </option>
+                        ))}
+                      </select>
+
                       <label className="form-label">Passenger Cabins</label>
                       <div id="passengerCabins">
                         {passengerCabins.map((val, idx) => (
@@ -299,6 +413,44 @@ export default function AddRulePage() {
                   {/* Cargo Section */}
                   {cargo && (
                     <div id="cargoSection" className="mb-3">
+                      <label className="form-label">Select Cabin</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setCargoTypes, cargoTypes, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingCabins}
+                      >
+                        <option value="">Select Cabin to Add</option>
+                        {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
+                          <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                            {cabin.name || cabin.cabinName}
+                          </option>
+                        ))}
+                      </select>
+
+                      <label className="form-label">Select Payload Type</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setCargoPayloadTypes, cargoPayloadTypes, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingPayloadTypes}
+                      >
+                        <option value="">Select Payload Type to Add</option>
+                        {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
+                          <option key={payloadType._id} value={payloadType.name}>
+                            {payloadType.name} ({payloadType.code})
+                          </option>
+                        ))}
+                      </select>
+
                       <label className="form-label">Cargo Types</label>
                       <div id="cargoTypes">
                         {cargoTypes.map((val, idx) => (
@@ -317,6 +469,44 @@ export default function AddRulePage() {
                   {/* Vehicle Section */}
                   {vehicle && (
                     <div id="vehicleSection" className="mb-3">
+                      <label className="form-label">Select Cabin</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setVehicleTypes, vehicleTypes, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingCabins}
+                      >
+                        <option value="">Select Cabin to Add</option>
+                        {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
+                          <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                            {cabin.name || cabin.cabinName}
+                          </option>
+                        ))}
+                      </select>
+
+                      <label className="form-label">Select Payload Type</label>
+                      <select 
+                        className="form-select mb-3" 
+                        onChange={e => {
+                          if (e.target.value) {
+                            addItem(setVehiclePayloadTypes, vehiclePayloadTypes, e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        disabled={loadingPayloadTypes}
+                      >
+                        <option value="">Select Payload Type to Add</option>
+                        {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
+                          <option key={payloadType._id} value={payloadType.name}>
+                            {payloadType.name} ({payloadType.code})
+                          </option>
+                        ))}
+                      </select>
+
                       <label className="form-label">Vehicle Types</label>
                       <div id="vehicleTypes">
                         {vehicleTypes.map((val, idx) => (
