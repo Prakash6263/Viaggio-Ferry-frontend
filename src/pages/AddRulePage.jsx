@@ -222,10 +222,10 @@ export default function AddRulePage() {
   const [vehicle, setVehicle] = useState(false);
 
   // dynamic lists
-  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [passengerCabins, setPassengerCabins] = useState([]);
   const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
-  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
-  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
+  const [cargoTypes, setCargoTypes] = useState([]);
+  const [vehicleTypes, setVehicleTypes] = useState([]);
   const [routes, setRoutes] = useState([{ from: "Muscat", to: "Dubai" }]);
 
   // helpers for add/remove
@@ -321,43 +321,59 @@ export default function AddRulePage() {
         return;
       }
 
+      // Validate at least one route exists
+      if (!routes || routes.length === 0 || routes.some(r => !r.from || !r.to)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "At least one complete route is required (both From and To ports)",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
       // Build service details according to API spec
       const serviceDetails = {
-        passenger: passenger ? passengerTypes.map((type) => {
-          const payloadType = passengerPayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => c.name === passengerCabins[0] || c.cabinName === passengerCabins[0]);
-          return {
-            payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id || ""
-          };
-        }) : [],
-        cargo: cargo ? cargoTypes.map((type) => {
-          const payloadType = cargoPayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
-          return {
-            payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id || ""
-          };
-        }) : [],
-        vehicle: vehicle ? vehicleTypes.map((type) => {
-          const payloadType = vehiclePayloadTypes.find(pt => pt.name === type);
-          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
-          return {
-            payloadTypeId: payloadType?._id || "",
-            cabinId: cabin?._id || ""
-          };
-        }) : []
+        passenger: passenger ? passengerCabins
+          .filter(cabinId => cabinId) // Filter out empty cabin IDs
+          .map((cabinId) => {
+            const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
+            // Only include if payloadTypeId exists, otherwise skip this entry
+            if (payloadType?._id) {
+              return {
+                payloadTypeId: payloadType._id,
+                cabinId: cabinId
+              };
+            }
+            return null;
+          })
+          .filter(item => item !== null) // Remove null entries
+        : [],
+        cargo: cargo ? cargoTypes
+          .filter(cabinId => cabinId) // Filter out empty cabin IDs
+          .map((cabinId) => ({
+            cabinId: cabinId
+          }))
+        : [],
+        vehicle: vehicle ? vehicleTypes
+          .filter(cabinId => cabinId) // Filter out empty cabin IDs
+          .map((cabinId) => ({
+            cabinId: cabinId
+          }))
+        : []
       };
 
-      // Build routes according to API spec
-      const routesData = routes.map((route) => {
-        const fromPort = ports.find(p => p.name === route.from);
-        const toPort = ports.find(p => p.name === route.to);
-        return {
-          routeFrom: fromPort?._id || "",
-          routeTo: toPort?._id || ""
-        };
-      });
+      // Build routes according to API spec - only include valid routes
+      const routesData = routes
+        .filter(route => route.from && route.to)
+        .map((route) => {
+          const fromPort = ports.find(p => p.name === route.from);
+          const toPort = ports.find(p => p.name === route.to);
+          return {
+            routeFrom: fromPort?._id || "",
+            routeTo: toPort?._id || ""
+          };
+        });
 
       // Use the currently logged-in user's ID as provider
       if (!currentUserId) {
@@ -371,7 +387,12 @@ export default function AddRulePage() {
       }
 
       const providerId = currentUserId;
-      let providerType = "User";
+      
+      // Determine providerType based on login role
+      let providerType = "Company";
+      if (loginRole === "partner") {
+        providerType = "Partner";
+      }
 
       // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
       const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
@@ -405,6 +426,14 @@ export default function AddRulePage() {
         status: "Active"
       };
 
+      // Add partner ID only if partnerScope is SpecificPartner
+      if (partnerSelection !== "All Child Partners") {
+        const selectedPartner = childPartners.find(p => p.name === partnerSelection);
+        if (selectedPartner) {
+          payload.partner = selectedPartner._id;
+        }
+      }
+
       console.log("[v0] Submitting markup/discount rule:", payload);
 
       try {
@@ -418,7 +447,7 @@ export default function AddRulePage() {
             text: response.message || "Markup/Discount rule created successfully",
             confirmButtonColor: "#17a2b8"
           }).then(() => {
-            window.history.back();
+            window.location.href = "/company/markup";
           });
         }
       } catch (error) {
@@ -479,17 +508,17 @@ export default function AddRulePage() {
 
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
-                    <label className="form-label">Applied to Layer</label>
+                    <label className="form-label">Applied Layer</label>
                     <select
                       className="form-select"
                       value={appliedLayer}
                       onChange={e => setAppliedLayer(e.target.value)}
                     >
                       <option value="">Select Layer</option>
-                      <option value="Marine">Marine</option>
-                      <option value="Commercial">Commercial</option>
-                      <option value="Selling">Selling</option>
-                      <option value="company">company</option>
+                      <option value="Company">Company</option>
+                      <option value="Marine Agent">Marine Agent</option>
+                      <option value="Commercial Agent">Commercial Agent</option>
+                      <option value="Selling Agent">Selling Agent</option>
                     </select>
                   </div>
                   <div className="col-md-6">
@@ -549,7 +578,7 @@ export default function AddRulePage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              <option key={cabin._id} value={cabin._id}>
                                 {cabin.name || cabin.cabinName}
                               </option>
                             ))}
@@ -558,7 +587,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Passenger Types</label>
                     <div id="passengerTypes">
@@ -590,7 +619,7 @@ export default function AddRulePage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              <option key={cabin._id} value={cabin._id}>
                                 {cabin.name || cabin.cabinName}
                               </option>
                             ))}
@@ -599,7 +628,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "General Cargo")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Cargo Types</label>
                     <div id="cargoPayloadTypes">
@@ -635,7 +664,7 @@ export default function AddRulePage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              <option key={cabin._id} value={cabin._id}>
                                 {cabin.name || cabin.cabinName}
                               </option>
                             ))}
@@ -644,7 +673,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "Car")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Vehicle Types</label>
                     <div id="vehiclePayloadTypes">

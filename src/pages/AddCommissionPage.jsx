@@ -8,6 +8,7 @@ import { partnerApi } from "../api/partnerApi";
 import { portsApi } from "../api/portsApi";
 import { cabinsApi } from "../api/cabinsApi";
 import { payloadTypesApi } from "../api/payloadTypesApi";
+import { commissionApi } from "../api/commissionApi";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -60,11 +61,15 @@ export default function AddCommissionPage() {
   const [vehicle, setVehicle] = useState(false);
 
   // Dynamic lists for service types
-  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [passengerCabins, setPassengerCabins] = useState([]);
   const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
-  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
-  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
-  const [routes, setRoutes] = useState([{ from: "Muscat", to: "Dubai" }]);
+  const [cargoTypes, setCargoTypes] = useState([]);
+  const [vehicleTypes, setVehicleTypes] = useState([]);
+  const [routes, setRoutes] = useState([{ from: "", to: "" }]);
+  const [expiryDate, setExpiryDate] = useState("");
+  const [priority, setPriority] = useState(1);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper functions for add/remove/update items
   const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
@@ -75,6 +80,17 @@ export default function AddCommissionPage() {
   useEffect(() => {
     const role = getLoginRoleFromToken();
     setLoginRole(role);
+    
+    // Extract user ID from JWT token
+    try {
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        setCurrentUserId(decoded.id || decoded.userId || decoded._id);
+      }
+    } catch (error) {
+      console.error("[v0] Failed to extract user ID from token:", error);
+    }
   }, []);
 
   // Initialize provider and layer from API based on login role
@@ -231,7 +247,156 @@ export default function AddCommissionPage() {
     fetchPayloadTypes();
   }, []);
 
+  const onSave = async (e) => {
+    e.preventDefault();
 
+    // Validation
+    if (!ruleName.trim()) {
+      window.alert("Rule Name is required");
+      return;
+    }
+
+    if (!value || value <= 0) {
+      window.alert("Commission Value must be greater than 0");
+      return;
+    }
+
+    if (!effectiveDate) {
+      window.alert("Effective Date is required");
+      return;
+    }
+
+    if (!expiryDate) {
+      window.alert("Expiry Date is required");
+      return;
+    }
+
+    if (!visaType) {
+      window.alert("Visa Type is required");
+      return;
+    }
+
+    if (!appliedLayer) {
+      window.alert("Applied Layer is required");
+      return;
+    }
+
+    if (!passenger && !cargo && !vehicle) {
+      window.alert("Select at least one Service Type");
+      return;
+    }
+
+    // Validate at least one route exists
+    if (!routes || routes.length === 0 || routes.some(r => !r.from || !r.to)) {
+      window.alert("At least one complete route is required (both From and To ports)");
+      return;
+    }
+
+    if (!currentUserId) {
+      window.alert("User not loaded. Please refresh and try again.");
+      return;
+    }
+
+    // Build service details according to API spec
+    const serviceDetails = {
+      passenger: passenger ? passengerCabins
+        .filter(cabinId => cabinId) // Filter out empty cabin IDs
+        .map((cabinId) => {
+          const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
+          // Only include if payloadTypeId exists, otherwise skip this entry
+          if (payloadType?._id) {
+            return {
+              payloadTypeId: payloadType._id,
+              cabinId: cabinId
+            };
+          }
+          return null;
+        })
+        .filter(item => item !== null) // Remove null entries
+      : [],
+      cargo: cargo ? cargoTypes
+        .filter(cabinId => cabinId) // Filter out empty cabin IDs
+        .map((cabinId) => ({
+          cabinId: cabinId
+        }))
+      : [],
+      vehicle: vehicle ? vehicleTypes
+        .filter(cabinId => cabinId) // Filter out empty cabin IDs
+        .map((cabinId) => ({
+          cabinId: cabinId
+        }))
+      : []
+    };
+
+    // Build routes according to API spec - only include valid routes
+    const routesData = routes
+      .filter(route => route.from && route.to)
+      .map((route) => {
+        const fromPort = ports.find(p => p.name === route.from);
+        const toPort = ports.find(p => p.name === route.to);
+        return {
+          routeFrom: fromPort?._id || "",
+          routeTo: toPort?._id || ""
+        };
+      });
+
+    // Determine providerType based on login role
+    let providerType = "Company";
+    if (loginRole === "partner") {
+      providerType = "Partner";
+    }
+
+    // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
+    const convertedValueType = valueType === "%" ? "percentage" : valueType === "fixed" ? "fixed" : valueType.toLowerCase();
+    
+    if (!["percentage", "fixed"].includes(convertedValueType)) {
+      window.alert("Value Type must be percentage or fixed");
+      return;
+    }
+
+    // Build payload according to API spec
+    const payload = {
+      ruleName,
+      provider: currentUserId,
+      providerType,
+      appliedLayer,
+      partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+      commissionType: convertedValueType,
+      commissionValue: parseInt(value),
+      valueType: convertedValueType,
+      visaType,
+      serviceDetails,
+      routes: routesData,
+      effectiveDate: new Date(effectiveDate).toISOString(),
+      expiryDate: new Date(expiryDate).toISOString(),
+      priority: parseInt(priority)
+    };
+
+    // Add partner ID only if partnerScope is SpecificPartner
+    if (partnerSelection !== "All Child Partners") {
+      const selectedPartner = childPartners.find(p => p.name === partnerSelection);
+      if (selectedPartner) {
+        payload.partner = selectedPartner._id;
+      }
+    }
+
+    console.log("[v0] Submitting commission rule:", payload);
+
+    try {
+      setIsSubmitting(true);
+      const response = await commissionApi.createRule(payload);
+
+      if (response.success || response.data) {
+        window.alert(response.message || "Commission rule created successfully");
+        window.location.href = "/company/commission";
+      }
+    } catch (error) {
+      console.error("[v0] Error creating rule:", error);
+      window.alert(error.message || "Failed to create rule. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="main-wrapper">
@@ -261,6 +426,7 @@ export default function AddCommissionPage() {
                 </div>
 
                 <div className="card-body">
+                  <form onSubmit={onSave}>
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Rule Name</label>
@@ -287,17 +453,17 @@ export default function AddCommissionPage() {
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label">Applied to Layer</label>
+                      <label className="form-label">Applied Layer</label>
                       <select
                         className="form-select"
                         value={appliedLayer}
                         onChange={e => setAppliedLayer(e.target.value)}
                       >
                         <option value="">Select Layer</option>
-                        <option value="Marine">Marine</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Selling">Selling</option>
-                        <option value="company">company</option>
+                        <option value="Company">Company</option>
+                        <option value="Marine Agent">Marine Agent</option>
+                        <option value="Commercial Agent">Commercial Agent</option>
+                        <option value="Selling Agent">Selling Agent</option>
                       </select>
                     </div>
 
@@ -370,7 +536,7 @@ export default function AddCommissionPage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              <option key={cabin._id} value={cabin._id}>
                                 {cabin.name || cabin.cabinName}
                               </option>
                             ))}
@@ -379,7 +545,7 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Passenger Types</label>
                     <div id="passengerTypes">
@@ -411,7 +577,7 @@ export default function AddCommissionPage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              <option key={cabin._id} value={cabin._id}>
                                 {cabin.name || cabin.cabinName}
                               </option>
                             ))}
@@ -420,7 +586,7 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "General Cargo")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Cargo Types</label>
                     <div id="cargoPayloadTypes">
@@ -456,7 +622,7 @@ export default function AddCommissionPage() {
                           <select className="form-select" value={val} onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}>
                             <option value="">Select Cabin</option>
                             {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
-                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              <option key={cabin._id} value={cabin._id}>
                                 {cabin.name || cabin.cabinName}
                               </option>
                             ))}
@@ -465,7 +631,7 @@ export default function AddCommissionPage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "Car")}>+ Add Cabin</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}>+ Add Cabin</button>
 
                     <label className="form-label mt-3">Vehicle Types</label>
                     <div id="vehiclePayloadTypes">
@@ -521,33 +687,60 @@ export default function AddCommissionPage() {
                   <div className="mb-3">
                     <label className="form-label">Route</label>
                     <div id="routes">
-                      <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPorts}>
-                          <option value="">From</option>
-                          {ports && ports.map((port) => (
-                            <option key={port._id} value={port.name}>
-                              {port.name}
-                            </option>
-                          ))}
-                        </select>
-                        <select className="form-select" disabled={loadingPorts}>
-                          <option value="">To</option>
-                          {ports && ports.map((port) => (
-                            <option key={port._id} value={port.name}>
-                              {port.name}
-                            </option>
-                          ))}
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
+                      {routes && routes.map((route, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={route.from} onChange={e => updateItem(setRoutes, routes, idx, { ...route, from: e.target.value })} disabled={loadingPorts}>
+                            <option value="">From Port</option>
+                            {ports && ports.map((port) => (
+                              <option key={port._id} value={port.name}>
+                                {port.name}
+                              </option>
+                            ))}
+                          </select>
+                          <select className="form-select" value={route.to} onChange={e => updateItem(setRoutes, routes, idx, { ...route, to: e.target.value })} disabled={loadingPorts}>
+                            <option value="">To Port</option>
+                            {ports && ports.map((port) => (
+                              <option key={port._id} value={port.name}>
+                                {port.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setRoutes, routes, idx)}>&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <a className="btn btn-sm btn-primary" id="addRoute" style={{ cursor: "pointer" }}>+ Add Route</a>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setRoutes, routes, { from: "", to: "" })}>+ Add Route</button>
+                  </div>
+
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label">Expiry Date</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={expiryDate}
+                        onChange={e => setExpiryDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Priority</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={priority}
+                        onChange={e => setPriority(parseInt(e.target.value))}
+                        min="1"
+                      />
+                    </div>
                   </div>
 
                   <div className="d-flex justify-content-end">
-                    <button className="btn btn-secondary me-2">Cancel</button>
-                    <button className="btn btn-turquoise">Save Rule</button>
+                    <a href="/company/commission" className="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" className="btn btn-turquoise" disabled={isSubmitting}>
+                      {isSubmitting ? "Saving..." : "Save Rule"}
+                    </button>
                   </div>
+                  </form>
 
                 </div>
               </div>
