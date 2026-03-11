@@ -1,87 +1,81 @@
-import React, { useEffect, useState } from "react";
-import { CirclesWithBar } from "react-loader-spinner";
-import Header from "../components/layout/Header";
-import { Sidebar } from "../components/layout/Sidebar";
-import { PageWrapper } from "../components/layout/PageWrapper";
-import { Link } from "react-router-dom";
-import { markupDiscountApi } from "../api/markupDiscountApi";
-import Swal from "sweetalert2";
-import CanDisable from "../components/CanDisable";
-import Can from "../components/Can";
+// import React, { useEffect, useRef } from "react";
+// import Header from "../components/layout/Header";
+// import { Sidebar } from "../components/layout/Sidebar";
+// import { PageWrapper } from "../components/layout/PageWrapper";
+// import { Link } from "react-router-dom";
+// /**
+//  * MarkupDiscountBoardPage
+//  * - exact markup / classes preserved from markup-discountboard.html
+//  * - safe DataTable init: only init if not already initialized
+//  * - theme toggle wired to update documentElement attribute (same as html)
+//  */
+// export default function MarkupDiscountBoardPage() {
+//   const tableRef = useRef(null);
+//   const themeBtnRef = useRef(null);
 
-/**
- * MarkupDiscountBoardPage
- * - Fetches markup/discount rules from API
- * - Displays data in Rules List table
- * - Uses CirclesWithBar loader like Currency page
- */
-export default function MarkupDiscountBoardPage() {
-  const [rules, setRules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+//   useEffect(() => {
+//     const el = tableRef.current;
+//     if (!el) return;
 
-  const fetchRules = async () => {
-    try {
-      setLoading(true);
-      console.log("[v0] Fetching markup/discount rules...");
-      const response = await markupDiscountApi.getRules(page, limit);
-      console.log("[v0] API Response:", response);
+//     // If DataTable already attached to element, skip re-initializing.
+//     // This prevents double-init when template script is also included.
+//     if (!el._dt && window.DataTable) {
+//       try {
+//         el._dt = new window.DataTable(el, {});
+//       } catch (err) {
+//         console.error("DataTable init error:", err);
+//       }
+//     }
 
-      if (response.success && response.data) {
-        // Transform API response to match table format
-        const transformedRules = response.data.map((rule) => ({
-          id: rule._id,
-          ruleName: rule.ruleName,
-          ruleType: rule.ruleType,
-          ruleValue: rule.ruleValue,
-          valueType: rule.valueType,
-          appliedLayer: rule.appliedLayer,
-          status: rule.status,
-          createdAt: rule.createdAt,
-          services: getServices(rule.serviceDetails),
-          providerType: rule.providerType,
-          providerName: rule.providerPartner?.name || rule.providerCompany?.companyName || "N/A",
-          visaType: rule.visaType,
-        }));
-        setRules(transformedRules);
-        setError(null);
-      } else {
-        setRules([]);
-      }
-    } catch (err) {
-      console.error("[v0] Error fetching rules:", err);
-      setError(err.message || "Failed to load markup/discount rules");
-      setRules([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+//     // cleanup not destroying here intentionally: if public script created DataTable,
+//     // we avoid destroying it because it may be managed elsewhere.
+//     return () => {
+//       // only destroy if we created it (we stored it on el._dt)
+//       try {
+//         if (el && el._dt && typeof el._dt.destroy === "function") {
+//           // destroy only if element still connected
+//           if (el.isConnected || document.contains(el)) {
+//             el._dt.destroy();
+//           } else {
+//             try { el._dt.destroy(); } catch (e) { /* ignore */ }
+//           }
+//           el._dt = null;
+//         }
+//       } catch (e) {
+//         // defensive
+//       }
+//     };
+//   }, []);
 
-  // Helper function to extract service types
-  const getServices = (serviceDetails) => {
-    const services = [];
-    if (serviceDetails?.passenger?.length > 0) services.push("Passenger");
-    if (serviceDetails?.cargo?.length > 0) services.push("Cargo");
-    if (serviceDetails?.vehicle?.length > 0) services.push("Vehicle");
-    return services;
-  };
+//   useEffect(() => {
+//     // theme toggle behavior, matching the inline script in original HTML
+//     const btn = themeBtnRef.current;
+//     if (!btn) return;
+//     const html = document.documentElement;
 
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
+//     // initialize icon
+//     if (localStorage.getItem("theme") === "dark") {
+//       html.setAttribute("data-theme", "dark");
+//       btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+//     } else {
+//       btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
+//     }
 
-  useEffect(() => {
-    fetchRules();
-  }, [page, limit]);
+//     const onClick = () => {
+//       if (html.getAttribute("data-theme") === "dark") {
+//         html.removeAttribute("data-theme");
+//         localStorage.setItem("theme", "light");
+//         btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
+//       } else {
+//         html.setAttribute("data-theme", "dark");
+//         localStorage.setItem("theme", "dark");
+//         btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+//       }
+//     };
+
+//     btn.addEventListener("click", onClick);
+//     return () => btn.removeEventListener("click", onClick);
+//   }, []);
 
 //   return (
 //     <div className="main-wrapper">
@@ -464,92 +458,100 @@ export default function MarkupDiscountBoardPage() {
 
 'use client';
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
+import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { Link } from "react-router-dom";
 import Can from "../components/Can";
 import CanDisable from "../components/CanDisable";
+import { markupDiscountApi } from "../api/markupDiscountApi";
+import Swal from "sweetalert2";
+
 /**
  * MarkupDiscountBoardPage
- * - exact markup / classes preserved from markup-discountboard.html
- * - safe DataTable init: only init if not already initialized
- * - theme toggle wired to update documentElement attribute (same as html)
+ * - Fetches markup/discount rules from API
+ * - Uses CirclesWithBar loader like Currency page
+ * - Displays data in Rules List table with pagination
  */
 export default function MarkupDiscountBoardPage() {
-  const tableRef = useRef(null);
-  const themeBtnRef = useRef(null);
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalRules, setTotalRules] = useState(0);
 
-  useEffect(() => {
-    const el = tableRef.current;
-    if (!el) return;
+  // Fetch rules from API
+  const fetchRules = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("[v0] Fetching markup/discount rules from API...", { page, limit });
+      
+      const response = await markupDiscountApi.getRules(page, limit);
+      console.log("[v0] API Response:", response);
 
-    // If DataTable already attached to element, skip re-initializing.
-    // This prevents double-init when template script is also included.
-    if (!el._dt && window.DataTable) {
-      try {
-        el._dt = new window.DataTable(el, {});
-      } catch (err) {
-        console.error("DataTable init error:", err);
-      }
-    }
-
-    // cleanup not destroying here intentionally: if public script created DataTable,
-    // we avoid destroying it because it may be managed elsewhere.
-    return () => {
-      // only destroy if we created it (we stored it on el._dt)
-      try {
-        if (el && el._dt && typeof el._dt.destroy === "function") {
-          // destroy only if element still connected
-          if (el.isConnected || document.contains(el)) {
-            el._dt.destroy();
-          } else {
-            try { el._dt.destroy(); } catch (e) { /* ignore */ }
-          }
-          el._dt = null;
-        }
-      } catch (e) {
-        // defensive
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    // theme toggle behavior, matching the inline script in original HTML
-    const btn = themeBtnRef.current;
-    if (!btn) return;
-    const html = document.documentElement;
-
-    // initialize icon
-    if (localStorage.getItem("theme") === "dark") {
-      html.setAttribute("data-theme", "dark");
-      btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
-    } else {
-      btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
-    }
-
-    const onClick = () => {
-      if (html.getAttribute("data-theme") === "dark") {
-        html.removeAttribute("data-theme");
-        localStorage.setItem("theme", "light");
-        btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
+      if (response.success && response.data) {
+        // Transform API response to match table format
+        const transformedRules = response.data.map((rule) => ({
+          id: rule._id,
+          ruleName: rule.ruleName,
+          ruleType: rule.ruleType,
+          ruleValue: rule.ruleValue,
+          valueType: rule.valueType,
+          appliedLayer: rule.appliedLayer,
+          status: rule.status,
+          createdAt: rule.createdAt,
+          services: getServices(rule.serviceDetails),
+          providerType: rule.providerType,
+          visaType: rule.visaType,
+        }));
+        setRules(transformedRules);
+        setTotalRules(response.meta?.total || transformedRules.length);
+        console.log("[v0] Rules loaded successfully:", transformedRules.length);
       } else {
-        html.setAttribute("data-theme", "dark");
-        localStorage.setItem("theme", "dark");
-        btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+        setRules([]);
+        console.log("[v0] No rules data in response");
       }
-    };
-
-    btn.addEventListener("click", onClick);
-    return () => btn.removeEventListener("click", onClick);
-  }, []);
-
-  const handleEdit = (ruleId) => {
-    // Navigate to edit page
-    window.location.href = `/company/markup/edit-rule/${ruleId}`;
+    } catch (err) {
+      console.error("[v0] Error fetching rules:", err);
+      setError(err.message || "Failed to load markup/discount rules");
+      setRules([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Helper function to extract service types from serviceDetails
+  const getServices = (serviceDetails) => {
+    const services = [];
+    if (serviceDetails) {
+      if (serviceDetails.passenger?.length > 0) services.push("Passenger");
+      if (serviceDetails.cargo?.length > 0) services.push("Cargo");
+      if (serviceDetails.vehicle?.length > 0) services.push("Vehicle");
+    }
+    return services;
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  // Handle edit
+  const handleEdit = (ruleId) => {
+    window.location.href = `/company/markup/edit/${ruleId}`;
+  };
+
+  // Handle delete
   const handleDelete = async (ruleId) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -565,7 +567,10 @@ export default function MarkupDiscountBoardPage() {
     if (result.isConfirmed) {
       try {
         setLoading(true);
+        console.log("[v0] Deleting rule with ID:", ruleId);
         const res = await markupDiscountApi.deleteRule(ruleId);
+        console.log("[v0] Delete response:", res);
+        
         if (res.success) {
           Swal.fire({
             icon: "success",
@@ -577,6 +582,7 @@ export default function MarkupDiscountBoardPage() {
           fetchRules();
         }
       } catch (err) {
+        console.error("[v0] Error deleting rule:", err);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -587,6 +593,11 @@ export default function MarkupDiscountBoardPage() {
       }
     }
   };
+
+  // Fetch rules on mount and when page/limit changes
+  useEffect(() => {
+    fetchRules();
+  }, [page, limit]);
 
   return (
     <div className="main-wrapper">
@@ -609,7 +620,7 @@ export default function MarkupDiscountBoardPage() {
                     <button className="btn btn-secondary me-2">Export</button>
                   </li>
                   <li>
-                    <Can action="create" path="/company/markup">
+                    <Can action="create">
                       <Link className="btn btn-turquoise" to="/company/markup/add-rule">
                         <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Rule
                       </Link>
@@ -746,27 +757,25 @@ export default function MarkupDiscountBoardPage() {
                         <div className="col-md-3">
                           <select className="form-select">
                             <option>All Providers</option>
-                            <option>Partner</option>
-                            <option>Company</option>
+                            <option value="partner">Partner</option>
+                            <option value="company">Company</option>
                           </select>
                         </div>
                         <div className="col-md-3">
                           <select className="form-select">
                             <option>All Layers</option>
-                            <option>Marine Agent</option>
-                            <option>Commercial Agent</option>
-                            <option>Selling Agent</option>
                           </select>
                         </div>
                         <div className="col-md-3">
                           <select className="form-select">
                             <option>All Statuses</option>
-                            <option>Active</option>
-                            <option>Inactive</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
                           </select>
                         </div>
                       </div>
 
+                      {/* Loading State */}
                       {loading && (
                         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
                           <CirclesWithBar
@@ -782,12 +791,14 @@ export default function MarkupDiscountBoardPage() {
                         </div>
                       )}
 
-                      {error && (
+                      {/* Error State */}
+                      {error && !loading && (
                         <div className="alert alert-danger" role="alert">
-                          {error}
+                          <strong>Error!</strong> {error}
                         </div>
                       )}
 
+                      {/* Table */}
                       {!loading && !error && (
                         <div className="table-responsive">
                           <table className="table table-striped" style={{ width: "100%" }}>
