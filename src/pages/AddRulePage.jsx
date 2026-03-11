@@ -9,6 +9,8 @@ import { partnerApi } from "../api/partnerApi";
 import { portsApi } from "../api/portsApi";
 import { cabinsApi } from "../api/cabinsApi";
 import { payloadTypesApi } from "../api/payloadTypesApi";
+import { markupDiscountApi } from "../api/markupDiscountApi";
+import Swal from "sweetalert2";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -199,6 +201,8 @@ export default function AddRulePage() {
   const [valueType, setValueType] = useState("%");
   const [visaType, setVisaType] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [priority, setPriority] = useState(1);
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [cabins, setCabins] = useState([]);
@@ -207,6 +211,7 @@ export default function AddRulePage() {
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
@@ -225,15 +230,168 @@ export default function AddRulePage() {
   const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
   const updateItem = (setter, arr, idx, val) => setter(arr.map((a,i) => i===idx ? val : a));
 
-    const onSave = (e) => {
+    const onSave = async (e) => {
       e.preventDefault();
-      const payload = {
-        ruleName, ruleType, provider, appliedLayer, partnerSelection, value, valueType, visaType, effectiveDate,
-        services: { passenger, cargo, vehicle },
-        passengerCabins, passengerTypes, cargoTypes, vehicleTypes, routes
+
+      // Validation
+      if (!ruleName.trim()) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Rule Name is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!value || value <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Commission Value must be greater than 0",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!effectiveDate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Effective Date is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!expiryDate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Expiry Date is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!visaType) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Visa Type is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!passenger && !cargo && !vehicle) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Select at least one Service Type",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Build service details according to API spec
+      const serviceDetails = {
+        passenger: passenger ? passengerTypes.map((type) => {
+          const payloadType = passengerPayloadTypes.find(pt => pt.name === type);
+          const cabin = cabins.find(c => c.name === passengerCabins[0] || c.cabinName === passengerCabins[0]);
+          return {
+            payloadTypeId: payloadType?._id || "",
+            cabinId: cabin?._id || ""
+          };
+        }) : [],
+        cargo: cargo ? cargoTypes.map((type) => {
+          const payloadType = cargoPayloadTypes.find(pt => pt.name === type);
+          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
+          return {
+            payloadTypeId: payloadType?._id || "",
+            cabinId: cabin?._id || ""
+          };
+        }) : [],
+        vehicle: vehicle ? vehicleTypes.map((type) => {
+          const payloadType = vehiclePayloadTypes.find(pt => pt.name === type);
+          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
+          return {
+            payloadTypeId: payloadType?._id || "",
+            cabinId: cabin?._id || ""
+          };
+        }) : []
       };
-      console.log("Save rule payload:", payload);
-      alert("Rule saved (demo). Check console.");
+
+      // Build routes according to API spec
+      const routesData = routes.map((route) => {
+        const fromPort = ports.find(p => p.name === route.from);
+        const toPort = ports.find(p => p.name === route.to);
+        return {
+          routeFrom: fromPort?._id || "",
+          routeTo: toPort?._id || ""
+        };
+      });
+
+      // Determine provider ID and type based on partner selection
+      let providerId = "";
+      let providerType = "Partner";
+
+      if (partnerSelection === "All Child Partners") {
+        // Get first child partner ID
+        if (childPartners.length > 0) {
+          providerId = childPartners[0]._id;
+        }
+      } else {
+        // Find selected partner by name
+        const selectedPartner = childPartners.find(p => p.name === partnerSelection);
+        providerId = selectedPartner?._id || "";
+      }
+
+      // Build payload according to API spec
+      const payload = {
+        ruleName,
+        provider: providerId,
+        providerType,
+        appliedLayer,
+        partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+        ruleType,
+        ruleValue: parseInt(value),
+        valueType: valueType === "%" ? "percentage" : "fixed",
+        visaType,
+        serviceDetails,
+        routes: routesData,
+        effectiveDate: new Date(effectiveDate).toISOString(),
+        expiryDate: new Date(expiryDate).toISOString(),
+        priority: parseInt(priority)
+      };
+
+      console.log("[v0] Submitting markup/discount rule:", payload);
+
+      try {
+        setIsSubmitting(true);
+        const response = await markupDiscountApi.createRule(payload);
+
+        if (response.success || response.data) {
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: response.message || "Markup/Discount rule created successfully",
+            confirmButtonColor: "#17a2b8"
+          }).then(() => {
+            window.history.back();
+          });
+        }
+      } catch (error) {
+        console.error("[v0] Error creating rule:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.message || "Failed to create rule. Please try again.",
+          confirmButtonColor: "#17a2b8"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     };
 
     return (
@@ -550,6 +708,29 @@ export default function AddRulePage() {
                     </div>
                   </div>
 
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label">Expiry Date</label>
+                      <input 
+                        type="date" 
+                        className="form-control"
+                        value={expiryDate}
+                        onChange={e => setExpiryDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Priority</label>
+                      <input 
+                        type="number" 
+                        className="form-control"
+                        value={priority}
+                        onChange={e => setPriority(e.target.value)}
+                        min="1"
+                        max="100"
+                      />
+                    </div>
+                  </div>
+
                   {/* Routes */}
                   <div className="mb-3">
                     <label className="form-label">Route</label>
@@ -590,8 +771,10 @@ export default function AddRulePage() {
                   </div>
 
                   <div className="d-flex justify-content-end">
-                    <button type="button" className="btn btn-secondary me-2" onClick={() => window.history.back()}>Cancel</button>
-                    <button className="btn btn-turquoise">Save Rule</button>
+                    <button type="button" className="btn btn-secondary me-2" onClick={() => window.history.back()} disabled={isSubmitting}>Cancel</button>
+                    <button className="btn btn-turquoise" disabled={isSubmitting}>
+                      {isSubmitting ? "Saving..." : "Save Rule"}
+                    </button>
                   </div>
                 </form>
               </div>
