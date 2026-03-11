@@ -9,6 +9,8 @@ import { partnerApi } from "../api/partnerApi";
 import { portsApi } from "../api/portsApi";
 import { cabinsApi } from "../api/cabinsApi";
 import { payloadTypesApi } from "../api/payloadTypesApi";
+import { markupDiscountApi } from "../api/markupDiscountApi";
+import Swal from "sweetalert2";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -199,6 +201,8 @@ export default function AddRulePage() {
   const [valueType, setValueType] = useState("%");
   const [visaType, setVisaType] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [priority, setPriority] = useState(1);
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [cabins, setCabins] = useState([]);
@@ -207,6 +211,7 @@ export default function AddRulePage() {
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
