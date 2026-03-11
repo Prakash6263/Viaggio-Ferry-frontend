@@ -9,6 +9,8 @@ import { partnerApi } from "../api/partnerApi";
 import { portsApi } from "../api/portsApi";
 import { cabinsApi } from "../api/cabinsApi";
 import { payloadTypesApi } from "../api/payloadTypesApi";
+import { markupDiscountApi } from "../api/markupDiscountApi";
+import Swal from "sweetalert2";
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {
@@ -57,8 +59,9 @@ export default function AddRulePage() {
 
             setProvider(providerName);
             setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+            setCurrentUserId(userData._id || "");
 
-            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "UserID:", userData._id);
           }
         } else if (loginRole === "company") {
           // For company login: Get company name and set layer as "Company"
@@ -70,8 +73,9 @@ export default function AddRulePage() {
 
             setProvider(providerName);
             setAppliedLayer("Company");
+            setCurrentUserId(companyData._id || "");
 
-            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company");
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company", "CompanyID:", companyData._id);
           }
         }
       } catch (error) {
@@ -199,6 +203,8 @@ export default function AddRulePage() {
   const [valueType, setValueType] = useState("%");
   const [visaType, setVisaType] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [priority, setPriority] = useState(1);
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [cabins, setCabins] = useState([]);
@@ -207,6 +213,8 @@ export default function AddRulePage() {
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState("");
 
   // service checkboxes
   const [passenger, setPassenger] = useState(false);
@@ -225,16 +233,206 @@ export default function AddRulePage() {
   const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
   const updateItem = (setter, arr, idx, val) => setter(arr.map((a, i) => i === idx ? val : a));
 
-  const onSave = (e) => {
-    e.preventDefault();
-    const payload = {
-      ruleName, ruleType, provider, appliedLayer, partnerSelection, value, valueType, visaType, effectiveDate,
-      services: { passenger, cargo, vehicle },
-      passengerCabins, passengerTypes, cargoTypes, vehicleTypes, routes
+    const onSave = async (e) => {
+      e.preventDefault();
+
+      // Validation
+      if (!ruleName.trim()) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Rule Name is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!value || value <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Commission Value must be greater than 0",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!effectiveDate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Effective Date is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!expiryDate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Expiry Date is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!visaType) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Visa Type is required",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Validate ruleType matches backend RULE_TYPES
+      const validRuleTypes = ["Markup", "Discount"];
+      if (!ruleType || !validRuleTypes.includes(ruleType)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Rule Type must be Markup or Discount",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Validate appliedLayer matches backend APPLIED_LAYERS
+      const validAppliedLayers = ["Company", "Marine Agent", "Commercial Agent", "Selling Agent"];
+      if (!appliedLayer || !validAppliedLayers.includes(appliedLayer)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Applied Layer is invalid",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      if (!passenger && !cargo && !vehicle) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Select at least one Service Type",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Build service details according to API spec
+      const serviceDetails = {
+        passenger: passenger ? passengerTypes.map((type) => {
+          const payloadType = passengerPayloadTypes.find(pt => pt.name === type);
+          const cabin = cabins.find(c => c.name === passengerCabins[0] || c.cabinName === passengerCabins[0]);
+          return {
+            payloadTypeId: payloadType?._id || "",
+            cabinId: cabin?._id || ""
+          };
+        }) : [],
+        cargo: cargo ? cargoTypes.map((type) => {
+          const payloadType = cargoPayloadTypes.find(pt => pt.name === type);
+          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
+          return {
+            payloadTypeId: payloadType?._id || "",
+            cabinId: cabin?._id || ""
+          };
+        }) : [],
+        vehicle: vehicle ? vehicleTypes.map((type) => {
+          const payloadType = vehiclePayloadTypes.find(pt => pt.name === type);
+          const cabin = cabins.find(c => c.name === type || c.cabinName === type);
+          return {
+            payloadTypeId: payloadType?._id || "",
+            cabinId: cabin?._id || ""
+          };
+        }) : []
+      };
+
+      // Build routes according to API spec
+      const routesData = routes.map((route) => {
+        const fromPort = ports.find(p => p.name === route.from);
+        const toPort = ports.find(p => p.name === route.to);
+        return {
+          routeFrom: fromPort?._id || "",
+          routeTo: toPort?._id || ""
+        };
+      });
+
+      // Use the currently logged-in user's ID as provider
+      if (!currentUserId) {
+        Swal.fire({
+          icon: "warning",
+          title: "Error",
+          text: "User not loaded. Please refresh and try again.",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      const providerId = currentUserId;
+      let providerType = "User";
+
+      // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
+      const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
+      
+      if (!["percentage", "fixed"].includes(convertedValueType)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Value Type must be percentage or fixed",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
+      // Build payload according to API spec and backend model
+      const payload = {
+        ruleName,
+        provider: providerId,
+        providerType,
+        appliedLayer,
+        partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+        ruleType,
+        ruleValue: parseInt(value),
+        valueType: convertedValueType,
+        visaType,
+        serviceDetails,
+        routes: routesData,
+        effectiveDate: new Date(effectiveDate).toISOString(),
+        expiryDate: new Date(expiryDate).toISOString(),
+        priority: parseInt(priority),
+        status: "Active"
+      };
+
+      console.log("[v0] Submitting markup/discount rule:", payload);
+
+      try {
+        setIsSubmitting(true);
+        const response = await markupDiscountApi.createRule(payload);
+
+        if (response.success || response.data) {
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: response.message || "Markup/Discount rule created successfully",
+            confirmButtonColor: "#17a2b8"
+          }).then(() => {
+            window.history.back();
+          });
+        }
+      } catch (error) {
+        console.error("[v0] Error creating rule:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.message || "Failed to create rule. Please try again.",
+          confirmButtonColor: "#17a2b8"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     };
-    console.log("Save rule payload:", payload);
-    alert("Rule saved (demo). Check console.");
-  };
 
   return (
     <div className="main-wrapper">
@@ -423,7 +621,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoPayloadTypes, cargoPayloadTypes, {name: "", code: ""})}>+ Add Cargo Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoPayloadTypes, cargoPayloadTypes, { name: "", code: "" })}>+ Add Cargo Type</button>
                   </div>
                 )}
 
@@ -468,7 +666,7 @@ export default function AddRulePage() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehiclePayloadTypes, vehiclePayloadTypes, {name: "", code: ""})}>+ Add Vehicle Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehiclePayloadTypes, vehiclePayloadTypes, { name: "", code: "" })}>+ Add Vehicle Type</button>
                   </div>
                 )}
 
@@ -491,11 +689,34 @@ export default function AddRulePage() {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Effective Date</label>
-                    <input
-                      type="date"
+                    <input 
+                      type="date" 
                       className="form-control"
                       value={effectiveDate}
                       onChange={e => setEffectiveDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Expiry Date</label>
+                    <input 
+                      type="date" 
+                      className="form-control"
+                      value={expiryDate}
+                      onChange={e => setExpiryDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Priority</label>
+                    <input 
+                      type="number" 
+                      className="form-control"
+                      value={priority}
+                      onChange={e => setPriority(e.target.value)}
+                      min="1"
+                      max="100"
                     />
                   </div>
                 </div>

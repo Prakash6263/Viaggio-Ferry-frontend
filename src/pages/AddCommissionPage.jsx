@@ -54,6 +54,23 @@ export default function AddCommissionPage() {
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
 
+  // Service type state management (React way, like AddRulePage)
+  const [passenger, setPassenger] = useState(false);
+  const [cargo, setCargo] = useState(false);
+  const [vehicle, setVehicle] = useState(false);
+
+  // Dynamic lists for service types
+  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
+  const [cargoTypes, setCargoTypes] = useState(["General Cargo"]);
+  const [vehicleTypes, setVehicleTypes] = useState(["Car"]);
+  const [routes, setRoutes] = useState([{ from: "Muscat", to: "Dubai" }]);
+
+  // Helper functions for add/remove/update items
+  const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
+  const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
+  const updateItem = (setter, arr, idx, val) => setter(arr.map((a, i) => i === idx ? val : a));
+
   // Determine login role from JWT token
   useEffect(() => {
     const role = getLoginRoleFromToken();
@@ -214,138 +231,7 @@ export default function AddCommissionPage() {
     fetchPayloadTypes();
   }, []);
 
-  useEffect(() => {
-    // Helper: toggle section visibility by class 'd-none'
-    const passengerCheckbox = document.getElementById("chkPassenger");
-    const cargoCheckbox = document.getElementById("chkCargo");
-    const vehicleCheckbox = document.getElementById("chkVehicle");
 
-    function toggleSection(cb, sectionId) {
-      if (!cb) return;
-      const section = document.getElementById(sectionId);
-      const handler = (e) => {
-        if (!section) return;
-        section.classList.toggle("d-none", !e.target.checked);
-      };
-      cb.addEventListener("change", handler);
-      // run initial state
-      handler({ target: cb });
-      return () => cb.removeEventListener("change", handler);
-    }
-
-    const cleanups = [];
-    cleanups.push(toggleSection(passengerCheckbox, "passengerSection"));
-    cleanups.push(toggleSection(cargoCheckbox, "cargoSection"));
-    cleanups.push(toggleSection(vehicleCheckbox, "vehicleSection"));
-
-    // addField function (same markup as original)
-    function addField(containerId, optionsHtml) {
-      const container = document.getElementById(containerId);
-      if (!container) return null;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `<select class="form-select">${optionsHtml}</select>
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-      return div;
-    }
-
-    // attach click handlers for add buttons
-    const addPassengerCabinBtn = document.getElementById("addPassengerCabin");
-    const addPassengerTypeBtn = document.getElementById("addPassengerType");
-    const addCargoTypeBtn = document.getElementById("addCargoType");
-    const addVehicleTypeBtn = document.getElementById("addVehicleType");
-    const addRouteBtn = document.getElementById("addRoute");
-
-    const onAddPassengerCabin = () =>
-      addField("passengerCabins", "<option>Economy</option><option>Business</option><option>First</option>");
-    const onAddPassengerType = () =>
-      addField("passengerTypes", "<option>Adult</option><option>Child</option><option>Infant</option><option>Student</option><option>Senior</option>");
-    const onAddCargoType = () =>
-      addField("cargoTypes", "<option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>");
-    const onAddVehicleType = () =>
-      addField("vehicleTypes", "<option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>");
-    const onAddRoute = () => {
-      const container = document.getElementById("routes");
-      if (!container) return;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `
-        <input type="text" class="form-control" placeholder="From">
-        <input type="text" class="form-control" placeholder="To">
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-    };
-
-    // Cabin dropdown handlers
-    const passengerCabinSelect = document.getElementById("passengerCabinSelect");
-    const cargoCabinSelect = document.getElementById("cargoCabinSelect");
-    const vehicleCabinSelect = document.getElementById("vehicleCabinSelect");
-
-    // Payload type dropdown handlers
-    const passengerPayloadTypeSelect = document.getElementById("passengerPayloadTypeSelect");
-    const cargoPayloadTypeSelect = document.getElementById("cargoPayloadTypeSelect");
-    const vehiclePayloadTypeSelect = document.getElementById("vehiclePayloadTypeSelect");
-
-    const onCabinSelectChange = (selectElem, containerId) => {
-      return (e) => {
-        if (e.target.value) {
-          addField(containerId, `<option>${e.target.value}</option>`);
-          e.target.value = "";
-        }
-      };
-    };
-
-    const onPayloadTypeSelectChange = (selectElem, containerId) => {
-      return (e) => {
-        if (e.target.value) {
-          addField(containerId, `<option>${e.target.value}</option>`);
-          e.target.value = "";
-        }
-      };
-    };
-
-    if (passengerCabinSelect) passengerCabinSelect.addEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
-    if (cargoCabinSelect) cargoCabinSelect.addEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoTypes"));
-    if (vehicleCabinSelect) vehicleCabinSelect.addEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleTypes"));
-
-    if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
-    if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
-    if (vehiclePayloadTypeSelect) vehiclePayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(vehiclePayloadTypeSelect, "vehicleTypes"));
-
-    if (addPassengerCabinBtn) addPassengerCabinBtn.addEventListener("click", onAddPassengerCabin);
-    if (addPassengerTypeBtn) addPassengerTypeBtn.addEventListener("click", onAddPassengerType);
-    if (addCargoTypeBtn) addCargoTypeBtn.addEventListener("click", onAddCargoType);
-    if (addVehicleTypeBtn) addVehicleTypeBtn.addEventListener("click", onAddVehicleType);
-    if (addRouteBtn) addRouteBtn.addEventListener("click", onAddRoute);
-
-    // Remove field: delegate
-    function onDocumentClickForRemove(e) {
-      if (!(e.target instanceof Element)) return;
-      if (e.target.classList.contains("remove-field")) {
-        const parent = e.target.parentElement;
-        if (parent) parent.remove();
-      }
-    }
-    document.addEventListener("click", onDocumentClickForRemove);
-
-    // cleanup on unmount
-    return () => {
-      cleanups.forEach((fn) => fn && fn());
-      if (passengerCabinSelect) passengerCabinSelect.removeEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
-      if (cargoCabinSelect) cargoCabinSelect.removeEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoTypes"));
-      if (vehicleCabinSelect) vehicleCabinSelect.removeEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleTypes"));
-      if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
-      if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
-      if (vehiclePayloadTypeSelect) vehiclePayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(vehiclePayloadTypeSelect, "vehicleTypes"));
-      if (addPassengerCabinBtn) addPassengerCabinBtn.removeEventListener("click", onAddPassengerCabin);
-      if (addPassengerTypeBtn) addPassengerTypeBtn.removeEventListener("click", onAddPassengerType);
-      if (addCargoTypeBtn) addCargoTypeBtn.removeEventListener("click", onAddCargoType);
-      if (addVehicleTypeBtn) addVehicleTypeBtn.removeEventListener("click", onAddVehicleType);
-      if (addRouteBtn) addRouteBtn.removeEventListener("click", onAddRoute);
-      document.removeEventListener("click", onDocumentClickForRemove);
-    };
-  }, []);
 
   return (
     <div className="main-wrapper">
@@ -458,94 +344,152 @@ export default function AddCommissionPage() {
                     </div>
                   </div>
 
-                  <div className="mb-3">
-                    <label className="form-label d-block">Service Types</label>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkPassenger" />
-                      <label className="form-check-label" htmlFor="chkPassenger">Passenger</label>
-                    </div>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkCargo" />
-                      <label className="form-check-label" htmlFor="chkCargo">Cargo</label>
-                    </div>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkVehicle" />
-                      <label className="form-check-label" htmlFor="chkVehicle">Vehicle</label>
-                    </div>
+  <div className="mb-3">
+                  <label className="form-label d-block">Service Types</label>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="checkbox" checked={passenger} onChange={e => setPassenger(e.target.checked)} id="chkPassenger" />
+                    <label className="form-check-label" htmlFor="chkPassenger">Passenger</label>
                   </div>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="checkbox" checked={cargo} onChange={e => setCargo(e.target.checked)} id="chkCargo" />
+                    <label className="form-check-label" htmlFor="chkCargo">Cargo</label>
+                  </div>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="checkbox" checked={vehicle} onChange={e => setVehicle(e.target.checked)} id="chkVehicle" />
+                    <label className="form-check-label" htmlFor="chkVehicle">Vehicle</label>
+                  </div>
+                </div>
 
-                  {/* Passenger Section (hidden by default with d-none) */}
-                  <div id="passengerSection" className="mb-3 d-none">
+                {/* Passenger Section */}
+                {passenger && (
+                  <div id="passengerSection" className="mb-3">
                     <label className="form-label">Passenger Cabins</label>
                     <div id="passengerCabins">
-                      <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingCabins}>
-                          <option value="">Select Cabin</option>
-                          {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                            <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                              {cabin.name || cabin.cabinName}
-                            </option>
-                          ))}
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
+                      {passengerCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={val} onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}>
+                            <option value="">Select Cabin</option>
+                            {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
+                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                                {cabin.name || cabin.cabinName}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <button className="btn btn-sm btn-primary" id="addPassengerCabin">+ Add Cabin</button>
-                    <br />
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
+
                     <label className="form-label mt-3">Passenger Types</label>
                     <div id="passengerTypes">
-                      <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPayloadTypes}>
-                          <option value="">Select Passenger Type</option>
-                          {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                            <option key={payloadType._id} value={payloadType.name}>
-                              {payloadType.name} ({payloadType.code})
-                            </option>
-                          ))}
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
+                      {passengerTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={val} onChange={e => updateItem(setPassengerTypes, passengerTypes, idx, e.target.value)}>
+                            <option value="">Select Passenger Type</option>
+                            {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
+                              <option key={payloadType._id} value={payloadType.name}>
+                                {payloadType.name} ({payloadType.code})
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setPassengerTypes, passengerTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <button className="btn btn-sm btn-primary" id="addPassengerType">+ Add Passenger Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerTypes, passengerTypes, "Adult")}>+ Add Passenger Type</button>
                   </div>
+                )}
 
-                  {/* Cargo Section */}
-                  <div id="cargoSection" className="mb-3 d-none">
-                    <label className="form-label">Cargo Types</label>
-                    <div id="cargoTypes">
-                      <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPayloadTypes}>
-                          <option value="">Select Cargo Type</option>
-                          {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
-                            <option key={payloadType._id} value={payloadType.name}>
-                              {payloadType.name} ({payloadType.code})
-                            </option>
-                          ))}
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
+                {/* Cargo Section */}
+                {cargo && (
+                  <div id="cargoSection" className="mb-3">
+                    <label className="form-label">Cargo Cabins</label>
+                    <div id="cargoCabins">
+                      {cargoTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={val} onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}>
+                            <option value="">Select Cabin</option>
+                            {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
+                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                                {cabin.name || cabin.cabinName}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <button className="btn btn-sm btn-primary" id="addCargoType">+ Add Cargo Type</button>
-                  </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoTypes, cargoTypes, "General Cargo")}>+ Add Cabin</button>
 
-                  {/* Vehicle Section */}
-                  <div id="vehicleSection" className="mb-3 d-none">
-                    <label className="form-label">Vehicle Types</label>
-                    <div id="vehicleTypes">
-                      <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPayloadTypes}>
-                          <option value="">Select Vehicle Type</option>
-                          {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
-                            <option key={payloadType._id} value={payloadType.name}>
-                              {payloadType.name} ({payloadType.code})
-                            </option>
-                          ))}
-                        </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
-                      </div>
+                    <label className="form-label mt-3">Cargo Types</label>
+                    <div id="cargoPayloadTypes">
+                      {cargoPayloadTypes && cargoPayloadTypes.map((payloadType, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={payloadType.name || ""} onChange={e => {
+                            const updated = [...cargoPayloadTypes];
+                            updated[idx] = { ...payloadType, name: e.target.value };
+                            setCargoPayloadTypes(updated);
+                          }}>
+                            <option value="">Select Cargo Type</option>
+                            {cargoPayloadTypes && cargoPayloadTypes.map((type) => (
+                              <option key={type._id} value={type.name}>
+                                {type.name} ({type.code})
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setCargoPayloadTypes, cargoPayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <button className="btn btn-sm btn-primary" id="addVehicleType">+ Add Vehicle Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setCargoPayloadTypes, cargoPayloadTypes, {name: "", code: ""})}>+ Add Cargo Type</button>
                   </div>
+                )}
+
+                {/* Vehicle Section */}
+                {vehicle && (
+                  <div id="vehicleSection" className="mb-3">
+                    <label className="form-label">Vehicle Cabins</label>
+                    <div id="vehicleCabins">
+                      {vehicleTypes.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={val} onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}>
+                            <option value="">Select Cabin</option>
+                            {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
+                              <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                                {cabin.name || cabin.cabinName}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehicleTypes, vehicleTypes, "Car")}>+ Add Cabin</button>
+
+                    <label className="form-label mt-3">Vehicle Types</label>
+                    <div id="vehiclePayloadTypes">
+                      {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select className="form-select" value={payloadType.name || ""} onChange={e => {
+                            const updated = [...vehiclePayloadTypes];
+                            updated[idx] = { ...payloadType, name: e.target.value };
+                            setVehiclePayloadTypes(updated);
+                          }}>
+                            <option value="">Select Vehicle Type</option>
+                            {vehiclePayloadTypes && vehiclePayloadTypes.map((type) => (
+                              <option key={type._id} value={type.name}>
+                                {type.name} ({type.code})
+                              </option>
+                            ))}
+                          </select>
+                          <button type="button" className="btn btn-outline-danger remove-field" onClick={() => removeItem(setVehiclePayloadTypes, vehiclePayloadTypes, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setVehiclePayloadTypes, vehiclePayloadTypes, {name: "", code: ""})}>+ Add Vehicle Type</button>
+                  </div>
+                )}
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
