@@ -23,16 +23,8 @@ const getLoginRoleFromToken = () => {
   }
 }
 
-/**
- * AddCommissionPage
- * - keeps all original classes / ids
- * - attaches the same DOM-based handlers that the HTML page used:
- *   - checkbox toggles for passenger/cargo/vehicle sections
- *   - dynamic add/remove fields for cabins/types/routes
- * - this approach keeps generated DOM structure identical to HTML/CSS expectations
- */
 export default function AddCommissionPage() {
-  const [ruleName, setRuleName] = useState("");
+  const [commissionName, setCommissionName] = useState("");
   const [provider, setProvider] = useState("");
   const [appliedLayer, setAppliedLayer] = useState("");
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
@@ -44,7 +36,6 @@ export default function AddCommissionPage() {
   const [loginRole, setLoginRole] = useState(null);
   const [childPartners, setChildPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
-  const [loading2, setLoading2] = useState(false);
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [cabins, setCabins] = useState([]);
@@ -53,6 +44,22 @@ export default function AddCommissionPage() {
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
   const [loadingPayloadTypes, setLoadingPayloadTypes] = useState(false);
+
+  // service checkboxes
+  const [passenger, setPassenger] = useState(false);
+  const [cargo, setCargo] = useState(false);
+  const [vehicle, setVehicle] = useState(false);
+
+  // dynamic lists - cabins only (no types)
+  const [passengerCabins, setPassengerCabins] = useState(["Economy"]);
+  const [cargoCabins, setCargoCabins] = useState(["General Cargo"]);
+  const [vehicleCabins, setVehicleCabins] = useState(["Car"]);
+  const [routes, setRoutes] = useState([{ from: "Muscat", to: "Dubai" }]);
+
+  // helpers for add/remove
+  const addItem = (setter, arr, valueToAdd) => setter([...arr, valueToAdd]);
+  const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
+  const updateItem = (setter, arr, idx, val) => setter(arr.map((a,i) => i===idx ? val : a));
 
   // Determine login role from JWT token
   useEffect(() => {
@@ -67,7 +74,6 @@ export default function AddCommissionPage() {
         setLoading(true);
         
         if (loginRole === "user") {
-          // For user login: Get company name from user's company object and user's layer
           const response = await usersApi.getCurrentProfile();
           
           if (response.success && response.data) {
@@ -81,7 +87,6 @@ export default function AddCommissionPage() {
             console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
           }
         } else if (loginRole === "company") {
-          // For company login: Get company name and set layer as "Company"
           const response = await companyApi.getCompanyProfile();
           
           if (response.data) {
@@ -148,14 +153,13 @@ export default function AddCommissionPage() {
     fetchPorts();
   }, []);
 
-  // Fetch cabins from API - fetch all cabins for commission rules
+  // Fetch cabins from API
   useEffect(() => {
     const fetchCabins = async () => {
       try {
         setLoadingCabins(true);
         const response = await cabinsApi.getCabins(1, 100, "", "");
         
-        // Handle different response formats
         let cabinsList = [];
         if (response?.data?.cabins && Array.isArray(response.data.cabins)) {
           cabinsList = response.data.cabins;
@@ -184,19 +188,16 @@ export default function AddCommissionPage() {
       try {
         setLoadingPayloadTypes(true);
         
-        // Fetch passenger payload types
         const passengerResponse = await payloadTypesApi.getPayloadTypes(1, 100, "passenger");
         const passengerTypes = passengerResponse?.data?.payloadTypes || [];
         setPassengerPayloadTypes(passengerTypes);
         console.log("[v0] Passenger payload types loaded:", passengerTypes.length);
         
-        // Fetch cargo payload types
         const cargoResponse = await payloadTypesApi.getPayloadTypes(1, 100, "cargo");
         const cargoTypes = cargoResponse?.data?.payloadTypes || [];
         setCargoPayloadTypes(cargoTypes);
         console.log("[v0] Cargo payload types loaded:", cargoTypes.length);
         
-        // Fetch vehicle payload types
         const vehicleResponse = await payloadTypesApi.getPayloadTypes(1, 100, "vehicle");
         const vehicleTypes = vehicleResponse?.data?.payloadTypes || [];
         setVehiclePayloadTypes(vehicleTypes);
@@ -214,133 +215,16 @@ export default function AddCommissionPage() {
     fetchPayloadTypes();
   }, []);
 
-  useEffect(() => {
-    // Helper: toggle section visibility by class 'd-none'
-    const passengerCheckbox = document.getElementById("chkPassenger");
-    const cargoCheckbox = document.getElementById("chkCargo");
-    const vehicleCheckbox = document.getElementById("chkVehicle");
-
-    function toggleSection(cb, sectionId) {
-      if (!cb) return;
-      const section = document.getElementById(sectionId);
-      const handler = (e) => {
-        if (!section) return;
-        section.classList.toggle("d-none", !e.target.checked);
-      };
-      cb.addEventListener("change", handler);
-      // run initial state
-      handler({ target: cb });
-      return () => cb.removeEventListener("change", handler);
-    }
-
-    const cleanups = [];
-    cleanups.push(toggleSection(passengerCheckbox, "passengerSection"));
-    cleanups.push(toggleSection(cargoCheckbox, "cargoSection"));
-    cleanups.push(toggleSection(vehicleCheckbox, "vehicleSection"));
-
-    // addField function (same markup as original)
-    function addField(containerId, optionsHtml) {
-      const container = document.getElementById(containerId);
-      if (!container) return null;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `<select class="form-select">${optionsHtml}</select>
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-      return div;
-    }
-
-    // attach click handlers for add buttons
-    const addPassengerCabinBtn = document.getElementById("addPassengerCabin");
-    const addCargoCabinBtn = document.getElementById("addCargoCabin");
-    const addVehicleCabinBtn = document.getElementById("addVehicleCabin");
-    const addRouteBtn = document.getElementById("addRoute");
-
-    const onAddPassengerCabin = () =>
-      addField("passengerCabins", "<option>Economy</option><option>Business</option><option>First</option>");
-    const onAddCargoCabin = () =>
-      addField("cargoCabins", "<option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>");
-    const onAddVehicleCabin = () =>
-      addField("vehicleCabins", "<option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>");
-    const onAddRoute = () => {
-      const container = document.getElementById("routes");
-      if (!container) return;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `
-        <input type="text" class="form-control" placeholder="From">
-        <input type="text" class="form-control" placeholder="To">
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
+  const onSave = (e) => {
+    e.preventDefault();
+    const payload = {
+      commissionName, provider, appliedLayer, partnerSelection, value, valueType, visaType, effectiveDate,
+      services: { passenger, cargo, vehicle },
+      passengerCabins, cargoCabins, vehicleCabins, routes
     };
-
-    // Cabin dropdown handlers
-    const passengerCabinSelect = document.getElementById("passengerCabinSelect");
-    const cargoCabinSelect = document.getElementById("cargoCabinSelect");
-    const vehicleCabinSelect = document.getElementById("vehicleCabinSelect");
-
-    // Payload type dropdown handlers
-    const passengerPayloadTypeSelect = document.getElementById("passengerPayloadTypeSelect");
-    const cargoPayloadTypeSelect = document.getElementById("cargoPayloadTypeSelect");
-    const vehiclePayloadTypeSelect = document.getElementById("vehiclePayloadTypeSelect");
-
-    const onCabinSelectChange = (selectElem, containerId) => {
-      return (e) => {
-        if (e.target.value) {
-          addField(containerId, `<option>${e.target.value}</option>`);
-          e.target.value = "";
-        }
-      };
-    };
-
-    const onPayloadTypeSelectChange = (selectElem, containerId) => {
-      return (e) => {
-        if (e.target.value) {
-          addField(containerId, `<option>${e.target.value}</option>`);
-          e.target.value = "";
-        }
-      };
-    };
-
-    if (passengerCabinSelect) passengerCabinSelect.addEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
-    if (cargoCabinSelect) cargoCabinSelect.addEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoCabins"));
-    if (vehicleCabinSelect) vehicleCabinSelect.addEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleCabins"));
-    
-    if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
-    if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
-    if (vehiclePayloadTypeSelect) vehiclePayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(vehiclePayloadTypeSelect, "vehicleTypes"));
-
-    if (addPassengerCabinBtn) addPassengerCabinBtn.addEventListener("click", onAddPassengerCabin);
-    if (addCargoCabinBtn) addCargoCabinBtn.addEventListener("click", onAddCargoCabin);
-    if (addVehicleCabinBtn) addVehicleCabinBtn.addEventListener("click", onAddVehicleCabin);
-    if (addRouteBtn) addRouteBtn.addEventListener("click", onAddRoute);
-
-    // Remove field: delegate
-    function onDocumentClickForRemove(e) {
-      if (!(e.target instanceof Element)) return;
-      if (e.target.classList.contains("remove-field")) {
-        const parent = e.target.parentElement;
-        if (parent) parent.remove();
-      }
-    }
-    document.addEventListener("click", onDocumentClickForRemove);
-
-    // cleanup on unmount
-    return () => {
-      cleanups.forEach((fn) => fn && fn());
-      if (passengerCabinSelect) passengerCabinSelect.removeEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
-      if (cargoCabinSelect) cargoCabinSelect.removeEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoCabins"));
-      if (vehicleCabinSelect) vehicleCabinSelect.removeEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleCabins"));
-      if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
-      if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
-      if (vehiclePayloadTypeSelect) vehiclePayloadTypeSelect.removeEventListener("change", onPayloadTypeSelectChange(vehiclePayloadTypeSelect, "vehicleTypes"));
-      if (addPassengerCabinBtn) addPassengerCabinBtn.removeEventListener("click", onAddPassengerCabin);
-      if (addCargoCabinBtn) addCargoCabinBtn.removeEventListener("click", onAddCargoCabin);
-      if (addVehicleCabinBtn) addVehicleCabinBtn.removeEventListener("click", onAddVehicleCabin);
-      if (addRouteBtn) addRouteBtn.removeEventListener("click", onAddRoute);
-      document.removeEventListener("click", onDocumentClickForRemove);
-    };
-  }, []);
+    console.log("Save commission payload:", payload);
+    alert("Commission saved (demo). Check console.");
+  };
 
   return (
     <div className="main-wrapper">
@@ -348,133 +232,108 @@ export default function AddCommissionPage() {
       <Sidebar />
       <PageWrapper>
         <div className="content container-fluid">
-          <style>{`
-            .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-            .delete-route { cursor:pointer; color:red; font-size:18px; }
-          `}</style>
-
-          {/* Back Button */}
           <div className="mb-3">
-            <a href="/company/commission" className="btn btn-turquoise">
-              <i className="bi bi-arrow-left"></i> Back
-            </a>
+            <a href="/company/commission" className="btn btn-turquoise"><i className="bi bi-arrow-left"></i> Back</a>
           </div>
 
-          <div className="row g-4">
-            <div className="col-md-12">
-              <div className="card flex-fill">
-                <div className="card-header">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h5 className="card-title">Add New Commission Rule</h5>
+          <div className="card flex-fill">
+            <div className="card-header">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="card-title">Add New Commission</h5>
+              </div>
+            </div>
+            <div className="card-body">
+              <form onSubmit={onSave}>
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Commission Name</label>
+                    <input className="form-control" value={commissionName} onChange={e=>setCommissionName(e.target.value)} placeholder="Enter commission name" />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Provider</label>
+                    <input 
+                      className="form-control" 
+                      value={provider} 
+                      readOnly 
+                      placeholder={loading ? "Loading..." : "No provider"}
+                      disabled={loading}
+                      title="Provider is automatically set to your company/profile name"
+                    />
                   </div>
                 </div>
 
-                <div className="card-body">
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Rule Name</label>
-                      <input 
-                        type="text" 
-                        className="form-control" 
-                        placeholder="Enter rule name"
-                        value={ruleName}
-                        onChange={e => setRuleName(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Commission Provider</label>
-                      <input 
-                        className="form-control" 
-                        value={provider} 
-                        readOnly 
-                        placeholder={loading ? "Loading..." : "No provider"}
-                        disabled={loading}
-                        title="Provider is automatically set to your company/profile name"
-                      />
-                    </div>
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Applied to Layer</label>
+                    <select 
+                      className="form-select" 
+                      value={appliedLayer} 
+                      onChange={e=>setAppliedLayer(e.target.value)}
+                    >
+                      <option value="">Select Layer</option>
+                      <option value="Marine">Marine</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="Selling">Selling</option>
+                      <option value="company">company</option>
+                    </select>
                   </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Applied to Layer</label>
-                      <select 
-                        className="form-select"
-                        value={appliedLayer}
-                        onChange={e => setAppliedLayer(e.target.value)}
-                      >
-                        <option value="">Select Layer</option>
-                        <option value="Marine">Marine</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Selling">Selling</option>
-                        <option value="company">company</option>
-                      </select>
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">Partner</label>
-                      <select 
-                        className="form-select"
-                        value={partnerSelection}
-                        onChange={e => setPartnerSelection(e.target.value)}
-                        disabled={loadingPartners}
-                      >
-                        <option value="All Child Partners">All Child Partners</option>
-                        {childPartners && childPartners.map((partner) => (
-                          <option key={partner._id} value={partner.name}>
-                            {partner.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Partner</label>
+                    <select 
+                      className="form-select" 
+                      value={partnerSelection} 
+                      onChange={e=>setPartnerSelection(e.target.value)}
+                      disabled={loadingPartners}
+                    >
+                      <option value="All Child Partners">All Child Partners</option>
+                      {childPartners && childPartners.map((partner) => (
+                        <option key={partner._id} value={partner.name}>
+                          {partner.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                </div>
 
-
-
-                  <div className="mb-3">
-                    <label className="form-label">Commission Value</label>
-                    <div className="input-group">
-                      <input 
-                        type="number" 
-                        className="form-control" 
-                        id="valueInput" 
-                        placeholder="Enter value"
-                        value={value}
-                        onChange={e => setValue(e.target.value)}
-                      />
-                      <select 
-                        id="valueType" 
-                        style={{ border: "1px solid #dee2e6" }}
-                        value={valueType}
-                        onChange={e => setValueType(e.target.value)}
-                      >
-                        <option value="%">%</option>
-                        <option value="fixed">Fixed</option>
-                      </select>
-                    </div>
+                <div className="mb-3">
+                  <label className="form-label">Commission Value</label>
+                  <div className="input-group">
+                    <input type="number" className="form-control" value={value} onChange={e=>setValue(e.target.value)} placeholder="Enter value" />
+                    <select value={valueType} onChange={e=>setValueType(e.target.value)} className="form-select" style={{ maxWidth: 110 }}>
+                      <option value="%">%</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
                   </div>
+                </div>
 
-                  <div className="mb-3">
-                    <label className="form-label d-block">Service Types</label>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkPassenger" />
-                      <label className="form-check-label" htmlFor="chkPassenger">Passenger</label>
-                    </div>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkCargo" />
-                      <label className="form-check-label" htmlFor="chkCargo">Cargo</label>
-                    </div>
-                    <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkVehicle" />
-                      <label className="form-check-label" htmlFor="chkVehicle">Vehicle</label>
-                    </div>
+                <div className="mb-3">
+                  <label className="form-label d-block">Service Types</label>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="checkbox" checked={passenger} onChange={e=>setPassenger(e.target.checked)} id="chkPassenger" />
+                    <label className="form-check-label" htmlFor="chkPassenger">Passenger</label>
                   </div>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="checkbox" checked={cargo} onChange={e=>setCargo(e.target.checked)} id="chkCargo" />
+                    <label className="form-check-label" htmlFor="chkCargo">Cargo</label>
+                  </div>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="checkbox" checked={vehicle} onChange={e=>setVehicle(e.target.checked)} id="chkVehicle" />
+                    <label className="form-check-label" htmlFor="chkVehicle">Vehicle</label>
+                  </div>
+                </div>
 
-                  {/* Passenger Section (hidden by default with d-none) */}
-                  <div id="passengerSection" className="mb-3 d-none">
+                {/* Passenger Section */}
+                {passenger && (
+                  <div id="passengerSection" className="mb-3">
                     <label className="form-label">Select Cabin</label>
                     <select 
                       className="form-select mb-3" 
-                      id="passengerCabinSelect"
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setPassengerCabins, passengerCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
                       disabled={loadingCabins}
                     >
                       <option value="">Select Cabin to Add</option>
@@ -488,7 +347,12 @@ export default function AddCommissionPage() {
                     <label className="form-label">Select Payload Type</label>
                     <select 
                       className="form-select mb-3" 
-                      id="passengerPayloadTypeSelect"
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setPassengerCabins, passengerCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
                       disabled={loadingPayloadTypes}
                     >
                       <option value="">Select Payload Type to Add</option>
@@ -500,16 +364,30 @@ export default function AddCommissionPage() {
                     </select>
 
                     <label className="form-label">Passenger Cabins</label>
-                    <div id="passengerCabins"></div>
-                    <button className="btn btn-sm btn-primary" id="addPassengerCabin">+ Add Cabin</button>
+                    <div id="passengerCabins">
+                      {passengerCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setPassengerCabins, passengerCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setPassengerCabins, passengerCabins, "Economy")}>+ Add Cabin</button>
                   </div>
+                )}
 
-                  {/* Cargo Section */}
-                  <div id="cargoSection" className="mb-3 d-none">
+                {/* Cargo Section */}
+                {cargo && (
+                  <div id="cargoSection" className="mb-3">
                     <label className="form-label">Select Cabin</label>
                     <select 
                       className="form-select mb-3" 
-                      id="cargoCabinSelect"
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setCargoCabins, cargoCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
                       disabled={loadingCabins}
                     >
                       <option value="">Select Cabin to Add</option>
@@ -523,7 +401,12 @@ export default function AddCommissionPage() {
                     <label className="form-label">Select Payload Type</label>
                     <select 
                       className="form-select mb-3" 
-                      id="cargoPayloadTypeSelect"
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setCargoCabins, cargoCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
                       disabled={loadingPayloadTypes}
                     >
                       <option value="">Select Payload Type to Add</option>
@@ -535,16 +418,30 @@ export default function AddCommissionPage() {
                     </select>
 
                     <label className="form-label">Cargo Cabins</label>
-                    <div id="cargoCabins"></div>
-                    <button className="btn btn-sm btn-primary" id="addCargoCabin">+ Add Cabin</button>
+                    <div id="cargoCabins">
+                      {cargoCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setCargoCabins, cargoCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setCargoCabins, cargoCabins, "General Cargo")}>+ Add Cabin</button>
                   </div>
+                )}
 
-                  {/* Vehicle Section */}
-                  <div id="vehicleSection" className="mb-3 d-none">
+                {/* Vehicle Section */}
+                {vehicle && (
+                  <div id="vehicleSection" className="mb-3">
                     <label className="form-label">Select Cabin</label>
                     <select 
                       className="form-select mb-3" 
-                      id="vehicleCabinSelect"
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setVehicleCabins, vehicleCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
                       disabled={loadingCabins}
                     >
                       <option value="">Select Cabin to Add</option>
@@ -558,7 +455,12 @@ export default function AddCommissionPage() {
                     <label className="form-label">Select Payload Type</label>
                     <select 
                       className="form-select mb-3" 
-                      id="vehiclePayloadTypeSelect"
+                      onChange={e => {
+                        if (e.target.value) {
+                          addItem(setVehicleCabins, vehicleCabins, e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
                       disabled={loadingPayloadTypes}
                     >
                       <option value="">Select Payload Type to Add</option>
@@ -570,42 +472,58 @@ export default function AddCommissionPage() {
                     </select>
 
                     <label className="form-label">Vehicle Cabins</label>
-                    <div id="vehicleCabins"></div>
-                    <button className="btn btn-sm btn-primary" id="addVehicleCabin">+ Add Cabin</button>
-                  </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Visa Type</label>
-                      <select 
-                        className="form-select"
-                        value={visaType}
-                        onChange={e => setVisaType(e.target.value)}
-                      >
-                        <option value="">Select Visa Type</option>
-                        <option value="Tourist">Tourist</option>
-                        <option value="Transit">Transit</option>
-                        <option value="Business">Business</option>
-                        <option value="Student">Student</option>
-                        <option value="Work">Work</option>
-                      </select>
+                    <div id="vehicleCabins">
+                      {vehicleCabins.map((val, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <input type="text" className="form-control" value={val} readOnly />
+                          <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setVehicleCabins, vehicleCabins, idx)}>&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Effective Date</label>
-                      <input 
-                        type="date" 
-                        className="form-control"
-                        value={effectiveDate}
-                        onChange={e => setEffectiveDate(e.target.value)}
-                      />
-                    </div>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setVehicleCabins, vehicleCabins, "Car")}>+ Add Cabin</button>
                   </div>
+                )}
 
-                  <div className="mb-3">
-                    <label className="form-label">Route</label>
-                    <div id="routes">
-                      <div className="input-group mb-2">
-                        <select className="form-select" disabled={loadingPorts}>
+                {/* Visa & Date */}
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Visa Type</label>
+                    <select 
+                      className="form-select"
+                      value={visaType}
+                      onChange={e => setVisaType(e.target.value)}
+                    >
+                      <option value="">Select Visa Type</option>
+                      <option value="Tourist">Tourist</option>
+                      <option value="Transit">Transit</option>
+                      <option value="Business">Business</option>
+                      <option value="Student">Student</option>
+                      <option value="Work">Work</option>
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Effective Date</label>
+                    <input 
+                      type="date" 
+                      className="form-control"
+                      value={effectiveDate}
+                      onChange={e => setEffectiveDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Routes */}
+                <div className="mb-3">
+                  <label className="form-label">Route</label>
+                  <div id="routes">
+                    {routes.map((r, idx) => (
+                      <div className="input-group mb-2" key={idx}>
+                        <select 
+                          className="form-select" 
+                          value={r.from} 
+                          onChange={e=>updateItem(setRoutes, routes, idx, { ...r, from: e.target.value })}
+                          disabled={loadingPorts}
+                        >
                           <option value="">From</option>
                           {ports && ports.map((port) => (
                             <option key={port._id} value={port.name}>
@@ -613,7 +531,12 @@ export default function AddCommissionPage() {
                             </option>
                           ))}
                         </select>
-                        <select className="form-select" disabled={loadingPorts}>
+                        <select 
+                          className="form-select" 
+                          value={r.to} 
+                          onChange={e=>updateItem(setRoutes, routes, idx, { ...r, to: e.target.value })}
+                          disabled={loadingPorts}
+                        >
                           <option value="">To</option>
                           {ports && ports.map((port) => (
                             <option key={port._id} value={port.name}>
@@ -621,21 +544,21 @@ export default function AddCommissionPage() {
                             </option>
                           ))}
                         </select>
-                        <button className="btn btn-outline-danger remove-field">&times;</button>
+                        <button type="button" className="btn btn-outline-danger" onClick={()=>removeItem(setRoutes, routes, idx)}>&times;</button>
                       </div>
-                    </div>
-                    <a className="btn btn-sm btn-primary" id="addRoute" style={{ cursor: "pointer" }}>+ Add Route</a>
+                    ))}
                   </div>
-
-                  <div className="d-flex justify-content-end">
-                    <button className="btn btn-secondary me-2">Cancel</button>
-                    <button className="btn btn-turquoise">Save Rule</button>
-                  </div>
-
+                  <button type="button" className="btn btn-sm btn-primary" onClick={()=>addItem(setRoutes, routes, { from: "", to: "" })}>+ Add Route</button>
                 </div>
-              </div>
+
+                <div className="d-flex justify-content-end">
+                  <button type="button" className="btn btn-secondary me-2" onClick={() => window.history.back()}>Cancel</button>
+                  <button className="btn btn-turquoise">Save Commission</button>
+                </div>
+              </form>
             </div>
           </div>
+
         </div>
       </PageWrapper>
     </div>
