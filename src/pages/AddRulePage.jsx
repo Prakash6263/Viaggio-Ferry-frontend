@@ -386,28 +386,13 @@ export default function AddRulePage() {
         return;
       }
 
-      // Get company ID from JWT token
-      let companyId = "";
-      try {
-        const token = localStorage.getItem("authToken");
-        if (token) {
-          const decoded = JSON.parse(atob(token.split(".")[1]));
-          companyId = decoded.companyId || decoded.company || "";
-        }
-      } catch (error) {
-        console.error("[v0] Error decoding company ID from token:", error);
-      }
-
       // Build payload according to API spec and backend model
       const payload = {
-        company: companyId,
         ruleName,
+        provider: providerId,
         providerType,
-        providerCompany: providerType === "Company" ? providerId : null,
-        providerPartner: providerType === "Partner" ? providerId : null,
         appliedLayer,
         partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
-        partner: partnerSelection !== "All Child Partners" ? partnerSelection : null,
         ruleType,
         ruleValue: parseInt(value),
         valueType: convertedValueType,
