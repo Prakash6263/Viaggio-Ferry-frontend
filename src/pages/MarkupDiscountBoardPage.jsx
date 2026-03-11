@@ -1,81 +1,87 @@
-// import React, { useEffect, useRef } from "react";
-// import Header from "../components/layout/Header";
-// import { Sidebar } from "../components/layout/Sidebar";
-// import { PageWrapper } from "../components/layout/PageWrapper";
-// import { Link } from "react-router-dom";
-// /**
-//  * MarkupDiscountBoardPage
-//  * - exact markup / classes preserved from markup-discountboard.html
-//  * - safe DataTable init: only init if not already initialized
-//  * - theme toggle wired to update documentElement attribute (same as html)
-//  */
-// export default function MarkupDiscountBoardPage() {
-//   const tableRef = useRef(null);
-//   const themeBtnRef = useRef(null);
+import React, { useEffect, useState } from "react";
+import { CirclesWithBar } from "react-loader-spinner";
+import Header from "../components/layout/Header";
+import { Sidebar } from "../components/layout/Sidebar";
+import { PageWrapper } from "../components/layout/PageWrapper";
+import { Link } from "react-router-dom";
+import { markupDiscountApi } from "../api/markupDiscountApi";
+import Swal from "sweetalert2";
+import CanDisable from "../components/CanDisable";
+import Can from "../components/Can";
 
-//   useEffect(() => {
-//     const el = tableRef.current;
-//     if (!el) return;
+/**
+ * MarkupDiscountBoardPage
+ * - Fetches markup/discount rules from API
+ * - Displays data in Rules List table
+ * - Uses CirclesWithBar loader like Currency page
+ */
+export default function MarkupDiscountBoardPage() {
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-//     // If DataTable already attached to element, skip re-initializing.
-//     // This prevents double-init when template script is also included.
-//     if (!el._dt && window.DataTable) {
-//       try {
-//         el._dt = new window.DataTable(el, {});
-//       } catch (err) {
-//         console.error("DataTable init error:", err);
-//       }
-//     }
+  const fetchRules = async () => {
+    try {
+      setLoading(true);
+      console.log("[v0] Fetching markup/discount rules...");
+      const response = await markupDiscountApi.getRules(page, limit);
+      console.log("[v0] API Response:", response);
 
-//     // cleanup not destroying here intentionally: if public script created DataTable,
-//     // we avoid destroying it because it may be managed elsewhere.
-//     return () => {
-//       // only destroy if we created it (we stored it on el._dt)
-//       try {
-//         if (el && el._dt && typeof el._dt.destroy === "function") {
-//           // destroy only if element still connected
-//           if (el.isConnected || document.contains(el)) {
-//             el._dt.destroy();
-//           } else {
-//             try { el._dt.destroy(); } catch (e) { /* ignore */ }
-//           }
-//           el._dt = null;
-//         }
-//       } catch (e) {
-//         // defensive
-//       }
-//     };
-//   }, []);
+      if (response.success && response.data) {
+        // Transform API response to match table format
+        const transformedRules = response.data.map((rule) => ({
+          id: rule._id,
+          ruleName: rule.ruleName,
+          ruleType: rule.ruleType,
+          ruleValue: rule.ruleValue,
+          valueType: rule.valueType,
+          appliedLayer: rule.appliedLayer,
+          status: rule.status,
+          createdAt: rule.createdAt,
+          services: getServices(rule.serviceDetails),
+          providerType: rule.providerType,
+          providerName: rule.providerPartner?.name || rule.providerCompany?.companyName || "N/A",
+          visaType: rule.visaType,
+        }));
+        setRules(transformedRules);
+        setError(null);
+      } else {
+        setRules([]);
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching rules:", err);
+      setError(err.message || "Failed to load markup/discount rules");
+      setRules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-//   useEffect(() => {
-//     // theme toggle behavior, matching the inline script in original HTML
-//     const btn = themeBtnRef.current;
-//     if (!btn) return;
-//     const html = document.documentElement;
+  // Helper function to extract service types
+  const getServices = (serviceDetails) => {
+    const services = [];
+    if (serviceDetails?.passenger?.length > 0) services.push("Passenger");
+    if (serviceDetails?.cargo?.length > 0) services.push("Cargo");
+    if (serviceDetails?.vehicle?.length > 0) services.push("Vehicle");
+    return services;
+  };
 
-//     // initialize icon
-//     if (localStorage.getItem("theme") === "dark") {
-//       html.setAttribute("data-theme", "dark");
-//       btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
-//     } else {
-//       btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
-//     }
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
 
-//     const onClick = () => {
-//       if (html.getAttribute("data-theme") === "dark") {
-//         html.removeAttribute("data-theme");
-//         localStorage.setItem("theme", "light");
-//         btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
-//       } else {
-//         html.setAttribute("data-theme", "dark");
-//         localStorage.setItem("theme", "dark");
-//         btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
-//       }
-//     };
-
-//     btn.addEventListener("click", onClick);
-//     return () => btn.removeEventListener("click", onClick);
-//   }, []);
+  useEffect(() => {
+    fetchRules();
+  }, [page, limit]);
 
 //   return (
 //     <div className="main-wrapper">
@@ -539,6 +545,49 @@ export default function MarkupDiscountBoardPage() {
     return () => btn.removeEventListener("click", onClick);
   }, []);
 
+  const handleEdit = (ruleId) => {
+    // Navigate to edit page
+    window.location.href = `/company/markup/edit-rule/${ruleId}`;
+  };
+
+  const handleDelete = async (ruleId) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setLoading(true);
+        const res = await markupDiscountApi.deleteRule(ruleId);
+        if (res.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Deleted!",
+            text: res.message || "Rule has been deleted successfully.",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+          fetchRules();
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err.message || "Failed to delete rule",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="main-wrapper">
       {/* Header */}
@@ -560,7 +609,7 @@ export default function MarkupDiscountBoardPage() {
                     <button className="btn btn-secondary me-2">Export</button>
                   </li>
                   <li>
-                    <Can action="create">
+                    <Can action="create" path="/company/markup">
                       <Link className="btn btn-turquoise" to="/company/markup/add-rule">
                         <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>Add New Rule
                       </Link>
@@ -692,20 +741,21 @@ export default function MarkupDiscountBoardPage() {
                     <div className="tab-pane fade show active" id="rule-list">
                       <div className="row mb-3 g-2">
                         <div className="col-md-3">
-                          <input type="text" className="form-control" placeholder="Search commission rules..." />
+                          <input type="text" className="form-control" placeholder="Search rules..." />
                         </div>
                         <div className="col-md-3">
                           <select className="form-select">
-                            <option>All Companies</option>
-                            <option>Company A</option>
-                            <option>Company B</option>
+                            <option>All Providers</option>
+                            <option>Partner</option>
+                            <option>Company</option>
                           </select>
                         </div>
                         <div className="col-md-3">
                           <select className="form-select">
                             <option>All Layers</option>
-                            <option>Layer 1</option>
-                            <option>Layer 2</option>
+                            <option>Marine Agent</option>
+                            <option>Commercial Agent</option>
+                            <option>Selling Agent</option>
                           </select>
                         </div>
                         <div className="col-md-3">
@@ -717,136 +767,110 @@ export default function MarkupDiscountBoardPage() {
                         </div>
                       </div>
 
-                      <div className="table-responsive">
-                        <table ref={tableRef} id="example" className="table table-striped" style={{ width: "100%" }}>
-                          <thead>
-                            <tr>
-                              <th><input type="checkbox" /></th>
-                              <th>Rule Name</th>
-                              <th>Type</th>
-                              <th>Value</th>
-                              <th>Applied To</th>
-                              <th>Services</th>
-                              <th>Status</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td><input type="checkbox" /></td>
-                              <td>
-                                Marine Agent Markup <div className="rule-sub">Created: 12 Aug 2023</div>
-                              </td>
-                              <td><span className="badge badge-markup">Markup</span></td>
-                              <td>5%</td>
-                              <td>Company → Marine Agent</td>
-                              <td>
-                                <span className="service-badge">Passenger</span>
-                                <span className="service-badge">Cargo</span>
-                                <span className="service-badge">Vehicle</span>
-                              </td>
-                              <td><span className="badge badge-status-active">Active</span></td>
-                              <td className="action-icons">
-                                <CanDisable action="update">
-                                  <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
-                                </CanDisable>
-                                <CanDisable action="delete">
-                                  <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
-                                </CanDisable>
-                              </td>
-                            </tr>
+                      {loading && (
+                        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+                          <CirclesWithBar
+                            height="100"
+                            width="100"
+                            color="#05468f"
+                            outerCircleColor="#05468f"
+                            innerCircleColor="#05468f"
+                            barColor="#05468f"
+                            ariaLabel="circles-with-bar-loading"
+                            visible={true}
+                          />
+                        </div>
+                      )}
 
-                            <tr>
-                              <td><input type="checkbox" /></td>
-                              <td>
-                                Commercial Agent Discount <div className="rule-sub">Created: 10 Aug 2023</div>
-                              </td>
-                              <td><span className="badge badge-discount">Discount</span></td>
-                              <td>3%</td>
-                              <td>Marine Agent → Commercial Agent</td>
-                              <td>
-                                <span className="service-badge">Passenger</span>
-                                <span className="service-badge">Vehicle</span>
-                              </td>
-                              <td><span className="badge badge-status-active">Active</span></td>
-                              <td className="action-icons">
-                                <CanDisable action="update">
-                                  <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
-                                </CanDisable>
-                                <CanDisable action="delete">
-                                  <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
-                                </CanDisable>
-                              </td>
-                            </tr>
+                      {error && (
+                        <div className="alert alert-danger" role="alert">
+                          {error}
+                        </div>
+                      )}
 
-                            <tr>
-                              <td><input type="checkbox" /></td>
-                              <td>
-                                Selling Agent Cargo Markup <div className="rule-sub">Created: 05 Aug 2023</div>
-                              </td>
-                              <td><span className="badge badge-markup">Markup</span></td>
-                              <td>10%</td>
-                              <td>Commercial Agent → Selling Agent</td>
-                              <td>
-                                <span className="service-badge">Cargo</span>
-                              </td>
-                              <td><span className="badge badge-status-active">Active</span></td>
-                              <td className="action-icons">
-                                <CanDisable action="update">
-                                  <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
-                                </CanDisable>
-                                <CanDisable action="delete">
-                                  <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
-                                </CanDisable>
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td><input type="checkbox" /></td>
-                              <td>
-                                Salesman Passenger Discount <div className="rule-sub">Created: 01 Aug 2023</div>
-                              </td>
-                              <td><span className="badge badge-discount">Discount</span></td>
-                              <td>2%</td>
-                              <td>Selling Agent → Salesman</td>
-                              <td>
-                                <span className="service-badge">Passenger</span>
-                              </td>
-                              <td><span className="badge badge-status-pending">Pending</span></td>
-                              <td className="action-icons">
-                                <CanDisable action="update">
-                                  <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
-                                </CanDisable>
-                                <CanDisable action="delete">
-                                  <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
-                                </CanDisable>
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td><input type="checkbox" /></td>
-                              <td>
-                                Company A Vehicle Markup <div className="rule-sub">Created: 28 Jul 2023</div>
-                              </td>
-                              <td><span className="badge badge-markup">Markup</span></td>
-                              <td>7%</td>
-                              <td>Company → Marine Agent</td>
-                              <td>
-                                <span className="service-badge">Vehicle</span>
-                              </td>
-                              <td><span className="badge badge-status-active">Active</span></td>
-                              <td className="action-icons">
-                                <CanDisable action="update">
-                                  <button className="btn btn-sm btn-primary-navy"><i className="bi bi-pencil-square"></i></button>
-                                </CanDisable>
-                                <CanDisable action="delete">
-                                  <button className="btn btn-sm btn-danger"><i className="bi bi-trash3"></i></button>
-                                </CanDisable>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                      {!loading && !error && (
+                        <div className="table-responsive">
+                          <table className="table table-striped" style={{ width: "100%" }}>
+                            <thead>
+                              <tr>
+                                <th><input type="checkbox" /></th>
+                                <th>Rule Name</th>
+                                <th>Type</th>
+                                <th>Value</th>
+                                <th>Applied To</th>
+                                <th>Services</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rules && rules.length > 0 ? (
+                                rules.map((rule) => (
+                                  <tr key={rule.id}>
+                                    <td><input type="checkbox" /></td>
+                                    <td>
+                                      {rule.ruleName}
+                                      <div className="rule-sub">Created: {formatDate(rule.createdAt)}</div>
+                                    </td>
+                                    <td>
+                                      <span className={`badge ${rule.ruleType === "Markup" ? "badge-markup" : "badge-discount"}`}>
+                                        {rule.ruleType}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      {rule.ruleValue}
+                                      {rule.valueType === "percentage" ? "%" : ""}
+                                    </td>
+                                    <td>{rule.appliedLayer || "N/A"}</td>
+                                    <td>
+                                      {rule.services && rule.services.length > 0 ? (
+                                        rule.services.map((service) => (
+                                          <span key={service} className="service-badge me-1">
+                                            {service}
+                                          </span>
+                                        ))
+                                      ) : (
+                                        <span>N/A</span>
+                                      )}
+                                    </td>
+                                    <td>
+                                      <span className={`badge ${rule.status === "Active" ? "badge-status-active" : "badge-status-pending"}`}>
+                                        {rule.status}
+                                      </span>
+                                    </td>
+                                    <td className="action-icons">
+                                      <CanDisable action="update" path="/company/markup">
+                                        <button
+                                          className="btn btn-sm btn-primary-navy"
+                                          onClick={() => handleEdit(rule.id)}
+                                          title="Edit Rule"
+                                        >
+                                          <i className="bi bi-pencil-square"></i>
+                                        </button>
+                                      </CanDisable>
+                                      <CanDisable action="delete" path="/company/markup">
+                                        <button
+                                          className="btn btn-sm btn-danger ms-2"
+                                          onClick={() => handleDelete(rule.id)}
+                                          title="Delete Rule"
+                                        >
+                                          <i className="bi bi-trash3"></i>
+                                        </button>
+                                      </CanDisable>
+                                    </td>
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr>
+                                  <td colSpan="8" className="text-center py-4">
+                                    No markup/discount rules found
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
 
                     {/* HISTORY TAB */}
