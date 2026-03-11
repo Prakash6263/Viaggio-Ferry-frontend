@@ -321,6 +321,17 @@ export default function AddRulePage() {
         return;
       }
 
+      // Validate at least one route exists
+      if (!routes || routes.length === 0 || routes.some(r => !r.from || !r.to)) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "At least one complete route is required (both From and To ports)",
+          confirmButtonColor: "#17a2b8"
+        });
+        return;
+      }
+
       // Build service details according to API spec
       const serviceDetails = {
         passenger: passenger ? passengerTypes.map((type) => {
@@ -349,15 +360,17 @@ export default function AddRulePage() {
         }) : []
       };
 
-      // Build routes according to API spec
-      const routesData = routes.map((route) => {
-        const fromPort = ports.find(p => p.name === route.from);
-        const toPort = ports.find(p => p.name === route.to);
-        return {
-          routeFrom: fromPort?._id || "",
-          routeTo: toPort?._id || ""
-        };
-      });
+      // Build routes according to API spec - only include valid routes
+      const routesData = routes
+        .filter(route => route.from && route.to)
+        .map((route) => {
+          const fromPort = ports.find(p => p.name === route.from);
+          const toPort = ports.find(p => p.name === route.to);
+          return {
+            routeFrom: fromPort?._id || "",
+            routeTo: toPort?._id || ""
+          };
+        });
 
       // Use the currently logged-in user's ID as provider
       if (!currentUserId) {
@@ -371,7 +384,12 @@ export default function AddRulePage() {
       }
 
       const providerId = currentUserId;
-      let providerType = "User";
+      
+      // Determine providerType based on login role
+      let providerType = "Company";
+      if (loginRole === "partner") {
+        providerType = "Partner";
+      }
 
       // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
       const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
@@ -405,6 +423,14 @@ export default function AddRulePage() {
         status: "Active"
       };
 
+      // Add partner ID only if partnerScope is SpecificPartner
+      if (partnerSelection !== "All Child Partners") {
+        const selectedPartner = childPartners.find(p => p.name === partnerSelection);
+        if (selectedPartner) {
+          payload.partner = selectedPartner._id;
+        }
+      }
+
       console.log("[v0] Submitting markup/discount rule:", payload);
 
       try {
@@ -418,7 +444,7 @@ export default function AddRulePage() {
             text: response.message || "Markup/Discount rule created successfully",
             confirmButtonColor: "#17a2b8"
           }).then(() => {
-            window.history.back();
+            window.location.href = "/company/markup";
           });
         }
       } catch (error) {
