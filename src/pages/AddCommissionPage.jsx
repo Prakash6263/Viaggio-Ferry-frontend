@@ -65,32 +65,32 @@ export default function AddCommissionPage() {
     const initializeUserData = async () => {
       try {
         setLoading(true);
-        
+
         if (loginRole === "user") {
           // For user login: Get company name from user's company object and user's layer
           const response = await usersApi.getCurrentProfile();
-          
+
           if (response.success && response.data) {
             const userData = response.data;
             const providerName = userData.company?.companyName || "Unknown";
             const userLayer = userData.layer || userData.role || "Company";
-            
+
             setProvider(providerName);
             setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
-            
+
             console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer);
           }
         } else if (loginRole === "company") {
           // For company login: Get company name and set layer as "Company"
           const response = await companyApi.getCompanyProfile();
-          
+
           if (response.data) {
             const companyData = response.data;
             const providerName = companyData.companyName || "Unknown";
-            
+
             setProvider(providerName);
             setAppliedLayer("Company");
-            
+
             console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company");
           }
         }
@@ -100,7 +100,7 @@ export default function AddCommissionPage() {
         setLoading(false);
       }
     };
-    
+
     if (loginRole) {
       initializeUserData();
     }
@@ -112,7 +112,7 @@ export default function AddCommissionPage() {
       try {
         setLoadingPartners(true);
         const response = await partnerApi.getChildPartners(1, 100, "Active");
-        
+
         if (response.success && response.data) {
           setChildPartners(response.data);
           console.log("[v0] Child partners loaded:", response.data.length, "partners");
@@ -123,7 +123,7 @@ export default function AddCommissionPage() {
         setLoadingPartners(false);
       }
     };
-    
+
     fetchChildPartners();
   }, []);
 
@@ -133,7 +133,7 @@ export default function AddCommissionPage() {
       try {
         setLoadingPorts(true);
         const response = await portsApi.getPorts(1, 100);
-        
+
         if (response.success && response.data && response.data.ports) {
           setPorts(response.data.ports);
           console.log("[v0] Ports loaded:", response.data.ports.length, "ports");
@@ -144,7 +144,7 @@ export default function AddCommissionPage() {
         setLoadingPorts(false);
       }
     };
-    
+
     fetchPorts();
   }, []);
 
@@ -154,7 +154,7 @@ export default function AddCommissionPage() {
       try {
         setLoadingCabins(true);
         const response = await cabinsApi.getCabins(1, 100, "", "");
-        
+
         // Handle different response formats
         let cabinsList = [];
         if (response?.data?.cabins && Array.isArray(response.data.cabins)) {
@@ -164,7 +164,7 @@ export default function AddCommissionPage() {
         } else if (Array.isArray(response)) {
           cabinsList = response;
         }
-        
+
         setCabins(cabinsList);
         console.log("[v0] Cabins loaded:", cabinsList.length, "cabins");
       } catch (error) {
@@ -174,7 +174,7 @@ export default function AddCommissionPage() {
         setLoadingCabins(false);
       }
     };
-    
+
     fetchCabins();
   }, []);
 
@@ -183,19 +183,19 @@ export default function AddCommissionPage() {
     const fetchPayloadTypes = async () => {
       try {
         setLoadingPayloadTypes(true);
-        
+
         // Fetch passenger payload types
         const passengerResponse = await payloadTypesApi.getPayloadTypes(1, 100, "passenger");
         const passengerTypes = passengerResponse?.data?.payloadTypes || [];
         setPassengerPayloadTypes(passengerTypes);
         console.log("[v0] Passenger payload types loaded:", passengerTypes.length);
-        
+
         // Fetch cargo payload types
         const cargoResponse = await payloadTypesApi.getPayloadTypes(1, 100, "cargo");
         const cargoTypes = cargoResponse?.data?.payloadTypes || [];
         setCargoPayloadTypes(cargoTypes);
         console.log("[v0] Cargo payload types loaded:", cargoTypes.length);
-        
+
         // Fetch vehicle payload types
         const vehicleResponse = await payloadTypesApi.getPayloadTypes(1, 100, "vehicle");
         const vehicleTypes = vehicleResponse?.data?.payloadTypes || [];
@@ -210,7 +210,7 @@ export default function AddCommissionPage() {
         setLoadingPayloadTypes(false);
       }
     };
-    
+
     fetchPayloadTypes();
   }, []);
 
@@ -257,50 +257,14 @@ export default function AddCommissionPage() {
     const addVehicleTypeBtn = document.getElementById("addVehicleType");
     const addRouteBtn = document.getElementById("addRoute");
 
-    const onAddPassengerCabin = () => {
-      const container = document.getElementById("passengerCabins");
-      if (!container) return;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `<select class="form-select">
-        <option value="">Select Cabin</option>
-      </select>
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-    };
-    const onAddPassengerType = () => {
-      const container = document.getElementById("passengerTypes");
-      if (!container) return;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `<select class="form-select">
-        <option value="">Select Payload Type</option>
-      </select>
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-    };
-    const onAddCargoType = () => {
-      const container = document.getElementById("cargoTypes");
-      if (!container) return;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `<select class="form-select">
-        <option value="">Select Payload Type</option>
-      </select>
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-    };
-    const onAddVehicleType = () => {
-      const container = document.getElementById("vehicleTypes");
-      if (!container) return;
-      const div = document.createElement("div");
-      div.className = "input-group mb-2";
-      div.innerHTML = `<select class="form-select">
-        <option value="">Select Payload Type</option>
-      </select>
-        <button class="btn btn-outline-danger remove-field">&times;</button>`;
-      container.appendChild(div);
-    };
+    const onAddPassengerCabin = () =>
+      addField("passengerCabins", "<option>Economy</option><option>Business</option><option>First</option>");
+    const onAddPassengerType = () =>
+      addField("passengerTypes", "<option>Adult</option><option>Child</option><option>Infant</option><option>Student</option><option>Senior</option>");
+    const onAddCargoType = () =>
+      addField("cargoTypes", "<option>General Cargo</option><option>Dangerous Goods</option><option>Perishable Goods</option><option>Livestock</option><option>Refrigerated</option>");
+    const onAddVehicleType = () =>
+      addField("vehicleTypes", "<option>Car</option><option>Truck</option><option>Motorcycle</option><option>RV</option><option>Trailer</option>");
     const onAddRoute = () => {
       const container = document.getElementById("routes");
       if (!container) return;
@@ -344,7 +308,7 @@ export default function AddCommissionPage() {
     if (passengerCabinSelect) passengerCabinSelect.addEventListener("change", onCabinSelectChange(passengerCabinSelect, "passengerCabins"));
     if (cargoCabinSelect) cargoCabinSelect.addEventListener("change", onCabinSelectChange(cargoCabinSelect, "cargoTypes"));
     if (vehicleCabinSelect) vehicleCabinSelect.addEventListener("change", onCabinSelectChange(vehicleCabinSelect, "vehicleTypes"));
-    
+
     if (passengerPayloadTypeSelect) passengerPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(passengerPayloadTypeSelect, "passengerTypes"));
     if (cargoPayloadTypeSelect) cargoPayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(cargoPayloadTypeSelect, "cargoTypes"));
     if (vehiclePayloadTypeSelect) vehiclePayloadTypeSelect.addEventListener("change", onPayloadTypeSelectChange(vehiclePayloadTypeSelect, "vehicleTypes"));
@@ -414,9 +378,9 @@ export default function AddCommissionPage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Rule Name</label>
-                      <input 
-                        type="text" 
-                        className="form-control" 
+                      <input
+                        type="text"
+                        className="form-control"
                         placeholder="Enter rule name"
                         value={ruleName}
                         onChange={e => setRuleName(e.target.value)}
@@ -424,10 +388,10 @@ export default function AddCommissionPage() {
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Commission Provider</label>
-                      <input 
-                        className="form-control" 
-                        value={provider} 
-                        readOnly 
+                      <input
+                        className="form-control"
+                        value={provider}
+                        readOnly
                         placeholder={loading ? "Loading..." : "No provider"}
                         disabled={loading}
                         title="Provider is automatically set to your company/profile name"
@@ -438,7 +402,7 @@ export default function AddCommissionPage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied to Layer</label>
-                      <select 
+                      <select
                         className="form-select"
                         value={appliedLayer}
                         onChange={e => setAppliedLayer(e.target.value)}
@@ -453,7 +417,7 @@ export default function AddCommissionPage() {
 
                     <div className="col-md-6">
                       <label className="form-label">Partner</label>
-                      <select 
+                      <select
                         className="form-select"
                         value={partnerSelection}
                         onChange={e => setPartnerSelection(e.target.value)}
@@ -474,16 +438,16 @@ export default function AddCommissionPage() {
                   <div className="mb-3">
                     <label className="form-label">Commission Value</label>
                     <div className="input-group">
-                      <input 
-                        type="number" 
-                        className="form-control" 
-                        id="valueInput" 
+                      <input
+                        type="number"
+                        className="form-control"
+                        id="valueInput"
                         placeholder="Enter value"
                         value={value}
                         onChange={e => setValue(e.target.value)}
                       />
-                      <select 
-                        id="valueType" 
+                      <select
+                        id="valueType"
                         style={{ border: "1px solid #dee2e6" }}
                         value={valueType}
                         onChange={e => setValueType(e.target.value)}
@@ -512,41 +476,16 @@ export default function AddCommissionPage() {
 
                   {/* Passenger Section (hidden by default with d-none) */}
                   <div id="passengerSection" className="mb-3 d-none">
-                    <label className="form-label">Select Cabin</label>
-                    <select 
-                      className="form-select mb-3" 
-                      id="passengerCabinSelect"
-                      disabled={loadingCabins}
-                    >
-                      <option value="">Select Cabin to Add</option>
-                      {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
-                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                          {cabin.name || cabin.cabinName}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Select Payload Type</label>
-                    <select 
-                      className="form-select mb-3" 
-                      id="passengerPayloadTypeSelect"
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
                     <label className="form-label">Passenger Cabins</label>
                     <div id="passengerCabins">
                       <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>Economy</option>
-                          <option>Business</option>
-                          <option>First</option>
+                        <select className="form-select" disabled={loadingCabins}>
+                          <option value="">Select Cabin</option>
+                          {cabins && cabins.filter(c => c.type === 'passenger').map((cabin) => (
+                            <option key={cabin._id} value={cabin.name || cabin.cabinName}>
+                              {cabin.name || cabin.cabinName}
+                            </option>
+                          ))}
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -556,12 +495,13 @@ export default function AddCommissionPage() {
                     <label className="form-label mt-3">Passenger Types</label>
                     <div id="passengerTypes">
                       <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>Adult</option>
-                          <option>Child</option>
-                          <option>Infant</option>
-                          <option>Student</option>
-                          <option>Senior</option>
+                        <select className="form-select" disabled={loadingPayloadTypes}>
+                          <option value="">Select Passenger Type</option>
+                          {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
+                            <option key={payloadType._id} value={payloadType.name}>
+                              {payloadType.name} ({payloadType.code})
+                            </option>
+                          ))}
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -571,43 +511,16 @@ export default function AddCommissionPage() {
 
                   {/* Cargo Section */}
                   <div id="cargoSection" className="mb-3 d-none">
-                    <label className="form-label">Select Cabin</label>
-                    <select 
-                      className="form-select mb-3" 
-                      id="cargoCabinSelect"
-                      disabled={loadingCabins}
-                    >
-                      <option value="">Select Cabin to Add</option>
-                      {cabins && cabins.filter(c => c.type === 'cargo').map((cabin) => (
-                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                          {cabin.name || cabin.cabinName}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Select Payload Type</label>
-                    <select 
-                      className="form-select mb-3" 
-                      id="cargoPayloadTypeSelect"
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
                     <label className="form-label">Cargo Types</label>
                     <div id="cargoTypes">
                       <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>General Cargo</option>
-                          <option>Dangerous Goods</option>
-                          <option>Perishable Goods</option>
-                          <option>Livestock</option>
-                          <option>Refrigerated</option>
+                        <select className="form-select" disabled={loadingPayloadTypes}>
+                          <option value="">Select Cargo Type</option>
+                          {cargoPayloadTypes && cargoPayloadTypes.map((payloadType) => (
+                            <option key={payloadType._id} value={payloadType.name}>
+                              {payloadType.name} ({payloadType.code})
+                            </option>
+                          ))}
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -617,43 +530,16 @@ export default function AddCommissionPage() {
 
                   {/* Vehicle Section */}
                   <div id="vehicleSection" className="mb-3 d-none">
-                    <label className="form-label">Select Cabin</label>
-                    <select 
-                      className="form-select mb-3" 
-                      id="vehicleCabinSelect"
-                      disabled={loadingCabins}
-                    >
-                      <option value="">Select Cabin to Add</option>
-                      {cabins && cabins.filter(c => c.type === 'vehicle').map((cabin) => (
-                        <option key={cabin._id} value={cabin.name || cabin.cabinName}>
-                          {cabin.name || cabin.cabinName}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label">Select Payload Type</label>
-                    <select 
-                      className="form-select mb-3" 
-                      id="vehiclePayloadTypeSelect"
-                      disabled={loadingPayloadTypes}
-                    >
-                      <option value="">Select Payload Type to Add</option>
-                      {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
-                        <option key={payloadType._id} value={payloadType.name}>
-                          {payloadType.name} ({payloadType.code})
-                        </option>
-                      ))}
-                    </select>
-
                     <label className="form-label">Vehicle Types</label>
                     <div id="vehicleTypes">
                       <div className="input-group mb-2">
-                        <select className="form-select">
-                          <option>Car</option>
-                          <option>Truck</option>
-                          <option>Motorcycle</option>
-                          <option>RV</option>
-                          <option>Trailer</option>
+                        <select className="form-select" disabled={loadingPayloadTypes}>
+                          <option value="">Select Vehicle Type</option>
+                          {vehiclePayloadTypes && vehiclePayloadTypes.map((payloadType) => (
+                            <option key={payloadType._id} value={payloadType.name}>
+                              {payloadType.name} ({payloadType.code})
+                            </option>
+                          ))}
                         </select>
                         <button className="btn btn-outline-danger remove-field">&times;</button>
                       </div>
@@ -664,7 +550,7 @@ export default function AddCommissionPage() {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Visa Type</label>
-                      <select 
+                      <select
                         className="form-select"
                         value={visaType}
                         onChange={e => setVisaType(e.target.value)}
@@ -679,8 +565,8 @@ export default function AddCommissionPage() {
                     </div>
                     <div className="col-md-6">
                       <label className="form-label">Effective Date</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         className="form-control"
                         value={effectiveDate}
                         onChange={e => setEffectiveDate(e.target.value)}
