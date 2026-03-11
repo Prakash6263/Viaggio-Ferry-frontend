@@ -58,6 +58,11 @@ export default function AddCommissionPage() {
   const [commissionType, setCommissionType] = useState("Markup");
   const [markup, setMarkup] = useState("");
   const [discount, setDiscount] = useState("");
+  
+  // Service checkboxes - matching AddRulePage pattern
+  const [passenger, setPassenger] = useState(false);
+  const [cargo, setCargo] = useState(false);
+  const [vehicle, setVehicle] = useState(false);
 
   // Handle cabin selection with checkmarks
   const handleCabinToggle = (cabinId) => {
@@ -621,15 +626,15 @@ export default function AddCommissionPage() {
                   <div className="mb-3">
                     <label className="form-label d-block">Service Types</label>
                     <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkPassenger" />
+                      <input className="form-check-input" type="checkbox" checked={passenger} onChange={e=>setPassenger(e.target.checked)} id="chkPassenger" />
                       <label className="form-check-label" htmlFor="chkPassenger">Passenger</label>
                     </div>
                     <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkCargo" />
+                      <input className="form-check-input" type="checkbox" checked={cargo} onChange={e=>setCargo(e.target.checked)} id="chkCargo" />
                       <label className="form-check-label" htmlFor="chkCargo">Cargo</label>
                     </div>
                     <div className="form-check form-check-inline">
-                      <input className="form-check-input service-checkbox" type="checkbox" id="chkVehicle" />
+                      <input className="form-check-input" type="checkbox" checked={vehicle} onChange={e=>setVehicle(e.target.checked)} id="chkVehicle" />
                       <label className="form-check-label" htmlFor="chkVehicle">Vehicle</label>
                     </div>
                   </div>
