@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
@@ -252,48 +253,93 @@ export default function AddCommissionPage() {
 
     // Validation
     if (!ruleName.trim()) {
-      window.alert("Rule Name is required");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Rule Name is required",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!value || value <= 0) {
-      window.alert("Commission Value must be greater than 0");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Commission Value must be greater than 0",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!effectiveDate) {
-      window.alert("Effective Date is required");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Effective Date is required",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!expiryDate) {
-      window.alert("Expiry Date is required");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Expiry Date is required",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!visaType) {
-      window.alert("Visa Type is required");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Visa Type is required",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!appliedLayer) {
-      window.alert("Applied Layer is required");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Applied Layer is required",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!passenger && !cargo && !vehicle) {
-      window.alert("Select at least one Service Type");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Select at least one Service Type",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     // Validate at least one route exists
     if (!routes || routes.length === 0 || routes.some(r => !r.from || !r.to)) {
-      window.alert("At least one complete route is required (both From and To ports)");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "At least one complete route is required (both From and To ports)",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!currentUserId) {
-      window.alert("User not loaded. Please refresh and try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "User not loaded. Please refresh and try again.",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
@@ -350,7 +396,12 @@ export default function AddCommissionPage() {
     const convertedValueType = valueType === "%" ? "percentage" : valueType === "fixed" ? "fixed" : valueType.toLowerCase();
     
     if (!["percentage", "fixed"].includes(convertedValueType)) {
-      window.alert("Value Type must be percentage or fixed");
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Value Type must be percentage or fixed",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
@@ -387,12 +438,25 @@ export default function AddCommissionPage() {
       const response = await commissionApi.createRule(payload);
 
       if (response.success || response.data) {
-        window.alert(response.message || "Commission rule created successfully");
-        window.location.href = "/company/commission";
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: response.message || "Commission rule created successfully",
+          confirmButtonText: "OK",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = "/company/commission";
+          }
+        });
       }
     } catch (error) {
       console.error("[v0] Error creating rule:", error);
-      window.alert(error.message || "Failed to create rule. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to create rule. Please try again.",
+        confirmButtonText: "OK",
+      });
     } finally {
       setIsSubmitting(false);
     }
