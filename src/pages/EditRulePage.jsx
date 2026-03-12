@@ -149,11 +149,11 @@ export default function EditRulePage() {
             }
           }
 
-          // Parse routes - store port names for dropdown display
+          // Parse routes - store port IDs for proper dropdown matching
           if (rule.routes && rule.routes.length > 0) {
             setRoutes(rule.routes.map(route => ({
-              from: route.routeFrom?.name || route.routeFrom?.code || route.routeFromName || "",
-              to: route.routeTo?.name || route.routeTo?.code || route.routeToName || ""
+              from: route.routeFrom?._id || "",
+              to: route.routeTo?._id || ""
             })));
           }
 
@@ -443,17 +443,11 @@ export default function EditRulePage() {
     const serviceDetails = {
       passenger: passenger ? passengerCabins
         .filter(cabinId => cabinId)
-        .map((cabinId) => {
-          const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
-          if (payloadType?._id) {
-            return {
-              payloadTypeId: payloadType._id,
-              cabinId: cabinId
-            };
-          }
-          return null;
-        })
-        .filter(item => item !== null)
+        .map((cabinId, index) => ({
+          payloadTypeId: passengerTypes[index] || "",
+          cabinId: cabinId
+        }))
+        .filter(item => item.payloadTypeId)
       : [],
       cargo: cargo ? cargoTypes
         .filter(cabinId => cabinId)
@@ -472,14 +466,10 @@ export default function EditRulePage() {
     // Build routes according to API spec
     const routesData = routes
       .filter(route => route.from && route.to)
-      .map((route) => {
-        const fromPort = ports.find(p => p.name === route.from);
-        const toPort = ports.find(p => p.name === route.to);
-        return {
-          routeFrom: fromPort?._id || "",
-          routeTo: toPort?._id || ""
-        };
-      });
+      .map((route) => ({
+        routeFrom: route.from,
+        routeTo: route.to
+      }));
 
     // Use the currently logged-in user's ID as provider
     if (!currentUserId) {
@@ -842,7 +832,7 @@ export default function EditRulePage() {
                       >
                         <option value="">From Port</option>
                         {ports.map(port => (
-                          <option key={port._id} value={port.name}>{port.name}</option>
+                          <option key={port._id} value={port._id}>{port.name}</option>
                         ))}
                       </select>
                       <select
@@ -852,7 +842,7 @@ export default function EditRulePage() {
                       >
                         <option value="">To Port</option>
                         {ports.map(port => (
-                          <option key={port._id} value={port.name}>{port.name}</option>
+                          <option key={port._id} value={port._id}>{port.name}</option>
                         ))}
                       </select>
                       <span className="delete-route" onClick={() => removeItem(setRoutes, routes, idx)}>×</span>
