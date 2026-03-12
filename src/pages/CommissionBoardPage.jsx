@@ -318,6 +318,7 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -336,6 +337,8 @@ import RuleDetailsModal from "../components/commission/RuleDetailsModal";
  */
 export default function CommissionBoardPage() {
   const [rules, setRules] = useState([]);
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
@@ -552,7 +555,7 @@ export default function CommissionBoardPage() {
 
   // Handle edit
   const handleEdit = (ruleId) => {
-    window.location.href = `/company/commission/edit/${ruleId}`;
+    navigate(`/company/commission/edit/${ruleId}`);
   };
 
   // Handle delete

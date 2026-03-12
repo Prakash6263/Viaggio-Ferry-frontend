@@ -463,7 +463,7 @@ import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Can from "../components/Can";
 import CanDisable from "../components/CanDisable";
 import { markupDiscountApi } from "../api/markupDiscountApi";
@@ -477,6 +477,8 @@ import MarkupDiscountDetailsModal from "../components/markup/MarkupDiscountDetai
  * - Displays data in Rules List table with pagination
  */
 export default function MarkupDiscountBoardPage() {
+  const navigate = useNavigate();
+  
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -685,7 +687,7 @@ export default function MarkupDiscountBoardPage() {
 
   // Handle edit
   const handleEdit = (ruleId) => {
-    window.location.href = `/company/markup/edit/${ruleId}`;
+    navigate(`/company/markup/edit/${ruleId}`);
   };
 
   // Handle delete
