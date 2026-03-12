@@ -125,43 +125,35 @@ export default function EditRulePage() {
             setVehicle(rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0);
 
             if (rule.serviceDetails.passenger && rule.serviceDetails.passenger.length > 0) {
-              const passengerData = rule.serviceDetails.passenger.map(p => ({
-                cabin: p.cabinId?._id || p.cabinId,
-                cabinName: p.cabinId?.name || p.cabinId,
-                payloadType: p.payloadTypeId?._id || p.payloadTypeId,
-                payloadTypeName: p.payloadTypeId?.name || p.payloadTypeId
-              }));
-              setPassengerCabins(passengerData);
+              // Store only the cabin IDs for the dropdown
+              const cabinIds = rule.serviceDetails.passenger.map(p => p.cabinId?._id || p.cabinId);
+              setPassengerCabins(cabinIds);
               
-              // Set passenger types
-              const uniquePayloadTypes = [...new Set(passengerData.map(p => p.payloadType))].filter(Boolean);
-              if (uniquePayloadTypes.length > 0) {
-                setPassengerTypes(uniquePayloadTypes);
+              // Set passenger types - store only the payload type IDs
+              const payloadTypeIds = rule.serviceDetails.passenger
+                .map(p => p.payloadTypeId?._id || p.payloadTypeId)
+                .filter(Boolean);
+              if (payloadTypeIds.length > 0) {
+                setPassengerTypes(payloadTypeIds);
               }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              const cargoData = rule.serviceDetails.cargo.map(c => ({
-                cabin: c.cabinId?._id || c.cabinId,
-                cabinName: c.cabinId?.name || c.cabinId
-              }));
-              setCargoTypes(cargoData);
+              // Store only cabin IDs for cargo
+              const cargoIds = rule.serviceDetails.cargo.map(c => c.cabinId?._id || c.cabinId);
+              setCargoTypes(cargoIds);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              const vehicleData = rule.serviceDetails.vehicle.map(v => ({
-                cabin: v.cabinId?._id || v.cabinId,
-                cabinName: v.cabinId?.name || v.cabinId
-              }));
-              setVehicleTypes(vehicleData);
+              // Store only cabin IDs for vehicle
+              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.cabinId?._id || v.cabinId);
+              setVehicleTypes(vehicleIds);
             }
           }
 
-          // Parse routes
+          // Parse routes - store port names for dropdown display
           if (rule.routes && rule.routes.length > 0) {
             setRoutes(rule.routes.map(route => ({
-              from: route.routeFrom?._id || route.routeFrom,
-              to: route.routeTo?._id || route.routeTo,
-              fromName: route.routeFrom?.code || route.routeFromName || route.routeFrom,
-              toName: route.routeTo?.code || route.routeToName || route.routeTo
+              from: route.routeFrom?.name || route.routeFrom?.code || route.routeFromName || "",
+              to: route.routeTo?.name || route.routeTo?.code || route.routeToName || ""
             })));
           }
 
