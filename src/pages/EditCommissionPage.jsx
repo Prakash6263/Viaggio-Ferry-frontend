@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { CirclesWithBar } from "react-loader-spinner";
 import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -534,9 +535,16 @@ export default function EditCommissionPage() {
         <PageWrapper>
           <div className="content container-fluid">
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
+              <CirclesWithBar
+                height="100"
+                width="100"
+                color="#05468f"
+                outerCircleColor="#05468f"
+                innerCircleColor="#05468f"
+                barColor="#05468f"
+                ariaLabel="circles-with-bar-loading"
+                visible={true}
+              />
             </div>
           </div>
         </PageWrapper>
