@@ -79,6 +79,7 @@ export default function EditRulePage() {
   // Determine login role from JWT token
   useEffect(() => {
     const role = getLoginRoleFromToken();
+    console.log("[v0] Login role extracted:", role);
     setLoginRole(role);
     
     try {
@@ -197,7 +198,10 @@ export default function EditRulePage() {
     };
 
     if (id && loginRole) {
+      console.log("[v0] Conditions met - id:", id, "loginRole:", loginRole);
       fetchRuleData();
+    } else {
+      console.log("[v0] Waiting for id and loginRole - id:", id, "loginRole:", loginRole);
     }
   }, [id, loginRole]);
 
