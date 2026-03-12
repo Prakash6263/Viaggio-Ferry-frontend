@@ -589,11 +589,7 @@ export default function EditRulePage() {
       <Sidebar />
       <PageWrapper>
         <div className="content container-fluid">
-          <style>{`
-            .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-            .route-row .form-select { flex:1; }
-            .delete-route { cursor:pointer; color:red; font-size:18px; }
-          `}</style>
+
 
           <div className="mb-3">
             <a href="/company/markup" className="btn btn-turquoise"><i className="bi bi-arrow-left"></i> Back</a>
@@ -740,21 +736,25 @@ export default function EditRulePage() {
                 {passenger && (
                   <div className="mb-3">
                     <label className="form-label">Passenger Cabins</label>
-                    {passengerCabins.map((cabin, idx) => (
-                      <div key={idx} className="route-row">
-                        <select
-                          className="form-select"
-                          value={cabin}
-                          onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}
-                        >
-                          <option value="">Select Cabin</option>
-                          {cabins.map(c => (
-                            <option key={c._id} value={c._id}>{c.name}</option>
-                          ))}
-                        </select>
-                        <span className="delete-route" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>×</span>
-                      </div>
-                    ))}
+                    <div>
+                      {passengerCabins.map((cabin, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select
+                            className="form-select"
+                            value={cabin}
+                            onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}
+                          >
+                            <option value="">Select Cabin</option>
+                            {cabins.map(c => (
+                              <option key={c._id} value={c._id}>{c.name}</option>
+                            ))}
+                          </select>
+                          <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>
+                            <i className="bi bi-x"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                     <button
                       type="button"
                       className="btn btn-sm btn-secondary"
@@ -768,21 +768,25 @@ export default function EditRulePage() {
                 {cargo && (
                   <div className="mb-3">
                     <label className="form-label">Cargo Types</label>
-                    {cargoTypes.map((type, idx) => (
-                      <div key={idx} className="route-row">
-                        <select
-                          className="form-select"
-                          value={type}
-                          onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
-                        >
-                          <option value="">Select Type</option>
-                          {cargoPayloadTypes.map(t => (
-                            <option key={t._id} value={t._id}>{t.name}</option>
-                          ))}
-                        </select>
-                        <span className="delete-route" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>×</span>
-                      </div>
-                    ))}
+                    <div>
+                      {cargoTypes.map((type, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select
+                            className="form-select"
+                            value={type}
+                            onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
+                          >
+                            <option value="">Select Type</option>
+                            {cargoPayloadTypes.map(t => (
+                              <option key={t._id} value={t._id}>{t.name}</option>
+                            ))}
+                          </select>
+                          <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>
+                            <i className="bi bi-x"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                     <button
                       type="button"
                       className="btn btn-sm btn-secondary"
@@ -796,21 +800,25 @@ export default function EditRulePage() {
                 {vehicle && (
                   <div className="mb-3">
                     <label className="form-label">Vehicle Types</label>
-                    {vehicleTypes.map((type, idx) => (
-                      <div key={idx} className="route-row">
-                        <select
-                          className="form-select"
-                          value={type}
-                          onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
-                        >
-                          <option value="">Select Type</option>
-                          {vehiclePayloadTypes.map(t => (
-                            <option key={t._id} value={t._id}>{t.name}</option>
-                          ))}
-                        </select>
-                        <span className="delete-route" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>×</span>
-                      </div>
-                    ))}
+                    <div>
+                      {vehicleTypes.map((type, idx) => (
+                        <div className="input-group mb-2" key={idx}>
+                          <select
+                            className="form-select"
+                            value={type}
+                            onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
+                          >
+                            <option value="">Select Type</option>
+                            {vehiclePayloadTypes.map(t => (
+                              <option key={t._id} value={t._id}>{t.name}</option>
+                            ))}
+                          </select>
+                          <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>
+                            <i className="bi bi-x"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                     <button
                       type="button"
                       className="btn btn-sm btn-secondary"
@@ -823,31 +831,41 @@ export default function EditRulePage() {
 
                 <div className="mb-3">
                   <label className="form-label">Routes</label>
-                  {routes.map((route, idx) => (
-                    <div key={idx} className="route-row">
-                      <select
-                        className="form-select"
-                        value={route.from}
-                        onChange={e => updateItem(setRoutes, routes, idx, { ...route, from: e.target.value })}
-                      >
-                        <option value="">From Port</option>
-                        {ports.map(port => (
-                          <option key={port._id} value={port._id}>{port.name}</option>
-                        ))}
-                      </select>
-                      <select
-                        className="form-select"
-                        value={route.to}
-                        onChange={e => updateItem(setRoutes, routes, idx, { ...route, to: e.target.value })}
-                      >
-                        <option value="">To Port</option>
-                        {ports.map(port => (
-                          <option key={port._id} value={port._id}>{port.name}</option>
-                        ))}
-                      </select>
-                      <span className="delete-route" onClick={() => removeItem(setRoutes, routes, idx)}>×</span>
-                    </div>
-                  ))}
+                  <div>
+                    {routes.map((route, idx) => (
+                      <div key={idx} className="row g-2 mb-2">
+                        <div className="col-md-5">
+                          <select
+                            className="form-select"
+                            value={route.from}
+                            onChange={e => updateItem(setRoutes, routes, idx, { ...route, from: e.target.value })}
+                          >
+                            <option value="">From Port</option>
+                            {ports.map(port => (
+                              <option key={port._id} value={port._id}>{port.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-md-5">
+                          <select
+                            className="form-select"
+                            value={route.to}
+                            onChange={e => updateItem(setRoutes, routes, idx, { ...route, to: e.target.value })}
+                          >
+                            <option value="">To Port</option>
+                            {ports.map(port => (
+                              <option key={port._id} value={port._id}>{port.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-md-2">
+                          <button className="btn btn-outline-danger w-100" type="button" onClick={() => removeItem(setRoutes, routes, idx)}>
+                            <i className="bi bi-x"></i>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   <button
                     type="button"
                     className="btn btn-sm btn-secondary"
