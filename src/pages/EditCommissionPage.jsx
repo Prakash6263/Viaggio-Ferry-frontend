@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { CirclesWithBar } from "react-loader-spinner";
 import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -26,8 +27,8 @@ const getLoginRoleFromToken = () => {
   }
 }
 
-export default function EditCommissionPage() {
-  const { id } = useParams();
+  export default function EditCommissionPage() {
+  const { ruleId } = useParams();
   const navigate = useNavigate();
 
   const [ruleData, setRuleData] = useState(null);
@@ -89,12 +90,12 @@ export default function EditCommissionPage() {
 
   // Fetch rule data
   useEffect(() => {
-    const fetchRuleData = async () => {
-      try {
-        setLoading(true);
-        console.log("[v0] Fetching commission rule with ID:", id);
+  const fetchRuleData = async () => {
+    try {
+      setLoading(true);
+      console.log("[v0] Fetching commission rule with ID:", ruleId);
 
-        const response = await commissionApi.getRuleById(id);
+        const response = await commissionApi.getRuleById(ruleId);
         console.log("[v0] Rule data response:", response);
 
         if (response.success && response.data) {
@@ -103,7 +104,7 @@ export default function EditCommissionPage() {
 
           // Populate form with existing data
           setRuleName(rule.ruleName || "");
-          setProvider(rule.provider?.name || rule.providerName || "");
+          setProvider(rule.providerCompany?.companyName || rule.provider?.name || rule.providerName || "");
           setAppliedLayer(rule.appliedLayer || "");
           setValue(rule.commissionValue || rule.ruleValue || "");
           setValueType(rule.valueType === "percentage" ? "%" : rule.valueType === "fixed" ? "fixed" : "%");
@@ -119,21 +120,35 @@ export default function EditCommissionPage() {
             setVehicle(rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0);
 
             if (rule.serviceDetails.passenger && rule.serviceDetails.passenger.length > 0) {
-              setPassengerCabins(rule.serviceDetails.passenger.map(p => p.cabinId || p.cabinId));
+              // Store only the cabin IDs for the dropdown
+              const cabinIds = rule.serviceDetails.passenger.map(p => p.cabinId?._id || p.cabinId);
+              setPassengerCabins(cabinIds);
+              
+              // Set passenger types - store only the payload type IDs
+              const payloadTypeIds = rule.serviceDetails.passenger
+                .map(p => p.payloadTypeId?._id || p.payloadTypeId)
+                .filter(Boolean);
+              if (payloadTypeIds.length > 0) {
+                setPassengerTypes(payloadTypeIds);
+              }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              setCargoTypes(rule.serviceDetails.cargo.map(c => c.cabinId));
+              // Store only cabin IDs for cargo
+              const cargoIds = rule.serviceDetails.cargo.map(c => c.cabinId?._id || c.cabinId);
+              setCargoTypes(cargoIds);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              setVehicleTypes(rule.serviceDetails.vehicle.map(v => v.cabinId));
+              // Store only cabin IDs for vehicle
+              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.cabinId?._id || v.cabinId);
+              setVehicleTypes(vehicleIds);
             }
           }
 
-          // Parse routes
+          // Parse routes - store port names for dropdown display
           if (rule.routes && rule.routes.length > 0) {
             setRoutes(rule.routes.map(route => ({
-              from: route.routeFromName || route.routeFrom,
-              to: route.routeToName || route.routeTo
+              from: route.routeFrom?.name || route.routeFrom?.code || route.routeFromName || "",
+              to: route.routeTo?.name || route.routeTo?.code || route.routeToName || ""
             })));
           }
 
@@ -168,10 +183,10 @@ export default function EditCommissionPage() {
       }
     };
 
-    if (id && loginRole) {
+    if (ruleId && loginRole) {
       fetchRuleData();
     }
-  }, [id, loginRole]);
+  }, [ruleId, loginRole]);
 
   // Initialize provider and layer
   useEffect(() => {
@@ -499,7 +514,7 @@ export default function EditCommissionPage() {
 
     try {
       setIsSubmitting(true);
-      const response = await commissionApi.updateRule(id, payload);
+      const response = await commissionApi.updateRule(ruleId, payload);
 
       if (response.success || response.data) {
         Swal.fire({
@@ -534,9 +549,16 @@ export default function EditCommissionPage() {
         <PageWrapper>
           <div className="content container-fluid">
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
+              <CirclesWithBar
+                height="100"
+                width="100"
+                color="#05468f"
+                outerCircleColor="#05468f"
+                innerCircleColor="#05468f"
+                barColor="#05468f"
+                ariaLabel="circles-with-bar-loading"
+                visible={true}
+              />
             </div>
           </div>
         </PageWrapper>
