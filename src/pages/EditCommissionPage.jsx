@@ -17,10 +17,14 @@ import { commissionApi } from "../api/commissionApi";
 const getLoginRoleFromToken = () => {
   try {
     const token = localStorage.getItem("authToken")
+    console.log("[v0] Token exists:", !!token)
     if (!token) return null
 
     const decoded = JSON.parse(atob(token.split(".")[1]))
-    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
+    const role = decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
+    console.log("[v0] Decoded token:", decoded)
+    console.log("[v0] Extracted role:", role)
+    return role
   } catch (error) {
     console.error("[v0] Error decoding token:", error)
     return null
