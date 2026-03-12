@@ -468,6 +468,7 @@ import Can from "../components/Can";
 import CanDisable from "../components/CanDisable";
 import { markupDiscountApi } from "../api/markupDiscountApi";
 import Swal from "sweetalert2";
+import MarkupDiscountDetailsModal from "../components/markup/MarkupDiscountDetailsModal";
 
 /**
  * MarkupDiscountBoardPage
@@ -495,6 +496,9 @@ export default function MarkupDiscountBoardPage() {
   const [historyError, setHistoryError] = useState(null);
   const [selectedDateRange, setSelectedDateRange] = useState("last7days");
   const [selectedActionType, setSelectedActionType] = useState("");
+
+  // Rule details modal state
+  const [selectedRuleId, setSelectedRuleId] = useState(null);
 
   // Fetch rules from API with filters
   const fetchRules = async (filterOverrides = {}) => {
@@ -646,6 +650,37 @@ export default function MarkupDiscountBoardPage() {
       default:
         return "border-primary-subtle";
     }
+  };
+
+  // Open rule details modal
+  const openRuleDetails = (ruleId) => {
+    console.log("[v0] Opening rule details for ID:", ruleId);
+    setSelectedRuleId(ruleId);
+    
+    // Show modal with a small delay to ensure state is updated
+    setTimeout(() => {
+      const modalElement = document.getElementById("markupDiscountDetailsModal");
+      console.log("[v0] Modal element found:", !!modalElement);
+      
+      if (modalElement) {
+        try {
+          // Destroy any existing modal instance
+          const existingModal = window.bootstrap.Modal.getInstance(modalElement);
+          if (existingModal) {
+            existingModal.dispose();
+          }
+          
+          // Create new modal instance and show it
+          const modal = new window.bootstrap.Modal(modalElement);
+          modal.show();
+          console.log("[v0] Modal shown successfully");
+        } catch (err) {
+          console.error("[v0] Error showing modal:", err);
+        }
+      } else {
+        console.error("[v0] Modal element not found");
+      }
+    }, 100);
   };
 
   // Handle edit
@@ -1124,6 +1159,16 @@ export default function MarkupDiscountBoardPage() {
                                 <span className="history-meta">
                                   By {item.changedBy || "System"} • {formatHistoryDate(item.changedAt)}
                                 </span>
+                                <a 
+                                  href="#" 
+                                  className="view-link"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    openRuleDetails(item._id || item.ruleId);
+                                  }}
+                                >
+                                  View Details
+                                </a>
                               </div>
                             </div>
                           ))
@@ -1143,6 +1188,9 @@ export default function MarkupDiscountBoardPage() {
 
         </div>
       </PageWrapper>
+
+      {/* Markup/Discount Rule Details Modal */}
+      <MarkupDiscountDetailsModal ruleId={selectedRuleId} />
     </div>
   );
 }
