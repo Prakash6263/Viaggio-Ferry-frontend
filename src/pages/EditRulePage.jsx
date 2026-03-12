@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
@@ -107,7 +108,7 @@ export default function EditRulePage() {
 
           // Populate form with existing data
           setRuleName(rule.ruleName || "");
-          setProvider(rule.provider?.name || rule.providerName || "");
+          setProvider(rule.providerCompany?.companyName || rule.provider?.name || rule.providerName || "");
           setAppliedLayer(rule.appliedLayer || "");
           setRuleType(rule.ruleType || "Markup");
           setValue(rule.ruleValue || "");
@@ -124,21 +125,43 @@ export default function EditRulePage() {
             setVehicle(rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0);
 
             if (rule.serviceDetails.passenger && rule.serviceDetails.passenger.length > 0) {
-              setPassengerCabins(rule.serviceDetails.passenger.map(p => p.cabinId || p.cabinId));
+              const passengerData = rule.serviceDetails.passenger.map(p => ({
+                cabin: p.cabinId?._id || p.cabinId,
+                cabinName: p.cabinId?.name || p.cabinId,
+                payloadType: p.payloadTypeId?._id || p.payloadTypeId,
+                payloadTypeName: p.payloadTypeId?.name || p.payloadTypeId
+              }));
+              setPassengerCabins(passengerData);
+              
+              // Set passenger types
+              const uniquePayloadTypes = [...new Set(passengerData.map(p => p.payloadType))].filter(Boolean);
+              if (uniquePayloadTypes.length > 0) {
+                setPassengerTypes(uniquePayloadTypes);
+              }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              setCargoTypes(rule.serviceDetails.cargo.map(c => c.cabinId));
+              const cargoData = rule.serviceDetails.cargo.map(c => ({
+                cabin: c.cabinId?._id || c.cabinId,
+                cabinName: c.cabinId?.name || c.cabinId
+              }));
+              setCargoTypes(cargoData);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              setVehicleTypes(rule.serviceDetails.vehicle.map(v => v.cabinId));
+              const vehicleData = rule.serviceDetails.vehicle.map(v => ({
+                cabin: v.cabinId?._id || v.cabinId,
+                cabinName: v.cabinId?.name || v.cabinId
+              }));
+              setVehicleTypes(vehicleData);
             }
           }
 
           // Parse routes
           if (rule.routes && rule.routes.length > 0) {
             setRoutes(rule.routes.map(route => ({
-              from: route.routeFromName || route.routeFrom,
-              to: route.routeToName || route.routeTo
+              from: route.routeFrom?._id || route.routeFrom,
+              to: route.routeTo?._id || route.routeTo,
+              fromName: route.routeFrom?.code || route.routeFromName || route.routeFrom,
+              toName: route.routeTo?.code || route.routeToName || route.routeTo
             })));
           }
 
@@ -561,9 +584,16 @@ export default function EditRulePage() {
         <PageWrapper>
           <div className="content container-fluid">
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
+              <CirclesWithBar
+                height="100"
+                width="100"
+                color="#05468f"
+                outerCircleColor="#05468f"
+                innerCircleColor="#05468f"
+                barColor="#05468f"
+                ariaLabel="circles-with-bar-loading"
+                visible={true}
+              />
             </div>
           </div>
         </PageWrapper>

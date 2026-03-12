@@ -104,7 +104,7 @@ export default function EditCommissionPage() {
 
           // Populate form with existing data
           setRuleName(rule.ruleName || "");
-          setProvider(rule.provider?.name || rule.providerName || "");
+          setProvider(rule.providerCompany?.companyName || rule.provider?.name || rule.providerName || "");
           setAppliedLayer(rule.appliedLayer || "");
           setValue(rule.commissionValue || rule.ruleValue || "");
           setValueType(rule.valueType === "percentage" ? "%" : rule.valueType === "fixed" ? "fixed" : "%");
@@ -120,21 +120,43 @@ export default function EditCommissionPage() {
             setVehicle(rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0);
 
             if (rule.serviceDetails.passenger && rule.serviceDetails.passenger.length > 0) {
-              setPassengerCabins(rule.serviceDetails.passenger.map(p => p.cabinId || p.cabinId));
+              const passengerData = rule.serviceDetails.passenger.map(p => ({
+                cabin: p.cabinId?._id || p.cabinId,
+                cabinName: p.cabinId?.name || p.cabinId,
+                payloadType: p.payloadTypeId?._id || p.payloadTypeId,
+                payloadTypeName: p.payloadTypeId?.name || p.payloadTypeId
+              }));
+              setPassengerCabins(passengerData);
+              
+              // Set passenger types
+              const uniquePayloadTypes = [...new Set(passengerData.map(p => p.payloadType))].filter(Boolean);
+              if (uniquePayloadTypes.length > 0) {
+                setPassengerTypes(uniquePayloadTypes);
+              }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              setCargoTypes(rule.serviceDetails.cargo.map(c => c.cabinId));
+              const cargoData = rule.serviceDetails.cargo.map(c => ({
+                cabin: c.cabinId?._id || c.cabinId,
+                cabinName: c.cabinId?.name || c.cabinId
+              }));
+              setCargoTypes(cargoData);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              setVehicleTypes(rule.serviceDetails.vehicle.map(v => v.cabinId));
+              const vehicleData = rule.serviceDetails.vehicle.map(v => ({
+                cabin: v.cabinId?._id || v.cabinId,
+                cabinName: v.cabinId?.name || v.cabinId
+              }));
+              setVehicleTypes(vehicleData);
             }
           }
 
           // Parse routes
           if (rule.routes && rule.routes.length > 0) {
             setRoutes(rule.routes.map(route => ({
-              from: route.routeFromName || route.routeFrom,
-              to: route.routeToName || route.routeTo
+              from: route.routeFrom?._id || route.routeFrom,
+              to: route.routeTo?._id || route.routeTo,
+              fromName: route.routeFrom?.code || route.routeFromName || route.routeFrom,
+              toName: route.routeTo?.code || route.routeToName || route.routeTo
             })));
           }
 
