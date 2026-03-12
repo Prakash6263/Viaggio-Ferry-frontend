@@ -17,14 +17,10 @@ import Swal from "sweetalert2";
 const getLoginRoleFromToken = () => {
   try {
     const token = localStorage.getItem("authToken")
-    console.log("[v0] Token exists:", !!token)
     if (!token) return null
 
     const decoded = JSON.parse(atob(token.split(".")[1]))
-    const role = decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
-    console.log("[v0] Decoded token:", decoded)
-    console.log("[v0] Extracted role:", role)
-    return role
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
   } catch (error) {
     console.error("[v0] Error decoding token:", error)
     return null
@@ -32,7 +28,7 @@ const getLoginRoleFromToken = () => {
 }
 
 export default function EditRulePage() {
-  const { id } = useParams();
+  const { ruleId } = useParams();
   const navigate = useNavigate();
 
   const [ruleData, setRuleData] = useState(null);
@@ -83,7 +79,6 @@ export default function EditRulePage() {
   // Determine login role from JWT token
   useEffect(() => {
     const role = getLoginRoleFromToken();
-    console.log("[v0] Login role extracted:", role);
     setLoginRole(role);
     
     try {
@@ -102,9 +97,9 @@ export default function EditRulePage() {
     const fetchRuleData = async () => {
       try {
         setLoading(true);
-        console.log("[v0] Fetching markup/discount rule with ID:", id);
+        console.log("[v0] Fetching markup/discount rule with ID:", ruleId);
 
-        const response = await markupDiscountApi.getRuleById(id);
+        const response = await markupDiscountApi.getRuleById(ruleId);
         console.log("[v0] Rule data response:", response);
 
         if (response.success && response.data) {
@@ -201,13 +196,10 @@ export default function EditRulePage() {
       }
     };
 
-    if (id && loginRole) {
-      console.log("[v0] Conditions met - id:", id, "loginRole:", loginRole);
+    if (ruleId && loginRole) {
       fetchRuleData();
-    } else {
-      console.log("[v0] Waiting for id and loginRole - id:", id, "loginRole:", loginRole);
     }
-  }, [id, loginRole]);
+  }, [ruleId, loginRole]);
 
   // Initialize provider and layer from API based on login role
   useEffect(() => {
@@ -559,7 +551,7 @@ export default function EditRulePage() {
 
     try {
       setIsSubmitting(true);
-      const response = await markupDiscountApi.updateRule(id, payload);
+      const response = await markupDiscountApi.updateRule(ruleId, payload);
 
       if (response.success || response.data) {
         Swal.fire({

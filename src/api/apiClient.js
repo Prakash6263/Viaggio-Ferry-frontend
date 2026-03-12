@@ -5,7 +5,6 @@
 
 // const API_BASE_URL ="http://localhost:3001"
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
-console.log("[v0] API Base URL from env:", process.env.REACT_APP_API_BASE_URL)
 
 // Custom event for triggering logout across the app
 export const AUTH_LOGOUT_EVENT = "auth:logout"
@@ -136,10 +135,7 @@ export const apiFetch = async (endpoint, options = {}) => {
  * Helper for JSON responses with automatic token handling
  */
 export const apiRequest = async (endpoint, options = {}) => {
-  console.log("[v0] API Request to:", endpoint, "Base URL:", API_BASE_URL)
-  
   const response = await apiFetch(endpoint, options)
-  console.log("[v0] API Response status:", response.status, "OK:", response.ok)
 
   // Try to parse response as JSON
   let responseData
@@ -156,10 +152,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     responseData = {}
   }
 
-  console.log("[v0] API Response data:", responseData)
-
   if (!response.ok) {
-    console.error("[v0] API request failed:", responseData.message || `Request failed with status ${response.status}`)
     throw new Error(responseData.message || `Request failed with status ${response.status}`)
   }
 

@@ -17,22 +17,18 @@ import { commissionApi } from "../api/commissionApi";
 const getLoginRoleFromToken = () => {
   try {
     const token = localStorage.getItem("authToken")
-    console.log("[v0] Token exists:", !!token)
     if (!token) return null
 
     const decoded = JSON.parse(atob(token.split(".")[1]))
-    const role = decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
-    console.log("[v0] Decoded token:", decoded)
-    console.log("[v0] Extracted role:", role)
-    return role
+    return decoded.role || decoded.userType || decoded.layer || decoded.type || decoded.accountType
   } catch (error) {
     console.error("[v0] Error decoding token:", error)
     return null
   }
 }
 
-export default function EditCommissionPage() {
-  const { id } = useParams();
+  export default function EditCommissionPage() {
+  const { ruleId } = useParams();
   const navigate = useNavigate();
 
   const [ruleData, setRuleData] = useState(null);
@@ -79,7 +75,6 @@ export default function EditCommissionPage() {
   // Get login role from token
   useEffect(() => {
     const role = getLoginRoleFromToken();
-    console.log("[v0] Login role extracted:", role);
     setLoginRole(role);
     
     try {
@@ -95,12 +90,12 @@ export default function EditCommissionPage() {
 
   // Fetch rule data
   useEffect(() => {
-    const fetchRuleData = async () => {
-      try {
-        setLoading(true);
-        console.log("[v0] Fetching commission rule with ID:", id);
+  const fetchRuleData = async () => {
+    try {
+      setLoading(true);
+      console.log("[v0] Fetching commission rule with ID:", ruleId);
 
-        const response = await commissionApi.getRuleById(id);
+        const response = await commissionApi.getRuleById(ruleId);
         console.log("[v0] Rule data response:", response);
 
         if (response.success && response.data) {
@@ -196,13 +191,10 @@ export default function EditCommissionPage() {
       }
     };
 
-    if (id && loginRole) {
-      console.log("[v0] Conditions met - id:", id, "loginRole:", loginRole);
+    if (ruleId && loginRole) {
       fetchRuleData();
-    } else {
-      console.log("[v0] Waiting for id and loginRole - id:", id, "loginRole:", loginRole);
     }
-  }, [id, loginRole]);
+  }, [ruleId, loginRole]);
 
   // Initialize provider and layer
   useEffect(() => {
