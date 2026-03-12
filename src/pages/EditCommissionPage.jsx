@@ -770,7 +770,7 @@ const getLoginRoleFromToken = () => {
                           >
                             <option value="">Select Cabin</option>
                             {cabins.map(c => (
-                              <option key={c._id} value={c._id}>{c.cabinName}</option>
+                              <option key={c._id} value={c._id}>{c.name}</option>
                             ))}
                           </select>
                           <span className="delete-route" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>×</span>
@@ -798,7 +798,7 @@ const getLoginRoleFromToken = () => {
                           >
                             <option value="">Select Type</option>
                             {cargoPayloadTypes.map(t => (
-                              <option key={t._id} value={t._id}>{t.payloadTypeName}</option>
+                              <option key={t._id} value={t._id}>{t.name}</option>
                             ))}
                           </select>
                           <span className="delete-route" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>×</span>
@@ -826,7 +826,7 @@ const getLoginRoleFromToken = () => {
                           >
                             <option value="">Select Type</option>
                             {vehiclePayloadTypes.map(t => (
-                              <option key={t._id} value={t._id}>{t.payloadTypeName}</option>
+                              <option key={t._id} value={t._id}>{t.name}</option>
                             ))}
                           </select>
                           <span className="delete-route" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>×</span>
