@@ -522,7 +522,7 @@ const getLoginRoleFromToken = () => {
 
     try {
       setIsSubmitting(true);
-      const response = await commissionApi.updateRule(id, payload);
+      const response = await commissionApi.updateRule(ruleId, payload);
 
       if (response.success || response.data) {
         Swal.fire({
