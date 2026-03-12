@@ -1159,16 +1159,28 @@ export default function MarkupDiscountBoardPage() {
                                 <span className="history-meta">
                                   By {item.changedBy || "System"} • {formatHistoryDate(item.changedAt)}
                                 </span>
-                                <a 
-                                  href="#" 
-                                  className="view-link"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    openRuleDetails(item._id || item.ruleId);
-                                  }}
-                                >
-                                  View Details
-                                </a>
+                                <div className="d-flex gap-2">
+                                  <a 
+                                    href="#" 
+                                    className="view-link"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      openRuleDetails(item._id || item.ruleId);
+                                    }}
+                                  >
+                                    View Details
+                                  </a>
+                                  <a 
+                                    href="#" 
+                                    className="view-link"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleEdit(item._id || item.ruleId);
+                                    }}
+                                  >
+                                    Edit
+                                  </a>
+                                </div>
                               </div>
                             </div>
                           ))

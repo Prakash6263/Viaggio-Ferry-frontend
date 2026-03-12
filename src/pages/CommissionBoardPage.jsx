@@ -953,16 +953,28 @@ export default function CommissionBoardPage() {
                                     <span className="history-meta">
                                       By {item.createdBy?.name || item.createdBy?.email || "System"} • {formatHistoryDate(item.createdAt)}
                                     </span>
-                                    <a 
-                                      href="#" 
-                                      className="view-link"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        openRuleDetails(item.ruleId);
-                                      }}
-                                    >
-                                      View Details
-                                    </a>
+                                    <div className="d-flex gap-2">
+                                      <a 
+                                        href="#" 
+                                        className="view-link"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          openRuleDetails(item.ruleId);
+                                        }}
+                                      >
+                                        View Details
+                                      </a>
+                                      <a 
+                                        href="#" 
+                                        className="view-link"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleEdit(item.ruleId);
+                                        }}
+                                      >
+                                        Edit
+                                      </a>
+                                    </div>
                                   </div>
                                 </div>
                               ))
