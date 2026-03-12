@@ -599,6 +599,11 @@ export default function EditRulePage() {
       <Sidebar />
       <PageWrapper>
         <div className="content container-fluid">
+          <style>{`
+            .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+            .delete-route { cursor:pointer; color:red; font-size:18px; }
+          `}</style>
+
           <div className="mb-3">
             <a href="/company/markup" className="btn btn-turquoise"><i className="bi bi-arrow-left"></i> Back</a>
           </div>
@@ -745,7 +750,7 @@ export default function EditRulePage() {
                   <div className="mb-3">
                     <label className="form-label">Passenger Cabins</label>
                     {passengerCabins.map((cabin, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <div key={idx} className="route-row">
                         <select
                           className="form-select"
                           value={cabin}
@@ -756,7 +761,7 @@ export default function EditRulePage() {
                             <option key={c._id} value={c._id}>{c.cabinName}</option>
                           ))}
                         </select>
-                        <span style={{ cursor: "pointer", color: "red", fontSize: "18px" }} onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>×</span>
+                        <span className="delete-route" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>×</span>
                       </div>
                     ))}
                     <button
@@ -773,7 +778,7 @@ export default function EditRulePage() {
                   <div className="mb-3">
                     <label className="form-label">Cargo Types</label>
                     {cargoTypes.map((type, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <div key={idx} className="route-row">
                         <select
                           className="form-select"
                           value={type}
@@ -784,7 +789,7 @@ export default function EditRulePage() {
                             <option key={t._id} value={t._id}>{t.payloadTypeName}</option>
                           ))}
                         </select>
-                        <span style={{ cursor: "pointer", color: "red", fontSize: "18px" }} onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>×</span>
+                        <span className="delete-route" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>×</span>
                       </div>
                     ))}
                     <button
@@ -801,7 +806,7 @@ export default function EditRulePage() {
                   <div className="mb-3">
                     <label className="form-label">Vehicle Types</label>
                     {vehicleTypes.map((type, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <div key={idx} className="route-row">
                         <select
                           className="form-select"
                           value={type}
@@ -812,7 +817,7 @@ export default function EditRulePage() {
                             <option key={t._id} value={t._id}>{t.payloadTypeName}</option>
                           ))}
                         </select>
-                        <span style={{ cursor: "pointer", color: "red", fontSize: "18px" }} onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>×</span>
+                        <span className="delete-route" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>×</span>
                       </div>
                     ))}
                     <button
@@ -828,7 +833,7 @@ export default function EditRulePage() {
                 <div className="mb-3">
                   <label className="form-label">Routes</label>
                   {routes.map((route, idx) => (
-                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                    <div key={idx} className="route-row">
                       <select
                         className="form-select"
                         value={route.from}
@@ -849,7 +854,7 @@ export default function EditRulePage() {
                           <option key={port._id} value={port.name}>{port.name}</option>
                         ))}
                       </select>
-                      <span style={{ cursor: "pointer", color: "red", fontSize: "18px" }} onClick={() => removeItem(setRoutes, routes, idx)}>×</span>
+                      <span className="delete-route" onClick={() => removeItem(setRoutes, routes, idx)}>×</span>
                     </div>
                   ))}
                   <button
