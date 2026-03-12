@@ -144,11 +144,11 @@ const getLoginRoleFromToken = () => {
             }
           }
 
-          // Parse routes - store port names for dropdown display
+          // Parse routes - store port IDs for proper dropdown matching
           if (rule.routes && rule.routes.length > 0) {
             setRoutes(rule.routes.map(route => ({
-              from: route.routeFrom?.name || route.routeFrom?.code || route.routeFromName || "",
-              to: route.routeTo?.name || route.routeTo?.code || route.routeToName || ""
+              from: route.routeFrom?._id || "",
+              to: route.routeTo?._id || ""
             })));
           }
 
@@ -432,17 +432,11 @@ const getLoginRoleFromToken = () => {
     const serviceDetails = {
       passenger: passenger ? passengerCabins
         .filter(cabinId => cabinId)
-        .map((cabinId) => {
-          const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
-          if (payloadType?._id) {
-            return {
-              payloadTypeId: payloadType._id,
-              cabinId: cabinId
-            };
-          }
-          return null;
-        })
-        .filter(item => item !== null)
+        .map((cabinId, index) => ({
+          payloadTypeId: passengerTypes[index] || "",
+          cabinId: cabinId
+        }))
+        .filter(item => item.payloadTypeId)
       : [],
       cargo: cargo ? cargoTypes
         .filter(cabinId => cabinId)
@@ -460,14 +454,10 @@ const getLoginRoleFromToken = () => {
 
     const routesData = routes
       .filter(route => route.from && route.to)
-      .map((route) => {
-        const fromPort = ports.find(p => p.name === route.from);
-        const toPort = ports.find(p => p.name === route.to);
-        return {
-          routeFrom: fromPort?._id || "",
-          routeTo: toPort?._id || ""
-        };
-      });
+      .map((route) => ({
+        routeFrom: route.from,
+        routeTo: route.to
+      }));
 
     let providerType = "Company";
     if (loginRole === "partner") {
@@ -572,10 +562,7 @@ const getLoginRoleFromToken = () => {
       <Sidebar />
       <PageWrapper>
         <div className="content container-fluid">
-          <style>{`
-            .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-            .delete-route { cursor:pointer; color:red; font-size:18px; }
-          `}</style>
+
 
           <div className="mb-3">
             <a href="/company/commission" className="btn btn-turquoise">
@@ -761,21 +748,25 @@ const getLoginRoleFromToken = () => {
                   {passenger && (
                     <div className="mb-3">
                       <label className="form-label">Passenger Cabins</label>
-                      {passengerCabins.map((cabin, idx) => (
-                        <div key={idx} className="route-row">
-                          <select
-                            className="form-select"
-                            value={cabin}
-                            onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}
-                          >
-                            <option value="">Select Cabin</option>
-                            {cabins.map(c => (
-                              <option key={c._id} value={c._id}>{c.cabinName}</option>
-                            ))}
-                          </select>
-                          <span className="delete-route" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>×</span>
-                        </div>
-                      ))}
+                      <div>
+                        {passengerCabins.map((cabin, idx) => (
+                          <div className="input-group mb-2" key={idx}>
+                            <select
+                              className="form-select"
+                              value={cabin}
+                              onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}
+                            >
+                              <option value="">Select Cabin</option>
+                              {cabins.map(c => (
+                                <option key={c._id} value={c._id}>{c.name}</option>
+                              ))}
+                            </select>
+                            <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setPassengerCabins, passengerCabins, idx)}>
+                              <i className="bi bi-x"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                       <button
                         type="button"
                         className="btn btn-sm btn-secondary"
@@ -786,97 +777,115 @@ const getLoginRoleFromToken = () => {
                     </div>
                   )}
 
-                  {cargo && (
-                    <div className="mb-3">
-                      <label className="form-label">Cargo Types</label>
-                      {cargoTypes.map((type, idx) => (
-                        <div key={idx} className="route-row">
-                          <select
-                            className="form-select"
-                            value={type}
-                            onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
-                          >
-                            <option value="">Select Type</option>
-                            {cargoPayloadTypes.map(t => (
-                              <option key={t._id} value={t._id}>{t.payloadTypeName}</option>
-                            ))}
-                          </select>
-                          <span className="delete-route" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>×</span>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => addItem(setCargoTypes, cargoTypes, "")}
-                      >
-                        + Add Type
-                      </button>
-                    </div>
-                  )}
-
-                  {vehicle && (
-                    <div className="mb-3">
-                      <label className="form-label">Vehicle Types</label>
-                      {vehicleTypes.map((type, idx) => (
-                        <div key={idx} className="route-row">
-                          <select
-                            className="form-select"
-                            value={type}
-                            onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
-                          >
-                            <option value="">Select Type</option>
-                            {vehiclePayloadTypes.map(t => (
-                              <option key={t._id} value={t._id}>{t.payloadTypeName}</option>
-                            ))}
-                          </select>
-                          <span className="delete-route" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>×</span>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}
-                      >
-                        + Add Type
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="mb-3">
-                    <label className="form-label">Routes</label>
-                    {routes.map((route, idx) => (
-                      <div key={idx} className="route-row">
-                        <select
-                          className="form-select"
-                          value={route.from}
-                          onChange={e => updateItem(setRoutes, routes, idx, { ...route, from: e.target.value })}
-                        >
-                          <option value="">From Port</option>
-                          {ports.map(port => (
-                            <option key={port._id} value={port.name}>{port.name}</option>
+                    {cargo && (
+                      <div className="mb-3">
+                        <label className="form-label">Cargo Types</label>
+                        <div>
+                          {cargoTypes.map((type, idx) => (
+                            <div className="input-group mb-2" key={idx}>
+                              <select
+                                className="form-select"
+                                value={type}
+                                onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
+                              >
+                                <option value="">Select Type</option>
+                                {cabins.filter(c => c.type === 'cargo').map(c => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
+                                ))}
+                              </select>
+                              <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>
+                                <i className="bi bi-x"></i>
+                              </button>
+                            </div>
                           ))}
-                        </select>
-                        <select
-                          className="form-select"
-                          value={route.to}
-                          onChange={e => updateItem(setRoutes, routes, idx, { ...route, to: e.target.value })}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => addItem(setCargoTypes, cargoTypes, "")}
                         >
-                          <option value="">To Port</option>
-                          {ports.map(port => (
-                            <option key={port._id} value={port.name}>{port.name}</option>
-                          ))}
-                        </select>
-                        <span className="delete-route" onClick={() => removeItem(setRoutes, routes, idx)}>×</span>
+                          + Add Type
+                        </button>
                       </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => addItem(setRoutes, routes, { from: "", to: "" })}
-                    >
-                      + Add Route
-                    </button>
-                  </div>
+                    )}
+
+                    {vehicle && (
+                      <div className="mb-3">
+                        <label className="form-label">Vehicle Types</label>
+                        <div>
+                          {vehicleTypes.map((type, idx) => (
+                            <div className="input-group mb-2" key={idx}>
+                              <select
+                                className="form-select"
+                                value={type}
+                                onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
+                              >
+                                <option value="">Select Type</option>
+                                {cabins.filter(c => c.type === 'vehicle').map(c => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
+                                ))}
+                              </select>
+                              <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>
+                                <i className="bi bi-x"></i>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}
+                        >
+                          + Add Type
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="mb-3">
+                      <label className="form-label">Routes</label>
+                      <div>
+                        {routes.map((route, idx) => (
+                          <div key={idx} className="row g-2 mb-2">
+                            <div className="col-md-5">
+                              <select
+                                className="form-select"
+                                value={route.from}
+                                onChange={e => updateItem(setRoutes, routes, idx, { ...route, from: e.target.value })}
+                              >
+                                <option value="">From Port</option>
+                                {ports.map(port => (
+                                  <option key={port._id} value={port._id}>{port.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-md-5">
+                              <select
+                                className="form-select"
+                                value={route.to}
+                                onChange={e => updateItem(setRoutes, routes, idx, { ...route, to: e.target.value })}
+                              >
+                                <option value="">To Port</option>
+                                {ports.map(port => (
+                                  <option key={port._id} value={port._id}>{port.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-md-2">
+                              <button className="btn btn-outline-danger w-100" type="button" onClick={() => removeItem(setRoutes, routes, idx)}>
+                                <i className="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => addItem(setRoutes, routes, { from: "", to: "" })}
+                      >
+                        + Add Route
+                      </button>
+                    </div>
 
                   <div className="d-flex gap-2">
                     <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
