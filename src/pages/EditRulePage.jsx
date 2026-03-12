@@ -138,13 +138,13 @@ export default function EditRulePage() {
               }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              // Store only payload type IDs for cargo
-              const cargoIds = rule.serviceDetails.cargo.map(c => c.payloadTypeId?._id || c.payloadTypeId);
+              // Store only cabin IDs for cargo
+              const cargoIds = rule.serviceDetails.cargo.map(c => c.cabinId?._id || c.cabinId);
               setCargoTypes(cargoIds);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              // Store only payload type IDs for vehicle
-              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.payloadTypeId?._id || v.payloadTypeId);
+              // Store only cabin IDs for vehicle
+              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.cabinId?._id || v.cabinId);
               setVehicleTypes(vehicleIds);
             }
           }
@@ -765,69 +765,69 @@ export default function EditRulePage() {
                   </div>
                 )}
 
-                {cargo && (
-                  <div className="mb-3">
-                    <label className="form-label">Cargo Types</label>
-                    <div>
-                      {cargoTypes.map((type, idx) => (
-                        <div className="input-group mb-2" key={idx}>
-                          <select
-                            className="form-select"
-                            value={type}
-                            onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
-                          >
-                            <option value="">Select Type</option>
-                            {cargoPayloadTypes.map(t => (
-                              <option key={t._id} value={t._id}>{t.name}</option>
-                            ))}
-                          </select>
-                          <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>
-                            <i className="bi bi-x"></i>
-                          </button>
+                    {cargo && (
+                      <div className="mb-3">
+                        <label className="form-label">Cargo Types</label>
+                        <div>
+                          {cargoTypes.map((type, idx) => (
+                            <div className="input-group mb-2" key={idx}>
+                              <select
+                                className="form-select"
+                                value={type}
+                                onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
+                              >
+                                <option value="">Select Type</option>
+                                {cabins.filter(c => c.type === 'cargo').map(c => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
+                                ))}
+                              </select>
+                              <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>
+                                <i className="bi bi-x"></i>
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => addItem(setCargoTypes, cargoTypes, "")}
-                    >
-                      + Add Type
-                    </button>
-                  </div>
-                )}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => addItem(setCargoTypes, cargoTypes, "")}
+                        >
+                          + Add Type
+                        </button>
+                      </div>
+                    )}
 
-                {vehicle && (
-                  <div className="mb-3">
-                    <label className="form-label">Vehicle Types</label>
-                    <div>
-                      {vehicleTypes.map((type, idx) => (
-                        <div className="input-group mb-2" key={idx}>
-                          <select
-                            className="form-select"
-                            value={type}
-                            onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
-                          >
-                            <option value="">Select Type</option>
-                            {vehiclePayloadTypes.map(t => (
-                              <option key={t._id} value={t._id}>{t.name}</option>
-                            ))}
-                          </select>
-                          <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>
-                            <i className="bi bi-x"></i>
-                          </button>
+                    {vehicle && (
+                      <div className="mb-3">
+                        <label className="form-label">Vehicle Types</label>
+                        <div>
+                          {vehicleTypes.map((type, idx) => (
+                            <div className="input-group mb-2" key={idx}>
+                              <select
+                                className="form-select"
+                                value={type}
+                                onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
+                              >
+                                <option value="">Select Type</option>
+                                {cabins.filter(c => c.type === 'vehicle').map(c => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
+                                ))}
+                              </select>
+                              <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>
+                                <i className="bi bi-x"></i>
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}
-                    >
-                      + Add Type
-                    </button>
-                  </div>
-                )}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => addItem(setVehicleTypes, vehicleTypes, "")}
+                        >
+                          + Add Type
+                        </button>
+                      </div>
+                    )}
 
                 <div className="mb-3">
                   <label className="form-label">Routes</label>

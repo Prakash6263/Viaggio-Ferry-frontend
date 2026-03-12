@@ -133,13 +133,13 @@ const getLoginRoleFromToken = () => {
               }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              // Store only payload type IDs for cargo
-              const cargoIds = rule.serviceDetails.cargo.map(c => c.payloadTypeId?._id || c.payloadTypeId);
+              // Store only cabin IDs for cargo
+              const cargoIds = rule.serviceDetails.cargo.map(c => c.cabinId?._id || c.cabinId);
               setCargoTypes(cargoIds);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              // Store only payload type IDs for vehicle
-              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.payloadTypeId?._id || v.payloadTypeId);
+              // Store only cabin IDs for vehicle
+              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.cabinId?._id || v.cabinId);
               setVehicleTypes(vehicleIds);
             }
           }
@@ -789,8 +789,8 @@ const getLoginRoleFromToken = () => {
                                 onChange={e => updateItem(setCargoTypes, cargoTypes, idx, e.target.value)}
                               >
                                 <option value="">Select Type</option>
-                                {cargoPayloadTypes.map(t => (
-                                  <option key={t._id} value={t._id}>{t.name}</option>
+                                {cabins.filter(c => c.type === 'cargo').map(c => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
                                 ))}
                               </select>
                               <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setCargoTypes, cargoTypes, idx)}>
@@ -821,8 +821,8 @@ const getLoginRoleFromToken = () => {
                                 onChange={e => updateItem(setVehicleTypes, vehicleTypes, idx, e.target.value)}
                               >
                                 <option value="">Select Type</option>
-                                {vehiclePayloadTypes.map(t => (
-                                  <option key={t._id} value={t._id}>{t.name}</option>
+                                {cabins.filter(c => c.type === 'vehicle').map(c => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
                                 ))}
                               </select>
                               <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setVehicleTypes, vehicleTypes, idx)}>
