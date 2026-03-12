@@ -34,4 +34,11 @@ export const commissionApi = {
       method: "DELETE",
     })
   },
+
+  // Get markup/discount history
+  getMarkupDiscountHistory: async (dateRange = "last7days", actionType = "") => {
+    const params = new URLSearchParams({ dateRange });
+    if (actionType) params.append("actionType", actionType);
+    return apiRequest(`/api/markup-discounts/history?${params}`)
+  },
 }
