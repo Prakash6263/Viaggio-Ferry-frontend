@@ -489,6 +489,13 @@ export default function MarkupDiscountBoardPage() {
   const [selectedRuleType, setSelectedRuleType] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
+  // History states
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [selectedDateRange, setSelectedDateRange] = useState("last7days");
+  const [selectedActionType, setSelectedActionType] = useState("");
+
   // Fetch rules from API with filters
   const fetchRules = async (filterOverrides = {}) => {
     try {
@@ -547,6 +554,33 @@ export default function MarkupDiscountBoardPage() {
     }
   };
 
+  // Fetch history from API
+  const fetchHistory = async (dateRange = selectedDateRange, actionType = selectedActionType) => {
+    try {
+      setHistoryLoading(true);
+      setHistoryError(null);
+
+      console.log("[v0] Fetching markup/discount history...", { dateRange, actionType });
+
+      const response = await markupDiscountApi.getMarkupDiscountHistory(dateRange, actionType);
+      console.log("[v0] History API Response:", response);
+
+      if (response.success && response.data) {
+        setHistory(response.data);
+        console.log("[v0] History loaded successfully:", response.data.length);
+      } else {
+        setHistory([]);
+        console.log("[v0] No history data in response");
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching history:", err);
+      setHistoryError(err.message || "Failed to load history");
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Helper function to extract service types from serviceDetails
   const getServices = (serviceDetails) => {
     const services = [];
@@ -567,6 +601,51 @@ export default function MarkupDiscountBoardPage() {
       month: "2-digit",
       day: "2-digit",
     });
+  };
+
+  // Format date and time for history display
+  const formatHistoryDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Get badge color based on action type
+  const getActionBadgeClass = (actionType) => {
+    switch (actionType) {
+      case "Created":
+        return "bg-success";
+      case "Updated":
+        return "bg-primary";
+      case "Deleted":
+        return "bg-danger";
+      case "Activated":
+        return "bg-warning text-dark";
+      default:
+        return "bg-secondary";
+    }
+  };
+
+  // Get border color based on action type
+  const getActionBorderClass = (actionType) => {
+    switch (actionType) {
+      case "Created":
+        return "border-success-subtle";
+      case "Updated":
+        return "border-primary-subtle";
+      case "Deleted":
+        return "border-danger-subtle";
+      case "Activated":
+        return "border-warning-subtle";
+      default:
+        return "border-primary-subtle";
+    }
   };
 
   // Handle edit
@@ -616,6 +695,12 @@ export default function MarkupDiscountBoardPage() {
       }
     }
   };
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchRules();
+    fetchHistory();
+  }, []);
 
   // Fetch rules on mount and when filters change
   useEffect(() => {
@@ -966,74 +1051,87 @@ export default function MarkupDiscountBoardPage() {
                           <div className="col-md-4">
                             <select className="form-select">
                               <option>All Rules</option>
-                              <option>Marine Agent Markup</option>
-                              <option>Commercial Agent Discount</option>
-                              <option>Selling Agent Cargo Markup</option>
                             </select>
                           </div>
                           <div className="col-md-4">
-                            <select className="form-select">
-                              <option>All Actions</option>
-                              <option>Created</option>
-                              <option>Updated</option>
-                              <option>Activated</option>
-                              <option>Deactivated</option>
-                              <option>Deleted</option>
+                            <select 
+                              className="form-select"
+                              value={selectedActionType}
+                              onChange={(e) => setSelectedActionType(e.target.value)}
+                            >
+                              <option value="">All Actions</option>
+                              <option value="Created">Created</option>
+                              <option value="Updated">Updated</option>
+                              <option value="Activated">Activated</option>
+                              <option value="Deactivated">Deactivated</option>
+                              <option value="Deleted">Deleted</option>
                             </select>
                           </div>
                           <div className="col-md-3">
-                            <select className="form-select">
-                              <option>Last 7 Days</option>
-                              <option>Last 30 Days</option>
-                              <option>Last 90 Days</option>
-                              <option>Custom Range</option>
+                            <select 
+                              className="form-select"
+                              value={selectedDateRange}
+                              onChange={(e) => setSelectedDateRange(e.target.value)}
+                            >
+                              <option value="last7days">Last 7 Days</option>
+                              <option value="last30days">Last 30 Days</option>
+                              <option value="last90days">Last 90 Days</option>
                             </select>
                           </div>
                           <div className="col-md-1 d-grid">
-                            <button className="btn btn-primary">Apply</button>
+                            <button 
+                              className="btn btn-primary" 
+                              onClick={() => fetchHistory(selectedDateRange, selectedActionType)}
+                            >
+                              Apply
+                            </button>
                           </div>
                         </div>
 
-                        <div className="history-item border-start border-4 border-primary-subtle">
-                          <span className="badge bg-primary">Updated</span>
-                          <h6 className="mt-2">Marine Agent Markup</h6>
-                          <p>Value changed from 4% to 5%</p>
-                          <div className="d-flex justify-content-between">
-                            <span className="history-meta">By John Doe • 12 Aug 2023, 10:30 AM</span>
-                            <a href="#" className="view-link">View Details</a>
+                        {/* Loading State */}
+                        {historyLoading && (
+                          <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+                            <CirclesWithBar
+                              height="100"
+                              width="100"
+                              color="#05468f"
+                              outerCircleColor="#05468f"
+                              innerCircleColor="#05468f"
+                              barColor="#05468f"
+                              ariaLabel="circles-with-bar-loading"
+                              visible={true}
+                            />
                           </div>
-                        </div>
+                        )}
 
-                        <div className="history-item border-start border-4 border-success-subtle">
-                          <span className="badge bg-success">Created</span>
-                          <h6 className="mt-2">Commercial Agent Discount</h6>
-                          <p>New rule created with 3% discount</p>
-                          <div className="d-flex justify-content-between">
-                            <span className="history-meta">By Jane Smith • 10 Aug 2023, 2:15 PM</span>
-                            <a href="#" className="view-link">View Details</a>
+                        {/* Error State */}
+                        {historyError && !historyLoading && (
+                          <div className="alert alert-danger" role="alert">
+                            <strong>Error!</strong> {historyError}
                           </div>
-                        </div>
+                        )}
 
-                        <div className="history-item border-start border-4 border-warning-subtle">
-                          <span className="badge bg-warning text-dark">Activated</span>
-                          <h6 className="mt-2">Selling Agent Cargo Markup</h6>
-                          <p>Rule activated after review</p>
-                          <div className="d-flex justify-content-between">
-                            <span className="history-meta">By Mike Johnson • 05 Aug 2023, 9:45 AM</span>
-                            <a href="#" className="view-link">View Details</a>
+                        {/* History Items */}
+                        {!historyLoading && !historyError && history && history.length > 0 ? (
+                          history.map((item, index) => (
+                            <div key={index} className={`history-item border-start border-4 ${getActionBorderClass(item.actionType)}`}>
+                              <span className={`badge ${getActionBadgeClass(item.actionType)}`}>
+                                {item.actionType}
+                              </span>
+                              <h6 className="mt-2">{item.ruleName}</h6>
+                              <p>{item.description}</p>
+                              <div className="d-flex justify-content-between">
+                                <span className="history-meta">
+                                  By {item.changedBy || "System"} • {formatHistoryDate(item.changedAt)}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : !historyLoading && !historyError ? (
+                          <div className="alert alert-info" role="alert">
+                            No history records found
                           </div>
-                        </div>
-
-                        <div className="history-item border-start border-4 border-danger-subtle">
-                          <span className="badge bg-danger">Deleted</span>
-                          <h6 className="mt-2">Old Passenger Discount</h6>
-                          <p>Rule deleted as no longer needed</p>
-                          <div className="d-flex justify-content-between">
-                            <span className="history-meta">By Sarah Williams • 01 Aug 2023, 4:20 PM</span>
-                            <a href="#" className="view-link">View Details</a>
-                          </div>
-                        </div>
-
+                        ) : null}
                       </div>
                     </div>
                   </div>

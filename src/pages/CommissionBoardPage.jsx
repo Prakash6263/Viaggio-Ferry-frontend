@@ -456,9 +456,9 @@ export default function CommissionBoardPage() {
       setHistoryLoading(true);
       setHistoryError(null);
 
-      console.log("[v0] Fetching markup-discount history...", { dateRange, actionType });
+      console.log("[v0] Fetching commission rules history...", { dateRange, actionType });
 
-      const response = await commissionApi.getMarkupDiscountHistory(dateRange, actionType);
+      const response = await commissionApi.getCommissionRulesHistory(dateRange, actionType);
       console.log("[v0] History API Response:", response);
 
       if (response.success && response.data) {
