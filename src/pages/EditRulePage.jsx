@@ -601,6 +601,7 @@ export default function EditRulePage() {
         <div className="content container-fluid">
           <style>{`
             .route-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+            .route-row .form-select { flex:1; }
             .delete-route { cursor:pointer; color:red; font-size:18px; }
           `}</style>
 
