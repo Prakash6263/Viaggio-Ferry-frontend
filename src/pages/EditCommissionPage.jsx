@@ -133,13 +133,13 @@ const getLoginRoleFromToken = () => {
               }
             }
             if (rule.serviceDetails.cargo && rule.serviceDetails.cargo.length > 0) {
-              // Store only cabin IDs for cargo
-              const cargoIds = rule.serviceDetails.cargo.map(c => c.cabinId?._id || c.cabinId);
+              // Store only payload type IDs for cargo
+              const cargoIds = rule.serviceDetails.cargo.map(c => c.payloadTypeId?._id || c.payloadTypeId);
               setCargoTypes(cargoIds);
             }
             if (rule.serviceDetails.vehicle && rule.serviceDetails.vehicle.length > 0) {
-              // Store only cabin IDs for vehicle
-              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.cabinId?._id || v.cabinId);
+              // Store only payload type IDs for vehicle
+              const vehicleIds = rule.serviceDetails.vehicle.map(v => v.payloadTypeId?._id || v.payloadTypeId);
               setVehicleTypes(vehicleIds);
             }
           }
