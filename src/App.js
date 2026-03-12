@@ -41,8 +41,10 @@ import B2CCustomersPage from "./pages/B2CCustomersPage"
 import SalesmenPage from "./pages/SalesmenPage"
 import MarkupDiscountBoardPage from "./pages/MarkupDiscountBoardPage"
 import AddRulePage from "./pages/AddRulePage"
+import EditRulePage from "./pages/EditRulePage"
 import CommissionBoardPage from "./pages/CommissionBoardPage"
 import AddCommissionPage from "./pages/AddCommissionPage"
+import EditCommissionPage from "./pages/EditCommissionPage"
 
 // Sales and Booking
 import PriceListPage from "./pages/PriceListPage"
@@ -225,8 +227,10 @@ function AppRoutes() {
         <Route path="/company/salesmen" element={<ProtectedRoute element={<SalesmenPage />} />} />
         <Route path="/company/markup" element={<ProtectedRoute element={<MarkupDiscountBoardPage />} />} />
         <Route path="/company/markup/add-rule" element={<ProtectedRoute element={<AddRulePage />} />} />
+        <Route path="/company/markup/edit/:ruleId" element={<ProtectedRoute element={<EditRulePage />} />} />
         <Route path="/company/commission" element={<ProtectedRoute element={<CommissionBoardPage />} />} />
         <Route path="/company/commission/add" element={<ProtectedRoute element={<AddCommissionPage />} />} />
+        <Route path="/company/commission/edit/:ruleId" element={<ProtectedRoute element={<EditCommissionPage />} />} />
 
         {/* Sales and Booking */}
         <Route path="/company/pricelist" element={<ProtectedRoute element={<PriceListPage />} />} />

@@ -318,6 +318,7 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CirclesWithBar } from "react-loader-spinner";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -336,6 +337,8 @@ import RuleDetailsModal from "../components/commission/RuleDetailsModal";
  */
 export default function CommissionBoardPage() {
   const [rules, setRules] = useState([]);
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
@@ -456,9 +459,9 @@ export default function CommissionBoardPage() {
       setHistoryLoading(true);
       setHistoryError(null);
 
-      console.log("[v0] Fetching markup-discount history...", { dateRange, actionType });
+      console.log("[v0] Fetching commission rules history...", { dateRange, actionType });
 
-      const response = await commissionApi.getMarkupDiscountHistory(dateRange, actionType);
+      const response = await commissionApi.getCommissionRulesHistory(dateRange, actionType);
       console.log("[v0] History API Response:", response);
 
       if (response.success && response.data) {
@@ -552,7 +555,7 @@ export default function CommissionBoardPage() {
 
   // Handle edit
   const handleEdit = (ruleId) => {
-    window.location.href = `/company/commission/edit/${ruleId}`;
+    navigate(`/company/commission/edit/${ruleId}`);
   };
 
   // Handle delete
@@ -953,16 +956,28 @@ export default function CommissionBoardPage() {
                                     <span className="history-meta">
                                       By {item.createdBy?.name || item.createdBy?.email || "System"} • {formatHistoryDate(item.createdAt)}
                                     </span>
-                                    <a 
-                                      href="#" 
-                                      className="view-link"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        openRuleDetails(item.ruleId);
-                                      }}
-                                    >
-                                      View Details
-                                    </a>
+                                    <div className="d-flex gap-2">
+                                      <a 
+                                        href="#" 
+                                        className="view-link"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          openRuleDetails(item.ruleId);
+                                        }}
+                                      >
+                                        View Details
+                                      </a>
+                                      <a 
+                                        href="#" 
+                                        className="view-link"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleEdit(item.ruleId);
+                                        }}
+                                      >
+                                        Edit
+                                      </a>
+                                    </div>
                                   </div>
                                 </div>
                               ))

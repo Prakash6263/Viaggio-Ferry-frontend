@@ -35,10 +35,10 @@ export const commissionApi = {
     })
   },
 
-  // Get markup/discount history
-  getMarkupDiscountHistory: async (dateRange = "last7days", actionType = "") => {
+  // Get commission rules history
+  getCommissionRulesHistory: async (dateRange = "last7days", actionType = "") => {
     const params = new URLSearchParams({ dateRange });
     if (actionType) params.append("actionType", actionType);
-    return apiRequest(`/api/markup-discounts/history?${params}`)
+    return apiRequest(`/api/commission-rules/history?${params}`)
   },
 }
