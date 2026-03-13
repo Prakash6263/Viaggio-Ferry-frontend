@@ -37,14 +37,15 @@ const moduleSubmodules = {
   ],
   "partners-management": [
     { name: "Business Partners", code: "business-partners", permissions: ["Read", "Write", "Edit", "Delete"] },
-    { name: "Service Partners", code: "service-partners", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "B2C Customers", code: "b2c-customers", permissions: ["Read", "Write", "Edit", "Delete"] },
     { name: "Salesmen", code: "salesmen", permissions: ["Read", "Write", "Edit", "Delete"] },
     {
       name: "Markup & Discount Board",
-      code: "markup-discount-board",
+      code: "markup-discounts",
       permissions: ["Read", "Write", "Edit", "Delete"],
     },
-    { name: "Commission Board", code: "commission-board", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "Commission Board", code: "commissions", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "Promotions", code: "promotions", permissions: ["Read", "Write", "Edit", "Delete"] },
   ],
   "sales-bookings": [
     { name: "Price List", code: "price-list", permissions: ["Read", "Write", "Edit", "Delete"] },

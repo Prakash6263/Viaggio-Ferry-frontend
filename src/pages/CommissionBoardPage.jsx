@@ -612,8 +612,6 @@ export default function CommissionBoardPage() {
       <Sidebar />
 
       <PageWrapper>
-        {/* READ permission gate - hide entire page if no read access */}
-        <Can action="read">
         <div className="content container-fluid">
           {/* Page Header */}
           <div className="page-header">
@@ -1001,7 +999,6 @@ export default function CommissionBoardPage() {
           </div>
 
         </div>
-        </Can>
       </PageWrapper>
 
       {/* Rule Details Modal */}
