@@ -26,11 +26,39 @@ const getLoginRoleFromToken = () => {
   }
 }
 
+// Helper function to decode JWT and get layer
+const getLayerFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
+
+    const decoded = JSON.parse(atob(token.split(".")[1]))
+    return decoded.layer
+  } catch (error) {
+    console.error("[v0] Error decoding token for layer:", error)
+    return null
+  }
+}
+
+// Helper function to map current layer to next applicable layer
+const getNextApplicableLayer = (currentLayer) => {
+  const layerHierarchy = {
+    "company": "Marine Agent",
+    "marine": "Commercial Agent",
+    "commercial": "Selling Agent",
+    "selling": null // No next layer for selling agent
+  }
+  
+  const normalizedLayer = currentLayer?.toLowerCase() || ""
+  return layerHierarchy[normalizedLayer] || null
+}
+
 export default function AddRulePage() {
   const [ruleName, setRuleName] = useState("");
   const [ruleType, setRuleType] = useState("Markup");
   const [provider, setProvider] = useState("");
   const [appliedLayer, setAppliedLayer] = useState("");
+  const [providerLayer, setProviderLayer] = useState("");
   const [loading, setLoading] = useState(true);
   const [loginRole, setLoginRole] = useState(null);
   const [childPartners, setChildPartners] = useState([]);
@@ -48,6 +76,9 @@ export default function AddRulePage() {
       try {
         setLoading(true);
 
+        // Get layer from token for all cases
+        const tokenLayer = getLayerFromToken();
+        
         if (loginRole === "user") {
           // For user login: Get company name from user's company object and user's layer
           const response = await usersApi.getCurrentProfile();
@@ -58,10 +89,14 @@ export default function AddRulePage() {
             const userLayer = userData.layer || userData.role || "Company";
 
             setProvider(providerName);
-            setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
+            setProviderLayer(userLayer);
+            
+            // Set applied layer to next applicable layer based on provider layer
+            const nextLayer = getNextApplicableLayer(userLayer);
+            setAppliedLayer(nextLayer || userLayer);
             setCurrentUserId(userData._id || "");
 
-            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "UserID:", userData._id);
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "Applied Layer:", nextLayer, "UserID:", userData._id);
           }
         } else if (loginRole === "company") {
           // For company login: Get company name and set layer as "Company"
@@ -72,10 +107,13 @@ export default function AddRulePage() {
             const providerName = companyData.companyName || "Unknown";
 
             setProvider(providerName);
-            setAppliedLayer("Company");
+            setProviderLayer("company");
+            
+            // Company layer always maps to Marine Agent
+            setAppliedLayer("Marine Agent");
             setCurrentUserId(companyData._id || "");
 
-            console.log("[v0] Company profile loaded - Provider:", providerName, "Layer: Company", "CompanyID:", companyData._id);
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Provider Layer: company", "Applied Layer: Marine Agent", "CompanyID:", companyData._id);
           }
         }
       } catch (error) {
@@ -509,17 +547,17 @@ export default function AddRulePage() {
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
                     <label className="form-label">Applied Layer</label>
-                    <select
-                      className="form-select"
-                      value={appliedLayer}
-                      onChange={e => setAppliedLayer(e.target.value)}
-                    >
-                      <option value="">Select Layer</option>
-                      <option value="Company">Company</option>
-                      <option value="Marine Agent">Marine Agent</option>
-                      <option value="Commercial Agent">Commercial Agent</option>
-                      <option value="Selling Agent">Selling Agent</option>
-                    </select>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      value={appliedLayer} 
+                      readOnly 
+                      disabled
+                      style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                    />
+                    <small className="text-muted d-block mt-1">
+                      Automatically determined based on provider layer: {providerLayer}
+                    </small>
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Partner</label>
@@ -739,14 +777,14 @@ export default function AddRulePage() {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Priority</label>
-                    <input 
-                      type="number" 
-                      className="form-control"
+                    <select
+                      className="form-select"
                       value={priority}
                       onChange={e => setPriority(e.target.value)}
-                      min="1"
-                      max="100"
-                    />
+                    >
+                      <option value="1">1 - First Priority</option>
+                      <option value="2">2 - Not Applicable</option>
+                    </select>
                   </div>
                 </div>
 

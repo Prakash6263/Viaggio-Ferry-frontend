@@ -27,6 +27,33 @@ const getLoginRoleFromToken = () => {
   }
 }
 
+// Helper function to decode JWT and get layer
+const getLayerFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken")
+    if (!token) return null
+
+    const decoded = JSON.parse(atob(token.split(".")[1]))
+    return decoded.layer
+  } catch (error) {
+    console.error("[v0] Error decoding token for layer:", error)
+    return null
+  }
+}
+
+// Helper function to map current layer to next applicable layer
+const getNextApplicableLayer = (currentLayer) => {
+  const layerHierarchy = {
+    "company": "Marine Agent",
+    "marine": "Commercial Agent",
+    "commercial": "Selling Agent",
+    "selling": null // No next layer for selling agent
+  }
+  
+  const normalizedLayer = currentLayer?.toLowerCase() || ""
+  return layerHierarchy[normalizedLayer] || null
+}
+
   export default function EditCommissionPage() {
   const { ruleId } = useParams();
   const navigate = useNavigate();
@@ -38,6 +65,7 @@ const getLoginRoleFromToken = () => {
   const [ruleName, setRuleName] = useState("");
   const [provider, setProvider] = useState("");
   const [appliedLayer, setAppliedLayer] = useState("");
+  const [providerLayer, setProviderLayer] = useState("");
   const [partnerSelection, setPartnerSelection] = useState("All Child Partners");
   const [value, setValue] = useState("");
   const [valueType, setValueType] = useState("%");
@@ -200,12 +228,17 @@ const getLoginRoleFromToken = () => {
             const providerName = userData.company?.companyName || "Unknown";
             const userLayer = userData.layer || userData.role || "Company";
 
+            setProviderLayer(userLayer);
+            
+            // Set applied layer to next applicable layer based on provider layer
+            const nextLayer = getNextApplicableLayer(userLayer);
+            setAppliedLayer(nextLayer || userLayer);
+
             if (!provider) {
               setProvider(providerName);
-              setAppliedLayer(userLayer.charAt(0).toUpperCase() + userLayer.slice(1).toLowerCase());
             }
 
-            console.log("[v0] User profile loaded");
+            console.log("[v0] User profile loaded - Layer:", userLayer, "Applied Layer:", nextLayer);
           }
         } else if (loginRole === "company") {
           const response = await companyApi.getCompanyProfile();
@@ -214,9 +247,12 @@ const getLoginRoleFromToken = () => {
             const companyData = response.data;
             const providerName = companyData.companyName || "Unknown";
 
+            setProviderLayer("company");
+            // Company layer always maps to Marine Agent
+            setAppliedLayer("Marine Agent");
+
             if (!provider) {
               setProvider(providerName);
-              setAppliedLayer("Company");
             }
 
             console.log("[v0] Company profile loaded");
@@ -607,17 +643,17 @@ const getLoginRoleFromToken = () => {
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
                       <label className="form-label">Applied Layer</label>
-                      <select
-                        className="form-select"
-                        value={appliedLayer}
-                        onChange={e => setAppliedLayer(e.target.value)}
-                      >
-                        <option value="">Select Layer</option>
-                        <option value="Company">Company</option>
-                        <option value="Marine Agent">Marine Agent</option>
-                        <option value="Commercial Agent">Commercial Agent</option>
-                        <option value="Selling Agent">Selling Agent</option>
-                      </select>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        value={appliedLayer} 
+                        readOnly 
+                        disabled
+                        style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                      />
+                      <small className="text-muted d-block mt-1">
+                        Automatically determined based on provider layer: {providerLayer}
+                      </small>
                     </div>
 
                     <div className="col-md-6">
@@ -695,13 +731,14 @@ const getLoginRoleFromToken = () => {
                   <div className="row g-3 mb-3">
                     <div className="col-md-12">
                       <label className="form-label">Priority</label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="form-control"
+                      <select
+                        className="form-select"
                         value={priority}
                         onChange={e => setPriority(e.target.value)}
-                      />
+                      >
+                        <option value="1">1 - First Priority</option>
+                        <option value="2">2 - Not Applicable</option>
+                      </select>
                     </div>
                   </div>
 
