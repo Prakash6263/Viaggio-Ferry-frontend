@@ -754,6 +754,8 @@ export default function MarkupDiscountBoardPage() {
 
       {/* Page wrapper (keeps same outer wrapper as original) */}
       <PageWrapper>
+        {/* READ permission gate - hide entire page if no read access */}
+        <Can action="read">
         <div className="content container-fluid">
           {/* Page Header */}
           <div className="page-header">
@@ -1201,6 +1203,7 @@ export default function MarkupDiscountBoardPage() {
           </div>
 
         </div>
+        </Can>
       </PageWrapper>
 
       {/* Markup/Discount Rule Details Modal */}
