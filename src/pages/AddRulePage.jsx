@@ -520,6 +520,9 @@ export default function AddRulePage() {
                       <option value="Commercial Agent">Commercial Agent</option>
                       <option value="Selling Agent">Selling Agent</option>
                     </select>
+                    <small className="text-muted d-block mt-1">
+                      Layer hierarchy: Company → Marine Agent → Commercial Agent → Selling Agent
+                    </small>
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Partner</label>
@@ -739,14 +742,14 @@ export default function AddRulePage() {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Priority</label>
-                    <input 
-                      type="number" 
-                      className="form-control"
+                    <select
+                      className="form-select"
                       value={priority}
                       onChange={e => setPriority(e.target.value)}
-                      min="1"
-                      max="100"
-                    />
+                    >
+                      <option value="1">1 - First Priority</option>
+                      <option value="2">2 - Not Applicable</option>
+                    </select>
                   </div>
                 </div>
 
