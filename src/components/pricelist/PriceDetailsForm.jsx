@@ -43,6 +43,24 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
   const [selectedTaxIds, setSelectedTaxIds] = useState([]);
   const [currentTaxBase, setCurrentTaxBase] = useState('fare_only');
   const [totalPrice, setTotalPrice] = useState(0);
+  
+  // Form field state for create/edit
+  const [priceListName, setPriceListName] = useState('');
+  const [effectiveDateTime, setEffectiveDateTime] = useState('');
+  const [taxBase, setTaxBase] = useState('fare_only');
+  const [currency, setCurrency] = useState('');
+  
+  // Detail row state
+  const [newPassengerType, setNewPassengerType] = useState('');
+  const [newTicketType, setNewTicketType] = useState('one_way');
+  const [newCabin, setNewCabin] = useState('');
+  const [newOriginPort, setNewOriginPort] = useState('');
+  const [newDestinationPort, setNewDestinationPort] = useState('');
+  const [newVisaType, setNewVisaType] = useState('Tourist');
+  const [newTaxForm, setNewTaxForm] = useState('refundable');
+  const [newAllowedPieces, setNewAllowedPieces] = useState('');
+  const [newAllowedWeight, setNewAllowedWeight] = useState('');
+  const [newExcessPrice, setNewExcessPrice] = useState('');
 
   // Load existing price list if in edit mode
   useEffect(() => {
@@ -82,15 +100,10 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
     if (existingPriceList && existingPriceList.header && currencies.length > 0) {
       const header = existingPriceList.header;
 
-      // Prefill header fields
-      const nameInput = document.getElementById(`${idPrefix}-name`);
-      const dateInput = document.getElementById(`${idPrefix}-effective-date`);
-      const taxBaseSelect = document.getElementById(`${idPrefix}-tax-base`);
-      const currencySelect = document.getElementById(`${idPrefix}-currency`);
-      const partnersContainer = document.getElementById(`${idPrefix}-partners-tags`);
-
-      if (nameInput) nameInput.value = header.priceListName || '';
-      if (dateInput && header.effectiveDateTime) {
+      // Prefill header fields using state
+      setPriceListName(header.priceListName || '');
+      
+      if (header.effectiveDateTime) {
         // Convert ISO datetime to YYYY-MM-DDTHH:mm format for datetime-local input
         const date = new Date(header.effectiveDateTime);
         const year = date.getFullYear();
@@ -99,37 +112,25 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
-        dateInput.value = formatted;
+        setEffectiveDateTime(formatted);
       }
-      if (taxBaseSelect) taxBaseSelect.value = header.taxBase || 'fare_only';
-      if (currencySelect) {
-        // header.currency is an object with _id field from API response
-        const currencyId = typeof header.currency === 'object' ? header.currency._id : header.currency;
-        currencySelect.value = currencyId || '';
-      }
+      
+      setTaxBase(header.taxBase || 'fare_only');
+      setCurrentTaxBase(header.taxBase || 'fare_only');
+      
+      // header.currency is an object with _id field from API response
+      const currencyId = typeof header.currency === 'object' ? header.currency._id : header.currency;
+      setCurrency(currencyId || '');
 
-      // Populate partners tags
-      if (partnersContainer && header.partners && Array.isArray(header.partners)) {
-        partnersContainer.innerHTML = '';
+      // Populate selected partners from existing data
+      if (header.partners && Array.isArray(header.partners)) {
+        const partnerIds = new Set();
         header.partners.forEach(partnerObj => {
-          // partnerObj is an object with _id and name from API response
-          const partnerId = partnerObj._id;
-          const partnerName = partnerObj.name;
-
-          if (partnerId && partnerName) {
-            const tag = document.createElement('div');
-            tag.className = 'tag';
-            tag.setAttribute('data-id', partnerId);
-            tag.innerHTML = `<span>${partnerName}</span><button type="button" data-id="${partnerId}">&times;</button>`;
-            partnersContainer.appendChild(tag);
-
-            const btn = tag.querySelector('button');
-            btn.addEventListener('click', (e) => {
-              e.preventDefault();
-              tag.remove();
-            });
+          if (partnerObj._id) {
+            partnerIds.add(partnerObj._id);
           }
         });
+        setSelectedPartners(partnerIds);
       }
     }
   }, [existingPriceList, currencies, idPrefix]);
@@ -419,40 +420,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
     }
   };
 
-  // Handler for partners select change
-  const handlePartnerChange = (e) => {
-    const partnerId = e.target.value;
-    const partnerName = e.target.options[e.target.selectedIndex]?.dataset.name || "";
 
-    if (partnerId && !selectedPartners.has(partnerId)) {
-      const newSelected = new Set(selectedPartners);
-      newSelected.add(partnerId);
-      setSelectedPartners(newSelected);
-
-      // Update the display area
-      const container = document.getElementById(`${idPrefix}-partners-tags`);
-      if (container) {
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.setAttribute('data-id', partnerId);
-        tag.innerHTML = `<span>${partnerName}</span><button type="button" data-id="${partnerId}">&times;</button>`;
-        container.appendChild(tag);
-
-        const btn = tag.querySelector('button');
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const id = e.target.getAttribute('data-id');
-          const updated = new Set(selectedPartners);
-          updated.delete(id);
-          setSelectedPartners(updated);
-          tag.remove();
-        });
-      }
-
-      // Reset select
-      e.target.value = "";
-    }
-  };
 
   // Handle form submission - Create or Add Detail
   const handleSubmit = async (e) => {
@@ -461,25 +429,12 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
     try {
       setIsSubmitting(true);
 
-      // Get all detail form values
+      // Get all detail form values from state
       const basicPriceVal = basicPrice;
-      const passengerType = document.getElementById('new-passenger-type')?.value;
-      const ticketType = document.getElementById('new-ticket-type')?.value;
-      const cabin = document.getElementById('new-cabin')?.value;
-      const originPort = document.getElementById('new-origin-port')?.value;
-      const destinationPort = document.getElementById('new-destination-port')?.value;
-      const visaType = document.getElementById('new-visa-type')?.value;
-      const taxForm = document.getElementById('new-tax-form')?.value;
-      const allowedPieces = document.getElementById('new-allowed-pieces')?.value;
-      const allowedWeight = document.getElementById('new-allowed-weight')?.value;
-      const excessPrice = document.getElementById('new-excess-price')?.value;
-
-      // Get selected taxes from state (not from DOM)
       const selectedTaxIdsList = selectedTaxIds;
-      console.log("[v0] Selected tax IDs for submission:", selectedTaxIds);
 
       // Validate required detail fields
-      if (basicPriceVal === '' || basicPriceVal === null || basicPriceVal < 0 || !passengerType || !cabin || !originPort || !destinationPort) {
+      if (basicPriceVal === '' || basicPriceVal === null || basicPriceVal < 0 || !newPassengerType || !newCabin || !newOriginPort || !newDestinationPort) {
         Swal.fire({
           icon: 'warning',
           title: 'Missing Fields',
@@ -492,18 +447,18 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
       // If in edit mode, add detail to existing price list
       if (isEditMode && priceListId) {
         const detailPayload = {
-          passengerType,
-          ticketType: ticketType || 'one_way',
-          cabin,
-          originPort,
-          destinationPort,
-          visaType: visaType || 'Tourist',
+          passengerType: newPassengerType,
+          ticketType: newTicketType || 'one_way',
+          cabin: newCabin,
+          originPort: newOriginPort,
+          destinationPort: newDestinationPort,
+          visaType: newVisaType || 'Tourist',
           basicPrice: parseFloat(basicPriceVal),
           taxIds: selectedTaxIdsList,
-          taxForm: taxForm || 'refundable',
-          allowedLuggagePieces: parseInt(allowedPieces) || 1,
-          allowedLuggageWeight: parseInt(allowedWeight) || 20,
-          excessLuggagePricePerKg: parseFloat(excessPrice) || 2.5,
+          taxForm: newTaxForm || 'refundable',
+          allowedLuggagePieces: parseInt(newAllowedPieces) || 1,
+          allowedLuggageWeight: parseInt(newAllowedWeight) || 20,
+          excessLuggagePricePerKg: parseFloat(newExcessPrice) || 2.5,
         };
 
         console.log("[v0] Submitting edit mode detail payload:", detailPayload);
@@ -522,27 +477,22 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
               const updatedResponse = await priceListApi.getPriceListById(priceListId);
               if (updatedResponse?.success) {
                 setExistingPriceList(updatedResponse.data);
-                // Clear form fields for adding another detail
-                document.getElementById('new-passenger-type').value = '';
-                document.getElementById('new-ticket-type').value = '';
-                document.getElementById('new-cabin').value = '';
-                document.getElementById('new-origin-port').value = '';
-                document.getElementById('new-destination-port').value = '';
-                document.getElementById('new-visa-type').value = '';
-                document.getElementById('new-allowed-pieces').value = '';
-                document.getElementById('new-allowed-weight').value = '';
-                document.getElementById('new-excess-price').value = '';
-                document.getElementById('new-tax-form').value = 'refundable';
+                // Reset form fields
+                setNewPassengerType('');
+                setNewTicketType('one_way');
+                setNewCabin('');
+                setNewOriginPort('');
+                setNewDestinationPort('');
+                setNewVisaType('Tourist');
+                setNewAllowedPieces('');
+                setNewAllowedWeight('');
+                setNewExcessPrice('');
+                setNewTaxForm('refundable');
                 // Reset state
                 setBasicPrice(0);
                 setSelectedTaxIds([]);
                 setCurrentTaxBase('fare_only');
                 setTotalPrice(0);
-                // Clear tax tags
-                const selectedTaxTagsContainer = document.getElementById(`${idPrefix}-tax-tags`);
-                if (selectedTaxTagsContainer) {
-                  selectedTaxTagsContainer.innerHTML = '';
-                }
               }
             };
             fetchPriceList();
@@ -556,22 +506,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
         }
       } else {
         // Create mode - create full price list
-        const priceListName = document.getElementById(`${idPrefix}-name`)?.value;
-        const effectiveDateTime = document.getElementById(`${idPrefix}-effective-date`)?.value;
-        const taxBase = document.getElementById(`${idPrefix}-tax-base`)?.value;
-        const currency = document.getElementById(`${idPrefix}-currency`)?.value;
-
-        // Get selected partners from tags
-        const partnersTagsContainer = document.getElementById(`${idPrefix}-partners-tags`);
-        const partnerIds = [];
-        if (partnersTagsContainer) {
-          const tags = partnersTagsContainer.querySelectorAll('.tag');
-          tags.forEach(tag => {
-            const btn = tag.querySelector('button');
-            const partnerId = btn?.getAttribute('data-id');
-            if (partnerId) partnerIds.push(partnerId);
-          });
-        }
+        // Get selected partners from state
+        const partnerIds = Array.from(selectedPartners);
 
         // Validate required header fields
         if (!priceListName || !effectiveDateTime || !taxBase || !currency) {
@@ -596,18 +532,18 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
             status: 'active',
           },
           detail: {
-            passengerType,
-            ticketType: ticketType || 'one_way',
-            cabin,
-            originPort,
-            destinationPort,
-            visaType: visaType || 'Tourist',
+            passengerType: newPassengerType,
+            ticketType: newTicketType || 'one_way',
+            cabin: newCabin,
+            originPort: newOriginPort,
+            destinationPort: newDestinationPort,
+            visaType: newVisaType || 'Tourist',
             basicPrice: parseFloat(basicPriceVal),
             taxIds: selectedTaxIdsList,
-            taxForm: taxForm || 'refundable',
-            allowedLuggagePieces: parseInt(allowedPieces) || 1,
-            allowedLuggageWeight: parseInt(allowedWeight) || 20,
-            excessLuggagePricePerKg: parseFloat(excessPrice) || 2.5,
+            taxForm: newTaxForm || 'refundable',
+            allowedLuggagePieces: parseInt(newAllowedPieces) || 1,
+            allowedLuggageWeight: parseInt(newAllowedWeight) || 20,
+            excessLuggagePricePerKg: parseFloat(newExcessPrice) || 2.5,
           },
         };
 
@@ -725,19 +661,21 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                 <div className="row g-4 mb-4">
                   <div className="col-md-6 col-lg-3">
                     <label className="form-label">Price List Name</label>
-                    <input type="text" id={`${idPrefix}-name`} className="form-control" placeholder="Enter price list name" />
+                    <input type="text" className="form-control" placeholder="Enter price list name" value={priceListName} onChange={(e) => setPriceListName(e.target.value)} />
                   </div>
                   <div className="col-md-6 col-lg-3">
                     <label className="form-label">Effective Date & Time</label>
-                    <input type="datetime-local" id={`${idPrefix}-effective-date`} className="form-control" />
+                    <input type="datetime-local" className="form-control" value={effectiveDateTime} onChange={(e) => setEffectiveDateTime(e.target.value)} />
                   </div>
                   <div className="col-md-6 col-lg-3">
                     <label className="form-label">Tax Base</label>
                     <select 
-                      id={`${idPrefix}-tax-base`} 
                       className="form-select"
-                      value={currentTaxBase}
-                      onChange={(e) => setCurrentTaxBase(e.target.value)}
+                      value={taxBase}
+                      onChange={(e) => {
+                        setTaxBase(e.target.value);
+                        setCurrentTaxBase(e.target.value);
+                      }}
                     >
                       <option value="fare_only">Fare Only</option>
                       <option value="fare_plus_tax">Fare & Taxes</option>
@@ -745,11 +683,11 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                   </div>
                   <div className="col-md-6 col-lg-3">
                     <label className="form-label">Currency</label>
-                    <select id={`${idPrefix}-currency`} className="form-select">
+                    <select className="form-select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                       <option value="">Select Currency</option>
-                      {currencies.map((currency) => (
-                        <option key={currency._id} value={currency._id}>
-                          {currency.currencyCode}
+                      {currencies.map((curr) => (
+                        <option key={curr._id} value={curr._id}>
+                          {curr.currencyCode}
                         </option>
                       ))}
                     </select>
@@ -760,28 +698,14 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       id={`${idPrefix}-partners`}
                       className="form-select"
                       onChange={(e) => {
-                        const option = e.target.options[e.target.selectedIndex];
-                        if (option.value) {
-                          // Add selected partner as tag
-                          const partnersContainer = document.getElementById(`${idPrefix}-partners-tags`);
-                          const tag = document.createElement('div');
-                          tag.className = 'tag';
-                          tag.setAttribute('data-id', option.value);
-                          tag.innerHTML = `<span>${option.text}</span><button type="button" data-id="${option.value}">&times;</button>`;
-                          partnersContainer.appendChild(tag);
+                        const partnerId = e.target.value;
+                        const partnerName = e.target.options[e.target.selectedIndex]?.text || "";
 
-                          const btn = tag.querySelector('button');
-                          btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const select = document.getElementById(`${idPrefix}-partners`);
-                            Array.from(select.options).forEach(opt => {
-                              if (opt.value === option.value) opt.selected = false;
-                            });
-                            tag.remove();
-                          });
-
-                          // Reset dropdown
-                          e.target.selectedIndex = 0;
+                        if (partnerId && !selectedPartners.has(partnerId)) {
+                          const newSelected = new Set(selectedPartners);
+                          newSelected.add(partnerId);
+                          setSelectedPartners(newSelected);
+                          e.target.value = "";
                         }
                       }}
                     >
@@ -792,7 +716,26 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                         </option>
                       ))}
                     </select>
-                    <div id={`${idPrefix}-partners-tags`} className="selected-tags mt-2"></div>
+                    <div className="selected-tags mt-2">
+                      {Array.from(selectedPartners).map(partnerId => {
+                        const partner = marinePartners.find(p => p._id === partnerId);
+                        return (
+                          <div key={partnerId} className="tag">
+                            <span>{partner?.name}</span>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const updated = new Set(selectedPartners);
+                                updated.delete(partnerId);
+                                setSelectedPartners(updated);
+                              }}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
                 <hr />
@@ -876,7 +819,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                     {/* editable row for adding new detail */}
                     <tr>
                       <td className="px-2 py-4">
-                        <select id="new-passenger-type" className="form-select w-100 rounded-2 p-1">
+                        <select className="form-select w-100 rounded-2 p-1" value={newPassengerType} onChange={(e) => setNewPassengerType(e.target.value)}>
                           <option value="">Select {idPrefix === 'passenger' ? 'Passenger' : idPrefix === 'vehicle' ? 'Vehicle' : 'Cargo'} Type</option>
                           {payloadTypes.map((payloadType) => (
                             <option key={payloadType._id} value={payloadType._id}>
@@ -887,7 +830,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td className="px-2 py-4">
-                        <select id="new-ticket-type" className="form-select w-100 rounded-2 p-1">
+                        <select className="form-select w-100 rounded-2 p-1" value={newTicketType} onChange={(e) => setNewTicketType(e.target.value)}>
                           <option value="">Select Ticket Type</option>
                           <option value="one_way">One Way</option>
                           <option value="round_trip">Round Trip</option>
@@ -896,7 +839,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td className="px-2 py-4">
-                        <select id="new-cabin" className="form-select w-100 rounded-2 p-1" disabled={cabinsLoading}>
+                        <select className="form-select w-100 rounded-2 p-1" disabled={cabinsLoading} value={newCabin} onChange={(e) => setNewCabin(e.target.value)}>
                           <option value="">Select Cabin</option>
                           {cabins.map((cabin) => (
                             <option key={cabin._id} value={cabin._id}>
@@ -907,7 +850,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td className="px-2 py-4">
-                        <select id="new-origin-port" className="form-select w-100 rounded-2 p-1" disabled={portsLoading}>
+                        <select className="form-select w-100 rounded-2 p-1" disabled={portsLoading} value={newOriginPort} onChange={(e) => setNewOriginPort(e.target.value)}>
                           <option value="">Select Origin Port</option>
                           {ports.map((port) => (
                             <option key={port._id} value={port._id}>
@@ -918,7 +861,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td className="px-2 py-4">
-                        <select id="new-destination-port" className="form-select w-100 rounded-2 p-1" disabled={portsLoading}>
+                        <select className="form-select w-100 rounded-2 p-1" disabled={portsLoading} value={newDestinationPort} onChange={(e) => setNewDestinationPort(e.target.value)}>
                           <option value="">Select Destination Port</option>
                           {ports.map((port) => (
                             <option key={port._id} value={port._id}>
@@ -929,7 +872,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td className="px-2 py-4">
-                        <select id="new-visa-type" className="form-select w-100 rounded-2 p-1">
+                        <select className="form-select w-100 rounded-2 p-1" value={newVisaType} onChange={(e) => setNewVisaType(e.target.value)}>
                           <option>Tourist</option><option>Business</option><option>Student</option><option>N/A</option>
                         </select>
                       </td>
@@ -955,7 +898,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       <td className="px-2 py-4">
                         <select
                           id={`${idPrefix}-tax-select`}
-                          className="select-with-tags form-select rounded-2 p-1 h-24"
+                          className="form-select rounded-2 p-1 h-24"
                           style={{ width: 150 }}
                           disabled={taxesLoading}
                           onChange={(e) => {
@@ -980,7 +923,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                             </option>
                           ))}
                         </select>
-                        <div id={`${idPrefix}-tax-tags`} className="selected-tags">
+                        <div className="selected-tags">
                           {selectedTaxIds.map(taxId => {
                             const tax = taxes.find(t => t._id === taxId);
                             return (
@@ -999,7 +942,7 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td>
-                        <select className="form-select" id="new-tax-form" style={{ width: 150 }}>
+                        <select className="form-select" style={{ width: 150 }} value={newTaxForm} onChange={(e) => setNewTaxForm(e.target.value)}>
                           <option value="refundable">Refundable</option>
                           <option value="non_refundable">Non Refundable</option>
                         </select>
@@ -1017,15 +960,15 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                       </td>
 
                       <td className="px-2 py-4">
-                        <input type="number" id="new-allowed-pieces" className="form-control w-100 rounded-2 p-1" />
+                        <input type="number" className="form-control w-100 rounded-2 p-1" value={newAllowedPieces} onChange={(e) => setNewAllowedPieces(e.target.value)} />
                       </td>
 
                       <td className="px-2 py-4">
-                        <input type="number" step="0.01" id="new-allowed-weight" className="form-control w-100 rounded-2 p-1" />
+                        <input type="number" step="0.01" className="form-control w-100 rounded-2 p-1" value={newAllowedWeight} onChange={(e) => setNewAllowedWeight(e.target.value)} />
                       </td>
 
                       <td className="px-2 py-4">
-                        <input type="number" step="0.01" id="new-excess-price" className="form-control w-100 rounded-2 p-1" />
+                        <input type="number" step="0.01" className="form-control w-100 rounded-2 p-1" value={newExcessPrice} onChange={(e) => setNewExcessPrice(e.target.value)} />
                       </td>
                     </tr>
 

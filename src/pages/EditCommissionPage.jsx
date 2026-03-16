@@ -415,16 +415,6 @@ const getNextApplicableLayer = (currentLayer) => {
       return;
     }
 
-    if (!visaType) {
-      Swal.fire({
-        icon: "error",
-        title: "Validation Error",
-        text: "Visa Type is required",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-
     if (!appliedLayer) {
       Swal.fire({
         icon: "error",
@@ -440,16 +430,6 @@ const getNextApplicableLayer = (currentLayer) => {
         icon: "error",
         title: "Validation Error",
         text: "Select at least one Service Type",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-
-    if (!routes || routes.length === 0 || routes.some(r => !r.from || !r.to)) {
-      Swal.fire({
-        icon: "error",
-        title: "Validation Error",
-        text: "At least one complete route is required (both From and To ports)",
         confirmButtonText: "OK",
       });
       return;
@@ -521,13 +501,17 @@ const getNextApplicableLayer = (currentLayer) => {
       commissionType: convertedValueType,
       commissionValue: parseInt(value),
       valueType: convertedValueType,
-      visaType,
       serviceDetails,
       routes: routesData,
       effectiveDate: new Date(effectiveDate).toISOString(),
       expiryDate: new Date(expiryDate).toISOString(),
       priority: parseInt(priority)
     };
+    
+    // Add optional fields only if they have values
+    if (visaType) {
+      payload.visaType = visaType;
+    }
 
     if (partnerSelection !== "All Child Partners") {
       const selectedPartner = childPartners.find(p => p.name === partnerSelection);
@@ -619,7 +603,7 @@ const getNextApplicableLayer = (currentLayer) => {
                   <form onSubmit={onSave}>
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label">Rule Name</label>
+                      <label className="form-label">Rule Name <span style={{ color: "red" }}>*</span></label>
                       <input
                         type="text"
                         className="form-control"
@@ -629,7 +613,7 @@ const getNextApplicableLayer = (currentLayer) => {
                       />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label">Commission Provider</label>
+                      <label className="form-label">Commission Provider <span style={{ color: "red" }}>*</span></label>
                       <input
                         className="form-control"
                         value={provider}
@@ -642,7 +626,7 @@ const getNextApplicableLayer = (currentLayer) => {
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label">Applied Layer</label>
+                      <label className="form-label">Applied Layer <span style={{ color: "red" }}>*</span></label>
                       <input 
                         type="text" 
                         className="form-control" 
@@ -657,7 +641,7 @@ const getNextApplicableLayer = (currentLayer) => {
                     </div>
 
                     <div className="col-md-6">
-                      <label className="form-label">Partner</label>
+                      <label className="form-label">Partner <span style={{ color: "red" }}>*</span></label>
                       <select
                         className="form-select"
                         value={partnerSelection}
@@ -675,7 +659,7 @@ const getNextApplicableLayer = (currentLayer) => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Commission Value</label>
+                    <label className="form-label">Commission Value <span style={{ color: "red" }}>*</span></label>
                     <div className="input-group">
                       <input
                         type="number"
@@ -709,7 +693,7 @@ const getNextApplicableLayer = (currentLayer) => {
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className="form-label">Effective Date</label>
+                      <label className="form-label">Effective Date <span style={{ color: "red" }}>*</span></label>
                       <input
                         type="date"
                         className="form-control"
@@ -718,7 +702,7 @@ const getNextApplicableLayer = (currentLayer) => {
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className="form-label">Expiry Date</label>
+                      <label className="form-label">Expiry Date <span style={{ color: "red" }}>*</span></label>
                       <input
                         type="date"
                         className="form-control"
@@ -736,14 +720,17 @@ const getNextApplicableLayer = (currentLayer) => {
                         value={priority}
                         onChange={e => setPriority(e.target.value)}
                       >
-                        <option value="1">1 - First Priority</option>
-                        <option value="2">2 - Not Applicable</option>
+                        <option value="1">1 - Highest</option>
+                        <option value="2">2 - High</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - Low</option>
+                        <option value="5">5 - Lowest</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Service Types</label>
+                    <label className="form-label">Service Types <span style={{ color: "red" }}>*</span></label>
                     <div className="form-check">
                       <input
                         className="form-check-input"

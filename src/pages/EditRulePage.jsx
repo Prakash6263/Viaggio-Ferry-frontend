@@ -390,11 +390,12 @@ export default function EditRulePage() {
       return;
     }
 
-    if (!value || value <= 0) {
+    // Markup/Discount value is optional, but if provided must be greater than 0
+    if (value && value <= 0) {
       Swal.fire({
         icon: "warning",
         title: "Validation Error",
-        text: "Commission Value must be greater than 0",
+        text: "Rule Value must be greater than 0 if provided",
         confirmButtonColor: "#17a2b8"
       });
       return;
@@ -415,16 +416,6 @@ export default function EditRulePage() {
         icon: "warning",
         title: "Validation Error",
         text: "Expiry Date is required",
-        confirmButtonColor: "#17a2b8"
-      });
-      return;
-    }
-
-    if (!visaType) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "Visa Type is required",
         confirmButtonColor: "#17a2b8"
       });
       return;
@@ -459,17 +450,6 @@ export default function EditRulePage() {
         icon: "warning",
         title: "Validation Error",
         text: "Select at least one Service Type",
-        confirmButtonColor: "#17a2b8"
-      });
-      return;
-    }
-
-    // Validate at least one route exists
-    if (!routes || routes.length === 0 || routes.some(r => !r.from || !r.to)) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "At least one complete route is required (both From and To ports)",
         confirmButtonColor: "#17a2b8"
       });
       return;
@@ -547,15 +527,19 @@ export default function EditRulePage() {
       appliedLayer,
       partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
       ruleType,
-      ruleValue: parseInt(value),
+      ruleValue: parseInt(value) || null,
       valueType: convertedValueType,
-      visaType,
       serviceDetails,
       routes: routesData,
       effectiveDate: new Date(effectiveDate).toISOString(),
       expiryDate: new Date(expiryDate).toISOString(),
       priority: parseInt(priority)
     };
+    
+    // Add optional fields only if they have values
+    if (visaType) {
+      payload.visaType = visaType;
+    }
 
     // Add partner ID only if partnerScope is SpecificPartner
     if (partnerSelection !== "All Child Partners") {
@@ -641,18 +625,18 @@ export default function EditRulePage() {
               <form onSubmit={onSave}>
                 <div className="row g-3 mb-3">
                   <div className="col-md-4">
-                    <label className="form-label">Rule Name</label>
+                    <label className="form-label">Rule Name <span style={{ color: "red" }}>*</span></label>
                     <input className="form-control" value={ruleName} onChange={e => setRuleName(e.target.value)} placeholder="Enter rule name" />
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label">Rule Type</label>
+                    <label className="form-label">Rule Type <span style={{ color: "red" }}>*</span></label>
                     <select className="form-select" value={ruleType} onChange={e => setRuleType(e.target.value)}>
                       <option>Markup</option>
                       <option>Discount</option>
                     </select>
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label">Provider</label>
+                    <label className="form-label">Provider <span style={{ color: "red" }}>*</span></label>
                     <input
                       className="form-control"
                       value={provider}
@@ -665,7 +649,7 @@ export default function EditRulePage() {
 
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
-                    <label className="form-label">Applied Layer</label>
+                    <label className="form-label">Applied Layer <span style={{ color: "red" }}>*</span></label>
                     <input 
                       type="text" 
                       className="form-control" 
@@ -679,7 +663,7 @@ export default function EditRulePage() {
                     </small>
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label">Partner</label>
+                    <label className="form-label">Partner <span style={{ color: "red" }}>*</span></label>
                     <select
                       className="form-select"
                       value={partnerSelection}
@@ -713,11 +697,11 @@ export default function EditRulePage() {
                     <input type="text" className="form-control" value={visaType} onChange={e => setVisaType(e.target.value)} placeholder="E.g. Schengen, Tourist" />
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label">Effective Date</label>
+                    <label className="form-label">Effective Date <span style={{ color: "red" }}>*</span></label>
                     <input type="date" className="form-control" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} />
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label">Expiry Date</label>
+                    <label className="form-label">Expiry Date <span style={{ color: "red" }}>*</span></label>
                     <input type="date" className="form-control" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} />
                   </div>
                 </div>
@@ -730,14 +714,17 @@ export default function EditRulePage() {
                       value={priority}
                       onChange={e => setPriority(e.target.value)}
                     >
-                      <option value="1">1 - First Priority</option>
-                      <option value="2">2 - Not Applicable</option>
+                      <option value="1">1 - Highest</option>
+                      <option value="2">2 - High</option>
+                      <option value="3">3 - Medium</option>
+                      <option value="4">4 - Low</option>
+                      <option value="5">5 - Lowest</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">Service Types</label>
+                  <label className="form-label">Service Types <span style={{ color: "red" }}>*</span></label>
                   <div className="form-check">
                     <input
                       className="form-check-input"
