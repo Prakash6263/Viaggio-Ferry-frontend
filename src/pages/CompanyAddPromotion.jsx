@@ -1,8 +1,9 @@
 // src/pages/AddPromotionPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
+import { tripsApi } from "../api/tripsApi";
 
 export default function AddPromotionPage() {
   // basic fields
@@ -12,6 +13,34 @@ export default function AddPromotionPage() {
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("active");
   const [basis, setBasis] = useState("period");
+  const [selectedTrip, setSelectedTrip] = useState("");
+
+  // Trips state
+  const [trips, setTrips] = useState([]);
+  const [tripsLoading, setTripsLoading] = useState(false);
+  const [tripsError, setTripsError] = useState(null);
+
+  // Fetch trips on component mount
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        setTripsLoading(true);
+        setTripsError(null);
+        const response = await tripsApi.getTrips(1, 100);
+        console.log("[v0] Trips response:", response);
+        if (response && response.data && response.data.trips) {
+          setTrips(response.data.trips);
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching trips:", error.message);
+        setTripsError(error.message);
+      } finally {
+        setTripsLoading(false);
+      }
+    };
+
+    fetchTrips();
+  }, []);
 
   // benefits
   const [passengerEnabled, setPassengerEnabled] = useState(false);
@@ -40,8 +69,7 @@ export default function AddPromotionPage() {
       description: promoDesc,
       status,
       basis,
-      startDate,
-      endDate,
+      ...(basis === "period" ? { startDate, endDate } : { tripId: selectedTrip }),
       benefits: {
         passenger: passengerEnabled,
         cargo: cargoEnabled,
@@ -166,11 +194,15 @@ export default function AddPromotionPage() {
                     {basis === "trip" && (
                       <div className="mt-3">
                         <label className="form-label">Select Trip</label>
-                        <select id="trip-select" className="form-select">
+                        <select id="trip-select" className="form-select" value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} disabled={tripsLoading}>
                           <option value="">-- Select a Trip --</option>
-                          <option value="morning-express">Morning Express</option>
-                          <option value="afternoon-cruiser">Afternoon Cruiser</option>
+                          {tripsLoading && <option value="">Loading trips...</option>}
+                          {tripsError && <option value="">{`Error: ${tripsError}`}</option>}
+                          {trips.map((trip) => (
+                            <option key={trip._id} value={trip._id}>{trip.tripName}</option>
+                          ))}
                         </select>
+                        {tripsError && <small className="text-danger d-block mt-2">{tripsError}</small>}
                       </div>
                     )}
                   </div>
