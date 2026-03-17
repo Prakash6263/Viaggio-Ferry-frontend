@@ -1,9 +1,11 @@
 // src/pages/AddPromotionPage.jsx
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import { tripsApi } from "../api/tripsApi";
+import { promotionApi } from "../api/promotionApi";
 
 export default function AddPromotionPage() {
   // basic fields
@@ -44,8 +46,18 @@ export default function AddPromotionPage() {
 
   // benefits
   const [passengerEnabled, setPassengerEnabled] = useState(false);
+  const [passengerValue, setPassengerValue] = useState("");
+  const [passengerType, setPassengerType] = useState("percentage");
+  
   const [cargoEnabled, setCargoEnabled] = useState(false);
+  const [cargoValue, setCargoValue] = useState("");
+  const [cargoType, setCargoType] = useState("percentage");
+  
   const [vehicleEnabled, setVehicleEnabled] = useState(false);
+  const [vehicleValue, setVehicleValue] = useState("");
+  const [vehicleType, setVehicleType] = useState("percentage");
+
+  const [isSaving, setIsSaving] = useState(false);
 
   // service benefits dynamic list
   const [serviceBenefits, setServiceBenefits] = useState([
@@ -64,24 +76,120 @@ export default function AddPromotionPage() {
 
   function savePromotion(e) {
     e.preventDefault();
+    
+    // Validation
+    if (!promoName.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Field",
+        text: "Please enter promotion name",
+      });
+      return;
+    }
+
+    if (basis === "trip" && !selectedTrip) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Field",
+        text: "Please select a trip",
+      });
+      return;
+    }
+
+    if (basis === "period" && (!startDate || !endDate)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Fields",
+        text: "Please select start and end dates",
+      });
+      return;
+    }
+
+    // Build payload
     const payload = {
-      name: promoName,
+      promotionName: promoName,
       description: promoDesc,
-      status,
-      basis,
-      ...(basis === "period" ? { startDate, endDate } : { tripId: selectedTrip }),
-      benefits: {
-        passenger: passengerEnabled,
-        cargo: cargoEnabled,
-        vehicle: vehicleEnabled,
+      promotionBasis: basis === "period" ? "Period" : "Trip",
+      status: status.charAt(0).toUpperCase() + status.slice(1),
+      ...(basis === "period" ? {
+        startDate: startDate ? new Date(startDate).toISOString() : null,
+        endDate: endDate ? new Date(endDate).toISOString() : null,
+      } : {
+        trip: selectedTrip,
+      }),
+      passengerBenefit: {
+        isEnabled: passengerEnabled,
+        valueType: passengerType,
+        value: passengerEnabled ? parseInt(passengerValue) || 0 : 0,
       },
-      serviceBenefits,
+      cargoBenefit: {
+        isEnabled: cargoEnabled,
+        valueType: cargoType,
+        value: cargoEnabled ? parseInt(cargoValue) || 0 : 0,
+      },
+      vehicleBenefit: {
+        isEnabled: vehicleEnabled,
+        valueType: vehicleType,
+        value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
+      },
+      serviceBenefits: serviceBenefits
+        .filter((s) => s.title.trim())
+        .map((s) => ({
+          title: s.title,
+          valueType: s.amountType,
+          value: parseInt(s.value) || 0,
+        })),
     };
 
-    // TODO: Replace with actual API call (axios/fetch) and error handling
-    console.log("Save promotion payload:", payload);
-    alert("Promotion saved (demo). Check console for payload.");
-    // optionally redirect back to promotions list after success
+    console.log("[v0] Save promotion payload:", payload);
+    savePromotionAPI(payload);
+  }
+
+  async function savePromotionAPI(payload) {
+    try {
+      setIsSaving(true);
+      const response = await promotionApi.createPromotion(payload);
+      
+      console.log("[v0] Promotion saved successfully:", response);
+
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: response.message || "Promotion created successfully",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // Reset form
+        setPromoName("");
+        setPromoDesc("");
+        setStartDate("");
+        setEndDate("");
+        setStatus("active");
+        setBasis("period");
+        setSelectedTrip("");
+        setPassengerEnabled(false);
+        setPassengerValue("");
+        setPassengerType("percentage");
+        setCargoEnabled(false);
+        setCargoValue("");
+        setCargoType("percentage");
+        setVehicleEnabled(false);
+        setVehicleValue("");
+        setVehicleType("percentage");
+        setServiceBenefits([{ id: 1, title: "", amountType: "percentage", value: "" }]);
+        
+        // Optionally redirect back to promotions list after success
+        // navigate("/promotions");
+      });
+    } catch (error) {
+      console.error("[v0] Error saving promotion:", error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to create promotion",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -231,10 +339,20 @@ export default function AddPromotionPage() {
                         <div className="card-footer">
                           <div className="row g-2">
                             <div className="col-md-4">
-                              <input placeholder="Amount" className="form-control" />
+                              <input 
+                                placeholder="Amount" 
+                                className="form-control" 
+                                type="number"
+                                value={passengerValue}
+                                onChange={(e) => setPassengerValue(e.target.value)}
+                              />
                             </div>
                             <div className="col-md-4">
-                              <select className="form-select">
+                              <select 
+                                className="form-select"
+                                value={passengerType}
+                                onChange={(e) => setPassengerType(e.target.value)}
+                              >
                                 <option value="percentage">Percentage</option>
                                 <option value="fixed">Fixed Amount</option>
                               </select>
@@ -264,10 +382,20 @@ export default function AddPromotionPage() {
                         <div className="card-footer">
                           <div className="row g-2">
                             <div className="col-md-4">
-                              <input placeholder="Amount" className="form-control" />
+                              <input 
+                                placeholder="Amount" 
+                                className="form-control" 
+                                type="number"
+                                value={cargoValue}
+                                onChange={(e) => setCargoValue(e.target.value)}
+                              />
                             </div>
                             <div className="col-md-4">
-                              <select className="form-select">
+                              <select 
+                                className="form-select"
+                                value={cargoType}
+                                onChange={(e) => setCargoType(e.target.value)}
+                              >
                                 <option value="percentage">Percentage</option>
                                 <option value="fixed">Fixed Amount</option>
                               </select>
@@ -336,11 +464,11 @@ export default function AddPromotionPage() {
 
                   {/* Footer buttons */}
                   <div className="d-flex justify-content-end gap-2 mt-4">
-                    <button type="button" className="btn btn-secondary" onClick={() => window.history.back()}>
+                    <button type="button" className="btn btn-secondary" onClick={() => window.history.back()} disabled={isSaving}>
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
-                      Save Promotion
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save Promotion"}
                     </button>
                   </div>
                 </form>
