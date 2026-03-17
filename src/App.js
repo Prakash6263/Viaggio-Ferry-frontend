@@ -36,6 +36,7 @@ import CompanyEditTrip from "./pages/CompanyEditTrip"
 // Partner
 import CompanyPromotionsList from "./pages/CompanyPromotionsList"
 import CompanyAddPromotion from "./pages/CompanyAddPromotion"
+import CompanyEditPromotion from "./pages/CompanyEditPromotion"
 import BusinessPartnersPage from "./pages/BusinessPartners"
 import B2CCustomersPage from "./pages/B2CCustomersPage"
 import SalesmenPage from "./pages/SalesmenPage"
@@ -221,6 +222,10 @@ function AppRoutes() {
         <Route
           path="/company/partner-management/add-promotion"
           element={<ProtectedRoute element={<CompanyAddPromotion />} />}
+        />
+        <Route
+          path="/company/partner-management/promotions/:id/edit"
+          element={<ProtectedRoute element={<CompanyEditPromotion />} />}
         />
         <Route path="/company/partners" element={<ProtectedRoute element={<BusinessPartnersPage />} />} />
         <Route path="/company/b2c-customers" element={<ProtectedRoute element={<B2CCustomersPage />} />} />
