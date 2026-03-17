@@ -1,10 +1,15 @@
 // src/pages/AddPromotionPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
+import { tripsApi } from "../api/tripsApi";
+import { promotionApi } from "../api/promotionApi";
 
 export default function AddPromotionPage() {
+  const navigate = useNavigate();
   // basic fields
   const [promoName, setPromoName] = useState("");
   const [promoDesc, setPromoDesc] = useState("");
@@ -12,11 +17,49 @@ export default function AddPromotionPage() {
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("active");
   const [basis, setBasis] = useState("period");
+  const [selectedTrip, setSelectedTrip] = useState("");
+
+  // Trips state
+  const [trips, setTrips] = useState([]);
+  const [tripsLoading, setTripsLoading] = useState(false);
+  const [tripsError, setTripsError] = useState(null);
+
+  // Fetch trips on component mount
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        setTripsLoading(true);
+        setTripsError(null);
+        const response = await tripsApi.getTrips(1, 100);
+        console.log("[v0] Trips response:", response);
+        if (response && response.data && response.data.trips) {
+          setTrips(response.data.trips);
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching trips:", error.message);
+        setTripsError(error.message);
+      } finally {
+        setTripsLoading(false);
+      }
+    };
+
+    fetchTrips();
+  }, []);
 
   // benefits
   const [passengerEnabled, setPassengerEnabled] = useState(false);
+  const [passengerValue, setPassengerValue] = useState("");
+  const [passengerType, setPassengerType] = useState("percentage");
+  
   const [cargoEnabled, setCargoEnabled] = useState(false);
+  const [cargoValue, setCargoValue] = useState("");
+  const [cargoType, setCargoType] = useState("percentage");
+  
   const [vehicleEnabled, setVehicleEnabled] = useState(false);
+  const [vehicleValue, setVehicleValue] = useState("");
+  const [vehicleType, setVehicleType] = useState("percentage");
+
+  const [isSaving, setIsSaving] = useState(false);
 
   // service benefits dynamic list
   const [serviceBenefits, setServiceBenefits] = useState([
@@ -35,25 +78,98 @@ export default function AddPromotionPage() {
 
   function savePromotion(e) {
     e.preventDefault();
+    
+    // Validation
+    if (!promoName.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Field",
+        text: "Please enter promotion name",
+      });
+      return;
+    }
+
+    if (basis === "trip" && !selectedTrip) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Field",
+        text: "Please select a trip",
+      });
+      return;
+    }
+
+    if (basis === "period" && (!startDate || !endDate)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Fields",
+        text: "Please select start and end dates",
+      });
+      return;
+    }
+
+    // Build payload
     const payload = {
-      name: promoName,
+      promotionName: promoName,
       description: promoDesc,
-      status,
-      basis,
-      startDate,
-      endDate,
-      benefits: {
-        passenger: passengerEnabled,
-        cargo: cargoEnabled,
-        vehicle: vehicleEnabled,
+      promotionBasis: basis === "period" ? "Period" : "Trip",
+      status: status.charAt(0).toUpperCase() + status.slice(1),
+      startDate: startDate ? new Date(startDate).toISOString() : null,
+      endDate: endDate ? new Date(endDate).toISOString() : null,
+      ...(basis === "trip" && { trip: selectedTrip }),
+      passengerBenefit: {
+        isEnabled: passengerEnabled,
+        valueType: passengerType,
+        value: passengerEnabled ? parseInt(passengerValue) || 0 : 0,
       },
-      serviceBenefits,
+      cargoBenefit: {
+        isEnabled: cargoEnabled,
+        valueType: cargoType,
+        value: cargoEnabled ? parseInt(cargoValue) || 0 : 0,
+      },
+      vehicleBenefit: {
+        isEnabled: vehicleEnabled,
+        valueType: vehicleType,
+        value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
+      },
+      serviceBenefits: serviceBenefits
+        .filter((s) => s.title.trim())
+        .map((s) => ({
+          title: s.title,
+          valueType: s.amountType,
+          value: parseInt(s.value) || 0,
+        })),
     };
 
-    // TODO: Replace with actual API call (axios/fetch) and error handling
-    console.log("Save promotion payload:", payload);
-    alert("Promotion saved (demo). Check console for payload.");
-    // optionally redirect back to promotions list after success
+    console.log("[v0] Save promotion payload:", payload);
+    savePromotionAPI(payload);
+  }
+
+  async function savePromotionAPI(payload) {
+    try {
+      setIsSaving(true);
+      const response = await promotionApi.createPromotion(payload);
+      
+      console.log("[v0] Promotion saved successfully:", response);
+
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: response.message || "Promotion created successfully",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // Navigate to promotions list after successful creation
+        navigate("/company/partner-management/promotions");
+      });
+    } catch (error) {
+      console.error("[v0] Error saving promotion:", error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to create promotion",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -166,11 +282,15 @@ export default function AddPromotionPage() {
                     {basis === "trip" && (
                       <div className="mt-3">
                         <label className="form-label">Select Trip</label>
-                        <select id="trip-select" className="form-select">
+                        <select id="trip-select" className="form-select" value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} disabled={tripsLoading}>
                           <option value="">-- Select a Trip --</option>
-                          <option value="morning-express">Morning Express</option>
-                          <option value="afternoon-cruiser">Afternoon Cruiser</option>
+                          {tripsLoading && <option value="">Loading trips...</option>}
+                          {tripsError && <option value="">{`Error: ${tripsError}`}</option>}
+                          {trips.map((trip) => (
+                            <option key={trip._id} value={trip._id}>{trip.tripName}</option>
+                          ))}
                         </select>
+                        {tripsError && <small className="text-danger d-block mt-2">{tripsError}</small>}
                       </div>
                     )}
                   </div>
@@ -199,10 +319,20 @@ export default function AddPromotionPage() {
                         <div className="card-footer">
                           <div className="row g-2">
                             <div className="col-md-4">
-                              <input placeholder="Amount" className="form-control" />
+                              <input 
+                                placeholder="Amount" 
+                                className="form-control" 
+                                type="number"
+                                value={passengerValue}
+                                onChange={(e) => setPassengerValue(e.target.value)}
+                              />
                             </div>
                             <div className="col-md-4">
-                              <select className="form-select">
+                              <select 
+                                className="form-select"
+                                value={passengerType}
+                                onChange={(e) => setPassengerType(e.target.value)}
+                              >
                                 <option value="percentage">Percentage</option>
                                 <option value="fixed">Fixed Amount</option>
                               </select>
@@ -232,10 +362,20 @@ export default function AddPromotionPage() {
                         <div className="card-footer">
                           <div className="row g-2">
                             <div className="col-md-4">
-                              <input placeholder="Amount" className="form-control" />
+                              <input 
+                                placeholder="Amount" 
+                                className="form-control" 
+                                type="number"
+                                value={cargoValue}
+                                onChange={(e) => setCargoValue(e.target.value)}
+                              />
                             </div>
                             <div className="col-md-4">
-                              <select className="form-select">
+                              <select 
+                                className="form-select"
+                                value={cargoType}
+                                onChange={(e) => setCargoType(e.target.value)}
+                              >
                                 <option value="percentage">Percentage</option>
                                 <option value="fixed">Fixed Amount</option>
                               </select>
@@ -260,6 +400,31 @@ export default function AddPromotionPage() {
                           />
                         </div>
                       </div>
+                      {vehicleEnabled && (
+                        <div className="card-footer">
+                          <div className="row g-2">
+                            <div className="col-md-4">
+                              <input 
+                                placeholder="Amount" 
+                                className="form-control" 
+                                type="number"
+                                value={vehicleValue}
+                                onChange={(e) => setVehicleValue(e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-4">
+                              <select 
+                                className="form-select"
+                                value={vehicleType}
+                                onChange={(e) => setVehicleType(e.target.value)}
+                              >
+                                <option value="percentage">Percentage</option>
+                                <option value="fixed">Fixed Amount</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </section>
 
@@ -304,11 +469,11 @@ export default function AddPromotionPage() {
 
                   {/* Footer buttons */}
                   <div className="d-flex justify-content-end gap-2 mt-4">
-                    <button type="button" className="btn btn-secondary" onClick={() => window.history.back()}>
+                    <button type="button" className="btn btn-secondary" onClick={() => window.history.back()} disabled={isSaving}>
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
-                      Save Promotion
+                    <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save Promotion"}
                     </button>
                   </div>
                 </form>
