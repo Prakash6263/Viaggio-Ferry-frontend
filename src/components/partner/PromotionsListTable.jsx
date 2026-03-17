@@ -2,14 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Can from "../CanDisable"; // Import CanDisable component
+import { CirclesWithBar } from "react-loader-spinner";
+import CanDisable from "../CanDisable";
 import { promotionApi } from "../../api/promotionApi";
 import Swal from "sweetalert2";
 
 export default function PromotionsListTable() {
   const navigate = useNavigate();
   const [promotions, setPromotions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
@@ -51,6 +52,7 @@ export default function PromotionsListTable() {
 
     if (result.isConfirmed) {
       try {
+        setLoading(true); // show loader during deletion
         await promotionApi.deletePromotion(promotionId);
         
         Swal.fire({
@@ -58,6 +60,7 @@ export default function PromotionsListTable() {
           text: "The promotion has been successfully deleted.",
           icon: "success",
           timer: 2000,
+          showConfirmButton: false,
         });
 
         // Refresh the promotions list
@@ -69,6 +72,8 @@ export default function PromotionsListTable() {
           text: `Failed to delete promotion: ${err.message}`,
           icon: "error",
         });
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -157,80 +162,83 @@ export default function PromotionsListTable() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
-    return (
-      <div className="card-table card p-2">
-        <div className="card-body text-center">
-          <p>Loading promotions...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="card-table card p-2">
-        <div className="card-body text-center text-danger">
-          <p>Error loading promotions: {error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="card-table card p-2">
       <div className="card-body">
-        <div className="table-responsive">
-          <table id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
-            <thead>
-              <tr>
-                <th>Promotion Name</th>
-                <th>Status</th>
-                <th>Basis</th>
-                <th>Benefits</th>
-                <th>Eligibility</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="promotions-table-body">
-              {promotions && promotions.length > 0 ? (
-                promotions.map((promo) => (
-                  <tr key={promo._id}>
-                    <td>{promo.promotionName}</td>
-                    <td><span className={`status ${getStatusClass(promo.status)}`}>{promo.status}</span></td>
-                    <td>
-                      {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period: ${formatDate(promo.startDate)} - ${formatDate(promo.endDate)}`}
-                    </td>
-                    <td style={{ whiteSpace: "pre-line" }}>{formatBenefitsColumn(promo)}</td>
-                    <td style={{ whiteSpace: "pre-line" }}>{formatEligibilityColumn(promo)}</td>
-                    <td>
-                      <Can action="update" path="/company/partner-management/promotions">
-                        <button 
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => navigate(`/company/partner-management/promotions/${promo._id}/edit`)}
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
-                      </Can>
-                      <Can action="delete" path="/company/partner-management/promotions">
-                        <button 
-                          className="btn btn-outline-danger btn-sm ms-1" 
-                          onClick={() => handleDeletePromotion(promo._id, promo.promotionName)}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </Can>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+        {loading && (
+          <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+            <CirclesWithBar
+              height="100"
+              width="100"
+              color="#05468f"
+              outerCircleColor="#05468f"
+              innerCircleColor="#05468f"
+              barColor="#05468f"
+              ariaLabel="circles-with-bar-loading"
+              visible={true}
+            />
+          </div>
+        )}
+
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="table-responsive">
+            <table id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
+              <thead>
                 <tr>
-                  <td colSpan="6" className="text-center">No promotions found</td>
+                  <th>Promotion Name</th>
+                  <th>Status</th>
+                  <th>Basis</th>
+                  <th>Benefits</th>
+                  <th>Eligibility</th>
+                  <th>Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody id="promotions-table-body">
+                {promotions && promotions.length > 0 ? (
+                  promotions.map((promo) => (
+                    <tr key={promo._id}>
+                      <td>{promo.promotionName}</td>
+                      <td><span className={`status ${getStatusClass(promo.status)}`}>{promo.status}</span></td>
+                      <td>
+                        {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period: ${formatDate(promo.startDate)} - ${formatDate(promo.endDate)}`}
+                      </td>
+                      <td style={{ whiteSpace: "pre-line" }}>{formatBenefitsColumn(promo)}</td>
+                      <td style={{ whiteSpace: "pre-line" }}>{formatEligibilityColumn(promo)}</td>
+                      <td>
+                        <CanDisable action="update" path="/company/partner-management/promotions">
+                          <button 
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => navigate(`/company/partner-management/promotions/${promo._id}/edit`)}
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                        </CanDisable>
+                        <CanDisable action="delete" path="/company/partner-management/promotions">
+                          <button 
+                            className="btn btn-outline-danger btn-sm ms-1" 
+                            onClick={() => handleDeletePromotion(promo._id, promo.promotionName)}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </CanDisable>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center">No promotions found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

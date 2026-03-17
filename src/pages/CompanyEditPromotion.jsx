@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
+import Can from "../components/Can";
 import { tripsApi } from "../api/tripsApi";
 import { promotionApi } from "../api/promotionApi";
 
@@ -259,14 +260,15 @@ export default function CompanyEditPromotion() {
       <Header />
       <Sidebar />
       <PageWrapper>
-        <div className="page-header">
-          <div className="content-page-header">
-            <h5 className="card-title">Edit Promotion</h5>
+        <Can action="update" path="/company/partner-management/promotions">
+          <div className="page-header">
+            <div className="content-page-header">
+              <h5 className="card-title">Edit Promotion</h5>
+            </div>
           </div>
-        </div>
 
-        <div className="row">
-          <div className="col-12">
+          <div className="row">
+            <div className="col-12">
             <div className="card">
               <div className="card-body" style={{ padding: 20 }}>
                 <form id="promotion-form" onSubmit={savePromotion}>
@@ -563,6 +565,7 @@ export default function CompanyEditPromotion() {
             </div> {/* card */}
           </div>
         </div>
+        </Can>
       </PageWrapper>
     </div>
   );
