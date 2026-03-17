@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Can from "../CanDisable"; // Import CanDisable component
 import { promotionApi } from "../../api/promotionApi";
+import Swal from "sweetalert2";
 
 export default function PromotionsListTable() {
   const [promotions, setPromotions] = useState([]);
@@ -31,6 +32,42 @@ export default function PromotionsListTable() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeletePromotion = async (promotionId, promotionName) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `You are about to delete the promotion "${promotionName}". This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await promotionApi.deletePromotion(promotionId);
+        
+        Swal.fire({
+          title: "Deleted!",
+          text: "The promotion has been successfully deleted.",
+          icon: "success",
+          timer: 2000,
+        });
+
+        // Refresh the promotions list
+        fetchPromotions();
+      } catch (err) {
+        console.error("[v0] Error deleting promotion:", err.message);
+        Swal.fire({
+          title: "Error!",
+          text: `Failed to delete promotion: ${err.message}`,
+          icon: "error",
+        });
+      }
     }
   };
 
@@ -169,7 +206,12 @@ export default function PromotionsListTable() {
                         <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
                       </Can>
                       <Can action="delete" path="/company/partner-management/promotions">
-                        <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
+                        <button 
+                          className="btn btn-outline-danger btn-sm ms-1" 
+                          onClick={() => handleDeletePromotion(promo._id, promo.promotionName)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
                       </Can>
                     </td>
                   </tr>
