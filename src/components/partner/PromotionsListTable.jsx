@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Can from "../CanDisable"; // Import CanDisable component
 import { promotionApi } from "../../api/promotionApi";
 import Swal from "sweetalert2";
 
 export default function PromotionsListTable() {
+  const navigate = useNavigate();
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -203,7 +205,12 @@ export default function PromotionsListTable() {
                     <td style={{ whiteSpace: "pre-line" }}>{formatEligibilityColumn(promo)}</td>
                     <td>
                       <Can action="update" path="/company/partner-management/promotions">
-                        <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
+                        <button 
+                          className="btn btn-outline-primary btn-sm"
+                          onClick={() => navigate(`/company/partner-management/promotions/${promo._id}/edit`)}
+                        >
+                          <i className="bi bi-pencil"></i>
+                        </button>
                       </Can>
                       <Can action="delete" path="/company/partner-management/promotions">
                         <button 
