@@ -1,12 +1,42 @@
 'use client';
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Can from "../CanDisable"; // Import CanDisable component
+import { promotionApi } from "../../api/promotionApi";
 
 export default function PromotionsListTable() {
+  const [promotions, setPromotions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
+  const fetchPromotions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await promotionApi.getPromotions(pagination.page, pagination.limit);
+      console.log("[v0] Promotions response:", response);
+      if (response && response.data) {
+        setPromotions(response.data);
+        if (response.pagination) {
+          setPagination(response.pagination);
+        }
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching promotions:", err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const el = document.getElementById("promotionsTable");
-    if (!el || !window.DataTable) return;
+    if (!el || !window.DataTable || loading) return;
 
     try { if (el._dt) { el._dt.destroy(); el._dt = null; } } catch {}
 
@@ -26,7 +56,45 @@ export default function PromotionsListTable() {
     });
     el._dt = dt;
     return () => { try { dt.destroy(); } catch {} el._dt = null; };
-  }, []);
+  }, [promotions, loading]);
+
+  const getStatusClass = (status) => {
+    if (status === "Active") return "status-active";
+    if (status === "Scheduled") return "status-scheduled";
+    if (status === "Expired") return "status-expired";
+    return "status-inactive";
+  };
+
+  const formatBenefitValue = (benefit) => {
+    if (!benefit || !benefit.isEnabled) return "N/A";
+    const valueStr = benefit.valueType === "percentage" ? `${benefit.value}%` : `${benefit.value} units`;
+    return valueStr;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="card-table card p-2">
+        <div className="card-body text-center">
+          <p>Loading promotions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card-table card p-2">
+        <div className="card-body text-center text-danger">
+          <p>Error loading promotions: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card-table card p-2">
@@ -36,40 +104,47 @@ export default function PromotionsListTable() {
             <thead>
               <tr>
                 <th>Promotion Name</th>
+                <th>Description</th>
                 <th>Status</th>
                 <th>Basis</th>
-                <th>Benefits</th>
-                <th>Eligibility</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Passenger</th>
+                <th>Cargo</th>
+                <th>Vehicle</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="promotions-table-body">
-              <tr>
-                <td>Summer Travel Special</td>
-                <td><span className="status status-active">Active</span></td>
-                <td>Period: Jun 1, 10:00 - Aug 31, 23:59</td>
-                <td>Passenger: Buy 2 Get 1 Free<br/>Cargo: 15% Off<br/>Vehicle: $10 Off</td>
-                <td>Passenger: Adult, Economy<br/>Cargo: General Goods<br/>Vehicle: Car</td>
-                <td>
-                  <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
-                  <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
-                </td>
-              </tr>
-              <tr>
-                <td>Holiday Discount</td>
-                <td><span className="status status-scheduled">Scheduled</span></td>
-                <td>Trip: Morning Express</td>
-                <td>Passenger: 20% Off<br/>Vehicle: Buy 1 Get 1 Free</td>
-                <td>Passenger: Adult, Business<br/>Vehicle: Car, Motorcycle</td>
-                <td>
-                  <Can action="update" path="/company/partner-management/promotions">
-                    <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
-                  </Can>
-                  <Can action="delete" path="/company/partner-management/promotions">
-                    <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
-                  </Can>
-                </td>
-              </tr>
+              {promotions && promotions.length > 0 ? (
+                promotions.map((promo) => (
+                  <tr key={promo._id}>
+                    <td>{promo.promotionName}</td>
+                    <td>{promo.description}</td>
+                    <td><span className={`status ${getStatusClass(promo.status)}`}>{promo.status}</span></td>
+                    <td>
+                      {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period`}
+                    </td>
+                    <td>{formatDate(promo.startDate)}</td>
+                    <td>{formatDate(promo.endDate)}</td>
+                    <td>{formatBenefitValue(promo.passengerBenefit)}</td>
+                    <td>{formatBenefitValue(promo.cargoBenefit)}</td>
+                    <td>{formatBenefitValue(promo.vehicleBenefit)}</td>
+                    <td>
+                      <Can action="update" path="/company/partner-management/promotions">
+                        <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
+                      </Can>
+                      <Can action="delete" path="/company/partner-management/promotions">
+                        <button className="btn btn-outline-danger btn-sm ms-1"><i className="bi bi-trash"></i></button>
+                      </Can>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="10" className="text-center">No promotions found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

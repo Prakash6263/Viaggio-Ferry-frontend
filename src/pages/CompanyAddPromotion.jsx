@@ -1,5 +1,6 @@
 // src/pages/AddPromotionPage.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -8,6 +9,7 @@ import { tripsApi } from "../api/tripsApi";
 import { promotionApi } from "../api/promotionApi";
 
 export default function AddPromotionPage() {
+  const navigate = useNavigate();
   // basic fields
   const [promoName, setPromoName] = useState("");
   const [promoDesc, setPromoDesc] = useState("");
@@ -155,27 +157,8 @@ export default function AddPromotionPage() {
         text: response.message || "Promotion created successfully",
         confirmButtonText: "OK",
       }).then(() => {
-        // Reset form
-        setPromoName("");
-        setPromoDesc("");
-        setStartDate("");
-        setEndDate("");
-        setStatus("active");
-        setBasis("period");
-        setSelectedTrip("");
-        setPassengerEnabled(false);
-        setPassengerValue("");
-        setPassengerType("percentage");
-        setCargoEnabled(false);
-        setCargoValue("");
-        setCargoType("percentage");
-        setVehicleEnabled(false);
-        setVehicleValue("");
-        setVehicleType("percentage");
-        setServiceBenefits([{ id: 1, title: "", amountType: "percentage", value: "" }]);
-        
-        // Optionally redirect back to promotions list after success
-        // navigate("/promotions");
+        // Navigate to promotions list after successful creation
+        navigate("/company/partner-management/promotions");
       });
     } catch (error) {
       console.error("[v0] Error saving promotion:", error.message);
