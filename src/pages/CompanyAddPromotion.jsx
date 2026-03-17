@@ -111,12 +111,9 @@ export default function AddPromotionPage() {
       description: promoDesc,
       promotionBasis: basis === "period" ? "Period" : "Trip",
       status: status.charAt(0).toUpperCase() + status.slice(1),
-      ...(basis === "period" ? {
-        startDate: startDate ? new Date(startDate).toISOString() : null,
-        endDate: endDate ? new Date(endDate).toISOString() : null,
-      } : {
-        trip: selectedTrip,
-      }),
+      startDate: startDate ? new Date(startDate).toISOString() : null,
+      endDate: endDate ? new Date(endDate).toISOString() : null,
+      ...(basis === "trip" && { trip: selectedTrip }),
       passengerBenefit: {
         isEnabled: passengerEnabled,
         valueType: passengerType,
@@ -420,6 +417,31 @@ export default function AddPromotionPage() {
                           />
                         </div>
                       </div>
+                      {vehicleEnabled && (
+                        <div className="card-footer">
+                          <div className="row g-2">
+                            <div className="col-md-4">
+                              <input 
+                                placeholder="Amount" 
+                                className="form-control" 
+                                type="number"
+                                value={vehicleValue}
+                                onChange={(e) => setVehicleValue(e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-4">
+                              <select 
+                                className="form-select"
+                                value={vehicleType}
+                                onChange={(e) => setVehicleType(e.target.value)}
+                              >
+                                <option value="percentage">Percentage</option>
+                                <option value="fixed">Fixed Amount</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </section>
 
