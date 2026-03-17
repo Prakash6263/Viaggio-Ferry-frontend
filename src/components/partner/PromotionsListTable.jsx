@@ -35,8 +35,10 @@ export default function PromotionsListTable() {
   };
 
   useEffect(() => {
+    if (loading || !promotions.length) return;
+    
     const el = document.getElementById("promotionsTable");
-    if (!el || !window.DataTable || loading) return;
+    if (!el || !window.DataTable) return;
 
     try { if (el._dt) { el._dt.destroy(); el._dt = null; } } catch {}
 
@@ -47,6 +49,9 @@ export default function PromotionsListTable() {
       searching: true,
       ordering: true,
       info: true,
+      columnDefs: [
+        { orderable: false, targets: -1 } // disable sorting on Actions column
+      ],
       layout: {
         topStart: "pageLength",
         topEnd: "search",
@@ -66,13 +71,50 @@ export default function PromotionsListTable() {
   };
 
   const formatBenefitValue = (benefit) => {
-    if (!benefit || !benefit.isEnabled) return "N/A";
-    const valueStr = benefit.valueType === "percentage" ? `${benefit.value}%` : `${benefit.value} units`;
-    return valueStr;
+    if (!benefit || !benefit.isEnabled) return "-";
+    return benefit.valueType === "percentage" ? `${benefit.value}%` : `${benefit.value} units`;
+  };
+
+  const formatBenefitsColumn = (promo) => {
+    const benefits = [];
+    
+    if (promo.passengerBenefit && promo.passengerBenefit.isEnabled) {
+      benefits.push(`Passenger: ${formatBenefitValue(promo.passengerBenefit)}`);
+    }
+    if (promo.cargoBenefit && promo.cargoBenefit.isEnabled) {
+      benefits.push(`Cargo: ${formatBenefitValue(promo.cargoBenefit)}`);
+    }
+    if (promo.vehicleBenefit && promo.vehicleBenefit.isEnabled) {
+      benefits.push(`Vehicle: ${formatBenefitValue(promo.vehicleBenefit)}`);
+    }
+    if (promo.serviceBenefits && promo.serviceBenefits.length > 0) {
+      promo.serviceBenefits.forEach((service) => {
+        const serviceValue = service.valueType === "percentage" ? `${service.value}%` : `${service.value} units`;
+        benefits.push(`${service.title}: ${serviceValue}`);
+      });
+    }
+    
+    return benefits.length > 0 ? benefits.join("\n") : "-";
+  };
+
+  const formatEligibilityColumn = (promo) => {
+    const eligibility = [];
+    
+    if (promo.passengerBenefit && promo.passengerBenefit.isEnabled) {
+      eligibility.push(`Passenger: ${formatBenefitValue(promo.passengerBenefit)}`);
+    }
+    if (promo.cargoBenefit && promo.cargoBenefit.isEnabled) {
+      eligibility.push(`Cargo: ${formatBenefitValue(promo.cargoBenefit)}`);
+    }
+    if (promo.vehicleBenefit && promo.vehicleBenefit.isEnabled) {
+      eligibility.push(`Vehicle: ${formatBenefitValue(promo.vehicleBenefit)}`);
+    }
+    
+    return eligibility.length > 0 ? eligibility.join("\n") : "-";
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString();
   };
 
@@ -104,14 +146,10 @@ export default function PromotionsListTable() {
             <thead>
               <tr>
                 <th>Promotion Name</th>
-                <th>Description</th>
                 <th>Status</th>
                 <th>Basis</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Passenger</th>
-                <th>Cargo</th>
-                <th>Vehicle</th>
+                <th>Benefits</th>
+                <th>Eligibility</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -120,16 +158,12 @@ export default function PromotionsListTable() {
                 promotions.map((promo) => (
                   <tr key={promo._id}>
                     <td>{promo.promotionName}</td>
-                    <td>{promo.description}</td>
                     <td><span className={`status ${getStatusClass(promo.status)}`}>{promo.status}</span></td>
                     <td>
-                      {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period`}
+                      {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period: ${formatDate(promo.startDate)} - ${formatDate(promo.endDate)}`}
                     </td>
-                    <td>{formatDate(promo.startDate)}</td>
-                    <td>{formatDate(promo.endDate)}</td>
-                    <td>{formatBenefitValue(promo.passengerBenefit)}</td>
-                    <td>{formatBenefitValue(promo.cargoBenefit)}</td>
-                    <td>{formatBenefitValue(promo.vehicleBenefit)}</td>
+                    <td style={{ whiteSpace: "pre-line" }}>{formatBenefitsColumn(promo)}</td>
+                    <td style={{ whiteSpace: "pre-line" }}>{formatEligibilityColumn(promo)}</td>
                     <td>
                       <Can action="update" path="/company/partner-management/promotions">
                         <button className="btn btn-outline-primary btn-sm"><i className="bi bi-pencil"></i></button>
@@ -142,7 +176,7 @@ export default function PromotionsListTable() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="10" className="text-center">No promotions found</td>
+                  <td colSpan="6" className="text-center">No promotions found</td>
                 </tr>
               )}
             </tbody>
