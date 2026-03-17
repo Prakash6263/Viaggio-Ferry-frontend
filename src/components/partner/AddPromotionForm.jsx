@@ -28,8 +28,14 @@ export default function AddPromotionForm() {
         setTripsLoading(true);
         setTripsError(null);
         const response = await tripsApi.getTrips(1, 100);
+        console.log("[v0] Full trips response:", response);
+        console.log("[v0] Response structure - response.data:", response.data);
+        console.log("[v0] Response structure - response.data.trips:", response?.data?.trips);
         if (response && response.data && response.data.trips) {
+          console.log("[v0] Setting trips:", response.data.trips);
           setTrips(response.data.trips);
+        } else {
+          console.log("[v0] Trips not found in expected path");
         }
       } catch (error) {
         console.error("[v0] Error fetching trips:", error.message);
