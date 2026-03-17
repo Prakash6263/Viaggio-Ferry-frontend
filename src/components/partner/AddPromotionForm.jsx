@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { tripsApi } from "../../api/tripsApi";
 
 export default function AddPromotionForm() {
   const navigate = useNavigate();
@@ -14,6 +15,32 @@ export default function AddPromotionForm() {
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [trip, setTrip] = useState("");
+
+  // Trips state
+  const [trips, setTrips] = useState([]);
+  const [tripsLoading, setTripsLoading] = useState(false);
+  const [tripsError, setTripsError] = useState(null);
+
+  // Fetch trips on component mount
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        setTripsLoading(true);
+        setTripsError(null);
+        const response = await tripsApi.getTrips(1, 100);
+        if (response && response.data && response.data.trips) {
+          setTrips(response.data.trips);
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching trips:", error.message);
+        setTripsError(error.message);
+      } finally {
+        setTripsLoading(false);
+      }
+    };
+
+    fetchTrips();
+  }, []);
 
   // service toggles
   const [enablePassenger, setEnablePassenger] = useState(false);
@@ -119,14 +146,15 @@ export default function AddPromotionForm() {
         <div id="trip-basis" className="basis-fields" style={{ display: basis === "trip" ? "block" : "none" }}>
           <div className="form-group">
             <label htmlFor="trip-select">Select Trip</label>
-            <select id="trip-select" className="form-control" value={trip} onChange={(e) => setTrip(e.target.value)}>
+            <select id="trip-select" className="form-control" value={trip} onChange={(e) => setTrip(e.target.value)} disabled={tripsLoading}>
               <option value="">-- Select a Trip --</option>
-              <option value="morning-express">Morning Express</option>
-              <option value="afternoon-cruiser">Afternoon Cruiser</option>
-              <option value="evening-sunset">Evening Sunset</option>
-              <option value="midnight-ferry">Midnight Ferry</option>
-              <option value="weekend-getaway">Weekend Getaway</option>
+              {tripsLoading && <option value="">Loading trips...</option>}
+              {tripsError && <option value="">{`Error: ${tripsError}`}</option>}
+              {trips.map((t) => (
+                <option key={t._id} value={t._id}>{t.tripName}</option>
+              ))}
             </select>
+            {tripsError && <small className="text-danger">{tripsError}</small>}
           </div>
         </div>
       </div>
