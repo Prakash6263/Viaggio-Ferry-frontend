@@ -261,7 +261,22 @@ export default function CompanyEditPromotion() {
                       className="form-control"
                       value={promoDesc}
                       onChange={(e) => setPromoDesc(e.target.value)}
+                      placeholder="Brief description of the promotion"
                     />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Active Status</label>
+                    <select
+                      id="promo-status"
+                      className="form-select"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Scheduled">Scheduled</option>
+                    </select>
                   </div>
 
                   <div className="row g-3 mb-3">
@@ -285,20 +300,6 @@ export default function CompanyEditPromotion() {
                         onChange={(e) => setEndDate(e.target.value)}
                       />
                     </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Active Status</label>
-                    <select
-                      id="promo-status"
-                      className="form-select"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                      <option value="Scheduled">Scheduled</option>
-                    </select>
                   </div>
 
                   {/* Basis */}
