@@ -43,10 +43,7 @@ export default function CompanyEditPromotion() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // service benefits dynamic list
-  const [serviceBenefits, setServiceBenefits] = useState([
-    { id: 1, title: "", amountType: "percentage", value: "" },
-  ]);
+
 
   // Fetch trips and promotion data on component mount
   useEffect(() => {
@@ -109,17 +106,6 @@ export default function CompanyEditPromotion() {
             setVehicleType(promo.vehicleBenefit.valueType);
           }
           
-          // Set service benefits
-          if (promo.serviceBenefits && promo.serviceBenefits.length > 0) {
-            setServiceBenefits(
-              promo.serviceBenefits.map((s, idx) => ({
-                id: idx + 1,
-                title: s.title,
-                amountType: s.valueType,
-                value: s.value.toString(),
-              }))
-            );
-          }
         }
       } catch (error) {
         console.error("[v0] Error fetching data:", error.message);
@@ -135,16 +121,6 @@ export default function CompanyEditPromotion() {
 
     if (id) fetchData();
   }, [id, navigate]);
-
-  function addServiceBenefit() {
-    setServiceBenefits((s) => [...s, { id: Date.now(), title: "", amountType: "percentage", value: "" }]);
-  }
-  function removeServiceBenefit(id) {
-    setServiceBenefits((s) => s.filter((x) => x.id !== id));
-  }
-  function updateServiceBenefit(id, key, val) {
-    setServiceBenefits((s) => s.map((x) => (x.id === id ? { ...x, [key]: val } : x)));
-  }
 
   function savePromotion(e) {
     e.preventDefault();
@@ -201,13 +177,6 @@ export default function CompanyEditPromotion() {
         valueType: vehicleType,
         value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
       },
-      serviceBenefits: serviceBenefits
-        .filter((s) => s.title.trim())
-        .map((s) => ({
-          title: s.title,
-          valueType: s.amountType,
-          value: parseInt(s.value) || 0,
-        })),
     };
 
     console.log("[v0] Update promotion payload:", payload);
@@ -509,45 +478,6 @@ export default function CompanyEditPromotion() {
                           </div>
                         </div>
                       )}
-                    </div>
-                  </section>
-
-                  {/* Service benefits dynamic area */}
-                  <section className="mb-3">
-                    <h6>Service Benefit(s)</h6>
-                    <div className="d-flex flex-column gap-2">
-                      {serviceBenefits.map((s) => (
-                        <div key={s.id} className="d-flex gap-2 align-items-center">
-                          <input
-                            className="form-control"
-                            value={s.title}
-                            onChange={(e) => updateServiceBenefit(s.id, "title", e.target.value)}
-                            placeholder="Title"
-                          />
-                          <select
-                            className="form-select"
-                            value={s.amountType}
-                            onChange={(e) => updateServiceBenefit(s.id, "amountType", e.target.value)}
-                            style={{ width: 160 }}
-                          >
-                            <option value="percentage">Percentage (%)</option>
-                            <option value="fixed">Fixed Amount</option>
-                          </select>
-                          <input
-                            className="form-control"
-                            value={s.value}
-                            onChange={(e) => updateServiceBenefit(s.id, "value", e.target.value)}
-                            placeholder="Value"
-                            style={{ width: 120 }}
-                          />
-                          <button type="button" className="btn btn-danger" onClick={() => removeServiceBenefit(s.id)}>Remove</button>
-                        </div>
-                      ))}
-                      <div>
-                        <button type="button" className="btn btn-outline-primary mt-2" onClick={addServiceBenefit}>
-                          + Add Service Benefit
-                        </button>
-                      </div>
                     </div>
                   </section>
 

@@ -62,21 +62,6 @@ export default function AddPromotionPage() {
 
   const [isSaving, setIsSaving] = useState(false);
 
-  // service benefits dynamic list
-  const [serviceBenefits, setServiceBenefits] = useState([
-    { id: 1, title: "", amountType: "percentage", value: "" },
-  ]);
-
-  function addServiceBenefit() {
-    setServiceBenefits((s) => [...s, { id: Date.now(), title: "", amountType: "percentage", value: "" }]);
-  }
-  function removeServiceBenefit(id) {
-    setServiceBenefits((s) => s.filter((x) => x.id !== id));
-  }
-  function updateServiceBenefit(id, key, val) {
-    setServiceBenefits((s) => s.map((x) => (x.id === id ? { ...x, [key]: val } : x)));
-  }
-
   function savePromotion(e) {
     e.preventDefault();
     
@@ -132,13 +117,6 @@ export default function AddPromotionPage() {
         valueType: vehicleType,
         value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
       },
-      serviceBenefits: serviceBenefits
-        .filter((s) => s.title.trim())
-        .map((s) => ({
-          title: s.title,
-          valueType: s.amountType,
-          value: parseInt(s.value) || 0,
-        })),
     };
 
     console.log("[v0] Save promotion payload:", payload);
@@ -427,45 +405,6 @@ export default function AddPromotionPage() {
                           </div>
                         </div>
                       )}
-                    </div>
-                  </section>
-
-                  {/* Service benefits dynamic area */}
-                  <section className="mb-3">
-                    <h6>Service Benefit(s)</h6>
-                    <div className="d-flex flex-column gap-2">
-                      {serviceBenefits.map((s) => (
-                        <div key={s.id} className="d-flex gap-2 align-items-center">
-                          <input
-                            className="form-control"
-                            value={s.title}
-                            onChange={(e) => updateServiceBenefit(s.id, "title", e.target.value)}
-                            placeholder="Title"
-                          />
-                          <select
-                            className="form-select"
-                            value={s.amountType}
-                            onChange={(e) => updateServiceBenefit(s.id, "amountType", e.target.value)}
-                            style={{ width: 160 }}
-                          >
-                            <option value="percentage">Percentage (%)</option>
-                            <option value="amount">Amount</option>
-                          </select>
-                          <input
-                            className="form-control"
-                            value={s.value}
-                            onChange={(e) => updateServiceBenefit(s.id, "value", e.target.value)}
-                            placeholder="Value"
-                            style={{ width: 120 }}
-                          />
-                          <button type="button" className="btn btn-danger" onClick={() => removeServiceBenefit(s.id)}>Remove</button>
-                        </div>
-                      ))}
-                      <div>
-                        <button type="button" className="btn btn-outline-primary mt-2" onClick={addServiceBenefit}>
-                          + Add Service Benefit
-                        </button>
-                      </div>
                     </div>
                   </section>
 
