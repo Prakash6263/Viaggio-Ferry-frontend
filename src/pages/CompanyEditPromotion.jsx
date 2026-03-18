@@ -279,33 +279,10 @@ export default function CompanyEditPromotion() {
                     </select>
                   </div>
 
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Start Date &amp; Time</label>
-                      <input
-                        id="start-date"
-                        type="datetime-local"
-                        className="form-control"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">End Date &amp; Time</label>
-                      <input
-                        id="end-date"
-                        type="datetime-local"
-                        className="form-control"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Basis */}
-                  <div className="mb-3 p-3 border rounded">
+                  {/* Promotion Basis */}
+                  <div className="mb-3">
                     <label className="form-label fw-bold">Promotion Basis</label>
-                    <div className="d-flex gap-3 align-items-center mt-2">
+                    <div className="d-flex gap-4 align-items-center mt-2">
                       <div className="form-check">
                         <input
                           id="basis-period"
@@ -316,7 +293,7 @@ export default function CompanyEditPromotion() {
                           checked={basis === "Period"}
                           onChange={() => setBasis("Period")}
                         />
-                        <label className="form-check-label" htmlFor="basis-period">Period</label>
+                        <label className="form-check-label" htmlFor="basis-period">Based on Period</label>
                       </div>
 
                       <div className="form-check">
@@ -329,12 +306,37 @@ export default function CompanyEditPromotion() {
                           checked={basis === "Trip"}
                           onChange={() => setBasis("Trip")}
                         />
-                        <label className="form-check-label" htmlFor="basis-trip">Trip</label>
+                        <label className="form-check-label" htmlFor="basis-trip">Based on Trip</label>
                       </div>
                     </div>
 
+                    {basis === "Period" && (
+                      <div className="mt-3 p-3 border rounded">
+                        <div className="mb-3">
+                          <label className="form-label">Start Date &amp; Time</label>
+                          <input
+                            id="start-date"
+                            type="datetime-local"
+                            className="form-control"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="mb-0">
+                          <label className="form-label">End Date &amp; Time</label>
+                          <input
+                            id="end-date"
+                            type="datetime-local"
+                            className="form-control"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {basis === "Trip" && (
-                      <div className="mt-3">
+                      <div className="mt-3 p-3 border rounded">
                         <label className="form-label">Select Trip</label>
                         <select id="trip-select" className="form-select" value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} disabled={tripsLoading}>
                           <option value="">-- Select a Trip --</option>
