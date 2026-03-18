@@ -51,31 +51,68 @@ export default function AddPromotionPage() {
   const [passengerEnabled, setPassengerEnabled] = useState(false);
   const [passengerValue, setPassengerValue] = useState("");
   const [passengerType, setPassengerType] = useState("percentage");
+  const [passengerBasis, setPassengerBasis] = useState("quantity"); // quantity or totalValue
+  const [passengerMinValue, setPassengerMinValue] = useState("");
+  const [passengerConditions, setPassengerConditions] = useState([
+    { id: 1, passengerType: "Adult", class: "Economy" }
+  ]);
   
   const [cargoEnabled, setCargoEnabled] = useState(false);
   const [cargoValue, setCargoValue] = useState("");
   const [cargoType, setCargoType] = useState("percentage");
+  const [cargoBasis, setCargoBasis] = useState("quantity"); // quantity or totalValue
+  const [cargoMinValue, setCargoMinValue] = useState("");
+  const [cargoBuyX, setCargoBuyX] = useState("");
+  const [cargoGetY, setCargoGetY] = useState("");
+  const [cargoConditions, setCargoConditions] = useState([
+    { id: 1, cargoType: "General Goods" }
+  ]);
   
   const [vehicleEnabled, setVehicleEnabled] = useState(false);
   const [vehicleValue, setVehicleValue] = useState("");
   const [vehicleType, setVehicleType] = useState("percentage");
-
-  const [isSaving, setIsSaving] = useState(false);
-
-  // service benefits dynamic list
-  const [serviceBenefits, setServiceBenefits] = useState([
-    { id: 1, title: "", amountType: "percentage", value: "" },
+  const [vehicleBasis, setVehicleBasis] = useState("quantity"); // quantity or totalValue
+  const [vehicleMinValue, setVehicleMinValue] = useState("");
+  const [vehicleBuyX, setVehicleBuyX] = useState("");
+  const [vehicleGetY, setVehicleGetY] = useState("");
+  const [vehicleConditions, setVehicleConditions] = useState([
+    { id: 1, vehicleType: "Car" }
   ]);
 
-  function addServiceBenefit() {
-    setServiceBenefits((s) => [...s, { id: Date.now(), title: "", amountType: "percentage", value: "" }]);
-  }
-  function removeServiceBenefit(id) {
-    setServiceBenefits((s) => s.filter((x) => x.id !== id));
-  }
-  function updateServiceBenefit(id, key, val) {
-    setServiceBenefits((s) => s.map((x) => (x.id === id ? { ...x, [key]: val } : x)));
-  }
+  // Eligibility condition handlers - Passenger
+  const addPassengerCondition = () => {
+    setPassengerConditions(prev => [...prev, { id: Date.now(), passengerType: "Adult", class: "Economy" }]);
+  };
+  const removePassengerCondition = (id) => {
+    setPassengerConditions(prev => prev.filter(c => c.id !== id));
+  };
+  const updatePassengerCondition = (id, field, value) => {
+    setPassengerConditions(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
+  // Eligibility condition handlers - Cargo
+  const addCargoCondition = () => {
+    setCargoConditions(prev => [...prev, { id: Date.now(), cargoType: "General Goods" }]);
+  };
+  const removeCargoCondition = (id) => {
+    setCargoConditions(prev => prev.filter(c => c.id !== id));
+  };
+  const updateCargoCondition = (id, field, value) => {
+    setCargoConditions(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
+  // Eligibility condition handlers - Vehicle
+  const addVehicleCondition = () => {
+    setVehicleConditions(prev => [...prev, { id: Date.now(), vehicleType: "Car" }]);
+  };
+  const removeVehicleCondition = (id) => {
+    setVehicleConditions(prev => prev.filter(c => c.id !== id));
+  };
+  const updateVehicleCondition = (id, field, value) => {
+    setVehicleConditions(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
+  const [isSaving, setIsSaving] = useState(false);
 
   function savePromotion(e) {
     e.preventDefault();
@@ -132,13 +169,6 @@ export default function AddPromotionPage() {
         valueType: vehicleType,
         value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
       },
-      serviceBenefits: serviceBenefits
-        .filter((s) => s.title.trim())
-        .map((s) => ({
-          title: s.title,
-          valueType: s.amountType,
-          value: parseInt(s.value) || 0,
-        })),
     };
 
     console.log("[v0] Save promotion payload:", payload);
@@ -210,30 +240,8 @@ export default function AddPromotionPage() {
                       className="form-control"
                       value={promoDesc}
                       onChange={(e) => setPromoDesc(e.target.value)}
+                      placeholder="Brief description of the promotion"
                     />
-                  </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Start Date &amp; Time</label>
-                      <input
-                        id="start-date"
-                        type="datetime-local"
-                        className="form-control"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">End Date &amp; Time</label>
-                      <input
-                        id="end-date"
-                        type="datetime-local"
-                        className="form-control"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
                   </div>
 
                   <div className="mb-3">
@@ -250,10 +258,10 @@ export default function AddPromotionPage() {
                     </select>
                   </div>
 
-                  {/* Basis */}
-                  <div className="mb-3 p-3 border rounded">
+                  {/* Promotion Basis */}
+                  <div className="mb-3">
                     <label className="form-label fw-bold">Promotion Basis</label>
-                    <div className="d-flex gap-3 align-items-center mt-2">
+                    <div className="d-flex gap-4 align-items-center mt-2">
                       <div className="form-check">
                         <input
                           id="basis-period"
@@ -264,7 +272,7 @@ export default function AddPromotionPage() {
                           checked={basis === "period"}
                           onChange={() => setBasis("period")}
                         />
-                        <label className="form-check-label" htmlFor="basis-period">Period</label>
+                        <label className="form-check-label" htmlFor="basis-period">Based on Period</label>
                       </div>
 
                       <div className="form-check">
@@ -277,9 +285,34 @@ export default function AddPromotionPage() {
                           checked={basis === "trip"}
                           onChange={() => setBasis("trip")}
                         />
-                        <label className="form-check-label" htmlFor="basis-trip">Trip</label>
+                        <label className="form-check-label" htmlFor="basis-trip">Based on Trip</label>
                       </div>
                     </div>
+
+                    {basis === "period" && (
+                      <div className="mt-3 p-3 border rounded">
+                        <div className="mb-3">
+                          <label className="form-label">Start Date &amp; Time</label>
+                          <input
+                            id="start-date"
+                            type="datetime-local"
+                            className="form-control"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="mb-0">
+                          <label className="form-label">End Date &amp; Time</label>
+                          <input
+                            id="end-date"
+                            type="datetime-local"
+                            className="form-control"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {basis === "trip" && (
                       <div className="mt-3">
@@ -299,172 +332,473 @@ export default function AddPromotionPage() {
 
                   {/* Promotion Benefits & Eligibility */}
                   <section className="mb-3">
-                    <h6>Promotion Benefits &amp; Eligibility</h6>
+                    <div className="d-flex align-items-center gap-2 mb-3 p-2 rounded" style={{ backgroundColor: '#e8f4fc' }}>
+                      <i className="fa fa-gift text-primary"></i>
+                      <span className="fw-bold text-primary">Promotion Benefits &amp; Eligibility</span>
+                    </div>
 
-                    <div className="card mb-2">
-                      <div className="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>Passenger Tickets</strong>
-                          <div className="text-muted small">Enable promotion for passenger tickets</div>
-                        </div>
-                        <div>
+                    {/* Passenger Tickets */}
+                    <div className="border rounded mb-3">
+                      <div className="d-flex align-items-center gap-2 p-2 border-bottom" style={{ backgroundColor: '#f8f9fa' }}>
+                        <i className="fa fa-users text-primary"></i>
+                        <span className="fw-bold">Passenger Tickets</span>
+                      </div>
+                      <div className="p-3">
+                        <div className="form-check mb-3">
                           <input
                             id="passenger-benefit-enabled"
                             type="checkbox"
+                            className="form-check-input"
                             checked={passengerEnabled}
                             onChange={(e) => setPassengerEnabled(e.target.checked)}
                           />
+                          <label className="form-check-label" htmlFor="passenger-benefit-enabled">
+                            Enable promotion for passenger tickets
+                          </label>
                         </div>
-                      </div>
 
-                      {passengerEnabled && (
-                        <div className="card-footer">
-                          <div className="row g-2">
-                            <div className="col-md-4">
-                              <input 
-                                placeholder="Amount" 
-                                className="form-control" 
-                                type="number"
-                                value={passengerValue}
-                                onChange={(e) => setPassengerValue(e.target.value)}
-                              />
+                        {passengerEnabled && (
+                          <>
+                            <div className="d-flex gap-4 mb-3">
+                              <div className="form-check">
+                                <input
+                                  id="passenger-basis-quantity"
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="passengerBasis"
+                                  checked={passengerBasis === "quantity"}
+                                  onChange={() => setPassengerBasis("quantity")}
+                                />
+                                <label className="form-check-label" htmlFor="passenger-basis-quantity">Based on Ticket Quantity</label>
+                              </div>
+                              <div className="form-check">
+                                <input
+                                  id="passenger-basis-total"
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="passengerBasis"
+                                  checked={passengerBasis === "totalValue"}
+                                  onChange={() => setPassengerBasis("totalValue")}
+                                />
+                                <label className="form-check-label" htmlFor="passenger-basis-total">Based on Total Ticket Value</label>
+                              </div>
                             </div>
-                            <div className="col-md-4">
-                              <select 
-                                className="form-select"
-                                value={passengerType}
-                                onChange={(e) => setPassengerType(e.target.value)}
-                              >
-                                <option value="percentage">Percentage</option>
-                                <option value="fixed">Fixed Amount</option>
-                              </select>
+
+                            {passengerBasis === "totalValue" && (
+                              <div className="p-3 border rounded mb-3">
+                                <div className="mb-3">
+                                  <label className="form-label">Buy Total Value</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="Minimum purchase amount"
+                                    value={passengerMinValue}
+                                    onChange={(e) => setPassengerMinValue(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">Gets Discount</label>
+                                  <div className="d-flex gap-2">
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      placeholder="Discount amount"
+                                      value={passengerValue}
+                                      onChange={(e) => setPassengerValue(e.target.value)}
+                                    />
+                                    <select
+                                      className="form-select"
+                                      style={{ width: 100 }}
+                                      value={passengerType}
+                                      onChange={(e) => setPassengerType(e.target.value)}
+                                    >
+                                      <option value="percentage">%</option>
+                                      <option value="fixed">Fixed</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {passengerBasis === "quantity" && (
+                              <div className="p-3 border rounded mb-3">
+                                <div className="row g-2">
+                                  <div className="col-md-6">
+                                    <input
+                                      placeholder="Discount amount"
+                                      className="form-control"
+                                      type="number"
+                                      value={passengerValue}
+                                      onChange={(e) => setPassengerValue(e.target.value)}
+                                    />
+                                  </div>
+                                  <div className="col-md-6">
+                                    <select
+                                      className="form-select"
+                                      value={passengerType}
+                                      onChange={(e) => setPassengerType(e.target.value)}
+                                    >
+                                      <option value="percentage">Percentage (%)</option>
+                                      <option value="fixed">Fixed Amount</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Eligibility Conditions */}
+                            <div className="border rounded">
+                              <div className="d-flex align-items-center gap-2 p-2 border-bottom" style={{ backgroundColor: '#f8f9fa' }}>
+                                <i className="fa fa-filter text-primary"></i>
+                                <span className="fw-bold">Eligibility Conditions</span>
+                              </div>
+                              <div className="p-3">
+                                {passengerConditions.map((condition) => (
+                                  <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
+                                    <select
+                                      className="form-select"
+                                      value={condition.passengerType}
+                                      onChange={(e) => updatePassengerCondition(condition.id, "passengerType", e.target.value)}
+                                    >
+                                      <option value="Adult">Adult</option>
+                                      <option value="Child">Child</option>
+                                      <option value="Infant">Infant</option>
+                                      <option value="Senior">Senior</option>
+                                    </select>
+                                    <select
+                                      className="form-select"
+                                      value={condition.class}
+                                      onChange={(e) => updatePassengerCondition(condition.id, "class", e.target.value)}
+                                    >
+                                      <option value="Economy">Economy</option>
+                                      <option value="Business">Business</option>
+                                      <option value="First">First</option>
+                                    </select>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-danger btn-sm"
+                                      onClick={() => removePassengerCondition(condition.id)}
+                                      disabled={passengerConditions.length === 1}
+                                    >
+                                      <i className="fa fa-trash"></i>
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  className="btn btn-primary btn-sm mt-2"
+                                  onClick={addPassengerCondition}
+                                >
+                                  + Add Condition
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="card mb-2">
-                      <div className="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>Cargo Tickets</strong>
-                          <div className="text-muted small">Enable promotion for cargo tickets</div>
-                        </div>
-                        <div>
+                    {/* Cargo Tickets */}
+                    <div className="border rounded mb-3">
+                      <div className="d-flex align-items-center gap-2 p-2 border-bottom" style={{ backgroundColor: '#f8f9fa' }}>
+                        <i className="fa fa-cube text-primary"></i>
+                        <span className="fw-bold">Cargo Tickets</span>
+                      </div>
+                      <div className="p-3">
+                        <div className="form-check mb-3">
                           <input
                             id="cargo-benefit-enabled"
                             type="checkbox"
+                            className="form-check-input"
                             checked={cargoEnabled}
                             onChange={(e) => setCargoEnabled(e.target.checked)}
                           />
+                          <label className="form-check-label" htmlFor="cargo-benefit-enabled">
+                            Enable promotion for cargo tickets
+                          </label>
                         </div>
-                      </div>
 
-                      {cargoEnabled && (
-                        <div className="card-footer">
-                          <div className="row g-2">
-                            <div className="col-md-4">
-                              <input 
-                                placeholder="Amount" 
-                                className="form-control" 
-                                type="number"
-                                value={cargoValue}
-                                onChange={(e) => setCargoValue(e.target.value)}
-                              />
+                        {cargoEnabled && (
+                          <>
+                            <div className="d-flex gap-4 mb-3">
+                              <div className="form-check">
+                                <input
+                                  id="cargo-basis-quantity"
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="cargoBasis"
+                                  checked={cargoBasis === "quantity"}
+                                  onChange={() => setCargoBasis("quantity")}
+                                />
+                                <label className="form-check-label" htmlFor="cargo-basis-quantity">Based on Ticket Quantity</label>
+                              </div>
+                              <div className="form-check">
+                                <input
+                                  id="cargo-basis-total"
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="cargoBasis"
+                                  checked={cargoBasis === "totalValue"}
+                                  onChange={() => setCargoBasis("totalValue")}
+                                />
+                                <label className="form-check-label" htmlFor="cargo-basis-total">Based on Total Ticket Value</label>
+                              </div>
                             </div>
-                            <div className="col-md-4">
-                              <select 
-                                className="form-select"
-                                value={cargoType}
-                                onChange={(e) => setCargoType(e.target.value)}
-                              >
-                                <option value="percentage">Percentage</option>
-                                <option value="fixed">Fixed Amount</option>
-                              </select>
+
+                            {cargoBasis === "totalValue" && (
+                              <div className="p-3 border rounded mb-3">
+                                <div className="mb-3">
+                                  <label className="form-label">Buy Total Value</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="Minimum purchase amount"
+                                    value={cargoMinValue}
+                                    onChange={(e) => setCargoMinValue(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">Gets Discount</label>
+                                  <div className="d-flex gap-2">
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      placeholder="Discount amount"
+                                      value={cargoValue}
+                                      onChange={(e) => setCargoValue(e.target.value)}
+                                    />
+                                    <select
+                                      className="form-select"
+                                      style={{ width: 100 }}
+                                      value={cargoType}
+                                      onChange={(e) => setCargoType(e.target.value)}
+                                    >
+                                      <option value="percentage">%</option>
+                                      <option value="fixed">Fixed</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {cargoBasis === "quantity" && (
+                              <div className="p-3 border rounded mb-3">
+                                <div className="mb-3">
+                                  <label className="form-label">Buy X Tickets</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="1"
+                                    value={cargoBuyX}
+                                    onChange={(e) => setCargoBuyX(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">Get Y Tickets Free</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="1"
+                                    value={cargoGetY}
+                                    onChange={(e) => setCargoGetY(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Eligibility Conditions */}
+                            <div className="border rounded">
+                              <div className="d-flex align-items-center gap-2 p-2 border-bottom" style={{ backgroundColor: '#f8f9fa' }}>
+                                <i className="fa fa-filter text-primary"></i>
+                                <span className="fw-bold">Eligibility Conditions</span>
+                              </div>
+                              <div className="p-3">
+                                {cargoConditions.map((condition) => (
+                                  <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
+                                    <select
+                                      className="form-select"
+                                      value={condition.cargoType}
+                                      onChange={(e) => updateCargoCondition(condition.id, "cargoType", e.target.value)}
+                                    >
+                                      <option value="General Goods">General Goods</option>
+                                      <option value="Fragile">Fragile</option>
+                                      <option value="Perishable">Perishable</option>
+                                      <option value="Hazardous">Hazardous</option>
+                                      <option value="Oversized">Oversized</option>
+                                    </select>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-danger btn-sm"
+                                      onClick={() => removeCargoCondition(condition.id)}
+                                      disabled={cargoConditions.length === 1}
+                                    >
+                                      <i className="fa fa-trash"></i>
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  className="btn btn-success btn-sm mt-2"
+                                  onClick={addCargoCondition}
+                                >
+                                  + Add Condition
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="card mb-2">
-                      <div className="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>Vehicle Tickets</strong>
-                          <div className="text-muted small">Enable promotion for vehicle tickets</div>
-                        </div>
-                        <div>
+                    {/* Vehicle Tickets */}
+                    <div className="border rounded mb-3">
+                      <div className="d-flex align-items-center gap-2 p-2 border-bottom" style={{ backgroundColor: '#f8f9fa' }}>
+                        <i className="fa fa-car text-primary"></i>
+                        <span className="fw-bold">Vehicle Tickets</span>
+                      </div>
+                      <div className="p-3">
+                        <div className="form-check mb-3">
                           <input
                             id="vehicle-benefit-enabled"
                             type="checkbox"
+                            className="form-check-input"
                             checked={vehicleEnabled}
                             onChange={(e) => setVehicleEnabled(e.target.checked)}
                           />
+                          <label className="form-check-label" htmlFor="vehicle-benefit-enabled">
+                            Enable promotion for vehicle tickets
+                          </label>
                         </div>
-                      </div>
-                      {vehicleEnabled && (
-                        <div className="card-footer">
-                          <div className="row g-2">
-                            <div className="col-md-4">
-                              <input 
-                                placeholder="Amount" 
-                                className="form-control" 
-                                type="number"
-                                value={vehicleValue}
-                                onChange={(e) => setVehicleValue(e.target.value)}
-                              />
-                            </div>
-                            <div className="col-md-4">
-                              <select 
-                                className="form-select"
-                                value={vehicleType}
-                                onChange={(e) => setVehicleType(e.target.value)}
-                              >
-                                <option value="percentage">Percentage</option>
-                                <option value="fixed">Fixed Amount</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </section>
 
-                  {/* Service benefits dynamic area */}
-                  <section className="mb-3">
-                    <h6>Service Benefit(s)</h6>
-                    <div className="d-flex flex-column gap-2">
-                      {serviceBenefits.map((s) => (
-                        <div key={s.id} className="d-flex gap-2 align-items-center">
-                          <input
-                            className="form-control"
-                            value={s.title}
-                            onChange={(e) => updateServiceBenefit(s.id, "title", e.target.value)}
-                            placeholder="Title"
-                          />
-                          <select
-                            className="form-select"
-                            value={s.amountType}
-                            onChange={(e) => updateServiceBenefit(s.id, "amountType", e.target.value)}
-                            style={{ width: 160 }}
-                          >
-                            <option value="percentage">Percentage (%)</option>
-                            <option value="amount">Amount</option>
-                          </select>
-                          <input
-                            className="form-control"
-                            value={s.value}
-                            onChange={(e) => updateServiceBenefit(s.id, "value", e.target.value)}
-                            placeholder="Value"
-                            style={{ width: 120 }}
-                          />
-                          <button type="button" className="btn btn-danger" onClick={() => removeServiceBenefit(s.id)}>Remove</button>
-                        </div>
-                      ))}
-                      <div>
-                        <button type="button" className="btn btn-outline-primary mt-2" onClick={addServiceBenefit}>
-                          + Add Service Benefit
-                        </button>
+                        {vehicleEnabled && (
+                          <>
+                            <div className="d-flex gap-4 mb-3">
+                              <div className="form-check">
+                                <input
+                                  id="vehicle-basis-quantity"
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="vehicleBasis"
+                                  checked={vehicleBasis === "quantity"}
+                                  onChange={() => setVehicleBasis("quantity")}
+                                />
+                                <label className="form-check-label" htmlFor="vehicle-basis-quantity">Based on Ticket Quantity</label>
+                              </div>
+                              <div className="form-check">
+                                <input
+                                  id="vehicle-basis-total"
+                                  className="form-check-input"
+                                  type="radio"
+                                  name="vehicleBasis"
+                                  checked={vehicleBasis === "totalValue"}
+                                  onChange={() => setVehicleBasis("totalValue")}
+                                />
+                                <label className="form-check-label" htmlFor="vehicle-basis-total">Based on Total Ticket Value</label>
+                              </div>
+                            </div>
+
+                            {vehicleBasis === "totalValue" && (
+                              <div className="p-3 border rounded mb-3">
+                                <div className="mb-3">
+                                  <label className="form-label">Buy Total Value</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="Minimum purchase amount"
+                                    value={vehicleMinValue}
+                                    onChange={(e) => setVehicleMinValue(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">Gets Discount</label>
+                                  <div className="d-flex gap-2">
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      placeholder="Discount amount"
+                                      value={vehicleValue}
+                                      onChange={(e) => setVehicleValue(e.target.value)}
+                                    />
+                                    <select
+                                      className="form-select"
+                                      style={{ width: 100 }}
+                                      value={vehicleType}
+                                      onChange={(e) => setVehicleType(e.target.value)}
+                                    >
+                                      <option value="percentage">%</option>
+                                      <option value="fixed">Fixed</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {vehicleBasis === "quantity" && (
+                              <div className="p-3 border rounded mb-3">
+                                <div className="mb-3">
+                                  <label className="form-label">Buy X Tickets</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="1"
+                                    value={vehicleBuyX}
+                                    onChange={(e) => setVehicleBuyX(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="form-label">Get Y Tickets Free</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="1"
+                                    value={vehicleGetY}
+                                    onChange={(e) => setVehicleGetY(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Eligibility Conditions */}
+                            <div className="border rounded">
+                              <div className="d-flex align-items-center gap-2 p-2 border-bottom" style={{ backgroundColor: '#f8f9fa' }}>
+                                <i className="fa fa-filter text-primary"></i>
+                                <span className="fw-bold">Eligibility Conditions</span>
+                              </div>
+                              <div className="p-3">
+                                {vehicleConditions.map((condition) => (
+                                  <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
+                                    <select
+                                      className="form-select"
+                                      value={condition.vehicleType}
+                                      onChange={(e) => updateVehicleCondition(condition.id, "vehicleType", e.target.value)}
+                                    >
+                                      <option value="Car">Car</option>
+                                      <option value="Motorcycle">Motorcycle</option>
+                                      <option value="Truck">Truck</option>
+                                      <option value="Bus">Bus</option>
+                                      <option value="Van">Van</option>
+                                    </select>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-danger btn-sm"
+                                      onClick={() => removeVehicleCondition(condition.id)}
+                                      disabled={vehicleConditions.length === 1}
+                                    >
+                                      <i className="fa fa-trash"></i>
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  className="btn btn-success btn-sm mt-2"
+                                  onClick={addVehicleCondition}
+                                >
+                                  + Add Condition
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </section>
