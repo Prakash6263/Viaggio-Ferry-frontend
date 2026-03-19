@@ -62,6 +62,8 @@ export default function CompanyEditPromotion() {
   const [passengerType, setPassengerType] = useState("percentage");
   const [passengerBasis, setPassengerBasis] = useState("quantity"); // quantity or totalValue
   const [passengerMinValue, setPassengerMinValue] = useState("");
+  const [passengerBuyX, setPassengerBuyX] = useState("");
+  const [passengerGetY, setPassengerGetY] = useState("");
   const [passengerConditions, setPassengerConditions] = useState([
     { id: 1, cabinId: "", cabinName: "", payloadTypeId: "", payloadTypeName: "" }
   ]);
@@ -280,33 +282,133 @@ export default function CompanyEditPromotion() {
       return;
     }
 
-    // Build payload
+    // Build servicePromotions object
+    const servicePromotions = {};
+
+    // Passenger service promotion
+    if (passengerEnabled) {
+      const passengerEligibility = passengerConditions
+        .filter(c => c.cabinId || c.payloadTypeId)
+        .map(c => ({
+          ...(c.cabinId && { cabinId: c.cabinId }),
+          ...(c.payloadTypeId && { passengerTypeId: c.payloadTypeId }),
+        }));
+
+      // Only add passenger if we have valid data
+      const passengerPromo = {
+        isEnabled: true,
+        calculationType: passengerBasis,
+        eligibility: passengerEligibility,
+      };
+
+      if (passengerBasis === "quantity") {
+        const buyXVal = parseInt(passengerBuyX);
+        const getYVal = parseInt(passengerGetY);
+        if (buyXVal > 0 && getYVal > 0) {
+          passengerPromo.buyX = buyXVal;
+          passengerPromo.getY = getYVal;
+          servicePromotions.passenger = passengerPromo;
+        }
+      } else if (passengerBasis === "totalValue") {
+        const minVal = parseInt(passengerMinValue);
+        const discountVal = parseInt(passengerValue);
+        if (minVal > 0 && discountVal > 0) {
+          passengerPromo.minValue = minVal;
+          passengerPromo.discountType = passengerType;
+          passengerPromo.discountValue = discountVal;
+          servicePromotions.passenger = passengerPromo;
+        }
+      }
+    }
+
+    // Cargo service promotion
+    if (cargoEnabled) {
+      const cargoEligibility = cargoConditions
+        .filter(c => c.payloadTypeId)
+        .map(c => ({
+          payloadId: c.payloadTypeId,
+        }));
+
+      // Only add cargo if we have valid eligibility
+      if (cargoEligibility.length > 0) {
+        const cargoPromo = {
+          isEnabled: true,
+          calculationType: cargoBasis,
+          eligibility: cargoEligibility,
+        };
+
+        if (cargoBasis === "quantity") {
+          const buyXVal = parseInt(cargoBuyX);
+          const getYVal = parseInt(cargoGetY);
+          if (buyXVal > 0 && getYVal > 0) {
+            cargoPromo.buyX = buyXVal;
+            cargoPromo.getY = getYVal;
+            servicePromotions.cargo = cargoPromo;
+          }
+        } else if (cargoBasis === "totalValue") {
+          const minVal = parseInt(cargoMinValue);
+          const discountVal = parseInt(cargoValue);
+          if (minVal > 0 && discountVal > 0) {
+            cargoPromo.minValue = minVal;
+            cargoPromo.discountType = cargoType;
+            cargoPromo.discountValue = discountVal;
+            servicePromotions.cargo = cargoPromo;
+          }
+        }
+      }
+    }
+
+    // Vehicle service promotion
+    if (vehicleEnabled) {
+      const vehicleEligibility = vehicleConditions
+        .filter(c => c.payloadTypeId)
+        .map(c => ({
+          payloadId: c.payloadTypeId,
+        }));
+
+      // Only add vehicle if we have valid eligibility
+      if (vehicleEligibility.length > 0) {
+        const vehiclePromo = {
+          isEnabled: true,
+          calculationType: vehicleBasis,
+          eligibility: vehicleEligibility,
+        };
+
+        if (vehicleBasis === "quantity") {
+          const buyXVal = parseInt(vehicleBuyX);
+          const getYVal = parseInt(vehicleGetY);
+          if (buyXVal > 0 && getYVal > 0) {
+            vehiclePromo.buyX = buyXVal;
+            vehiclePromo.getY = getYVal;
+            servicePromotions.vehicle = vehiclePromo;
+          }
+        } else if (vehicleBasis === "totalValue") {
+          const minVal = parseInt(vehicleMinValue);
+          const discountVal = parseInt(vehicleValue);
+          if (minVal > 0 && discountVal > 0) {
+            vehiclePromo.minValue = minVal;
+            vehiclePromo.discountType = vehicleType;
+            vehiclePromo.discountValue = discountVal;
+            servicePromotions.vehicle = vehiclePromo;
+          }
+        }
+      }
+    }
+
+    // Build final payload
     const payload = {
       promotionName: promoName,
       description: promoDesc,
       promotionBasis: basis,
       status: status,
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
+      ...(basis === "Period" && {
+        startDate: startDate ? new Date(startDate).toISOString().split('T')[0] : null,
+        endDate: endDate ? new Date(endDate).toISOString().split('T')[0] : null,
+      }),
       ...(basis === "Trip" && { trip: selectedTrip }),
-      passengerBenefit: {
-        isEnabled: passengerEnabled,
-        valueType: passengerType,
-        value: passengerEnabled ? parseInt(passengerValue) || 0 : 0,
-      },
-      cargoBenefit: {
-        isEnabled: cargoEnabled,
-        valueType: cargoType,
-        value: cargoEnabled ? parseInt(cargoValue) || 0 : 0,
-      },
-      vehicleBenefit: {
-        isEnabled: vehicleEnabled,
-        valueType: vehicleType,
-        value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
-      },
+      servicePromotions,
     };
 
-    console.log("[v0] Update promotion payload:", payload);
     updatePromotionAPI(payload);
   }
 
