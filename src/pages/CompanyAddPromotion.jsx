@@ -27,8 +27,10 @@ export default function AddPromotionPage() {
   const [tripsLoading, setTripsLoading] = useState(false);
   const [tripsError, setTripsError] = useState(null);
 
-  // Passenger payload types state
+  // Payload types state
   const [passengerPayloadTypes, setPassengerPayloadTypes] = useState([]);
+  const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
+  const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
 
   // Handle trip selection to get cabin details
   const handleTripChange = (tripId) => {
@@ -39,18 +41,13 @@ export default function AddPromotionPage() {
       // Reset conditions when trip changes
       if (trip?.tripCapacityDetails) {
         const passengerCabins = trip.tripCapacityDetails.passenger || [];
-        const cargoCabins = trip.tripCapacityDetails.cargo || [];
-        const vehicleCabins = trip.tripCapacityDetails.vehicle || [];
         
         if (passengerCabins.length > 0) {
           setPassengerConditions([{ id: 1, cabinId: passengerCabins[0].cabinId, cabinName: passengerCabins[0].cabinName, payloadTypeId: "", payloadTypeName: "" }]);
         }
-        if (cargoCabins.length > 0) {
-          setCargoConditions([{ id: 1, cabinId: cargoCabins[0].cabinId, cabinName: cargoCabins[0].cabinName }]);
-        }
-        if (vehicleCabins.length > 0) {
-          setVehicleConditions([{ id: 1, cabinId: vehicleCabins[0].cabinId, cabinName: vehicleCabins[0].cabinName }]);
-        }
+        // Reset cargo and vehicle with payload type structure
+        setCargoConditions([{ id: 1, payloadTypeId: "", payloadTypeName: "" }]);
+        setVehicleConditions([{ id: 1, payloadTypeId: "", payloadTypeName: "" }]);
       }
     } else {
       setSelectedTripData(null);
@@ -86,8 +83,32 @@ export default function AddPromotionPage() {
       }
     };
 
+    const fetchCargoPayloadTypes = async () => {
+      try {
+        const response = await payloadTypesApi.getPayloadTypes(1, 100, "cargo");
+        if (response && response.data && response.data.payloadTypes) {
+          setCargoPayloadTypes(response.data.payloadTypes);
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching cargo payload types:", error.message);
+      }
+    };
+
+    const fetchVehiclePayloadTypes = async () => {
+      try {
+        const response = await payloadTypesApi.getPayloadTypes(1, 100, "vehicle");
+        if (response && response.data && response.data.payloadTypes) {
+          setVehiclePayloadTypes(response.data.payloadTypes);
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching vehicle payload types:", error.message);
+      }
+    };
+
     fetchTrips();
     fetchPassengerPayloadTypes();
+    fetchCargoPayloadTypes();
+    fetchVehiclePayloadTypes();
   }, []);
 
   // benefits
@@ -110,7 +131,7 @@ export default function AddPromotionPage() {
   const [cargoBuyX, setCargoBuyX] = useState("");
   const [cargoGetY, setCargoGetY] = useState("");
   const [cargoConditions, setCargoConditions] = useState([
-    { id: 1, cabinId: "", cabinName: "" }
+    { id: 1, payloadTypeId: "", payloadTypeName: "" }
   ]);
   
   const [vehicleEnabled, setVehicleEnabled] = useState(false);
@@ -121,7 +142,7 @@ export default function AddPromotionPage() {
   const [vehicleBuyX, setVehicleBuyX] = useState("");
   const [vehicleGetY, setVehicleGetY] = useState("");
   const [vehicleConditions, setVehicleConditions] = useState([
-    { id: 1, cabinId: "", cabinName: "" }
+    { id: 1, payloadTypeId: "", payloadTypeName: "" }
   ]);
 
   // Eligibility condition handlers - Passenger
@@ -139,9 +160,7 @@ export default function AddPromotionPage() {
 
   // Eligibility condition handlers - Cargo
   const addCargoCondition = () => {
-    const cargoCabins = selectedTripData?.tripCapacityDetails?.cargo || [];
-    const defaultCabin = cargoCabins[0] || { cabinId: "", cabinName: "" };
-    setCargoConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName }]);
+    setCargoConditions(prev => [...prev, { id: Date.now(), payloadTypeId: "", payloadTypeName: "" }]);
   };
   const removeCargoCondition = (id) => {
     setCargoConditions(prev => prev.filter(c => c.id !== id));
@@ -152,9 +171,7 @@ export default function AddPromotionPage() {
 
   // Eligibility condition handlers - Vehicle
   const addVehicleCondition = () => {
-    const vehicleCabins = selectedTripData?.tripCapacityDetails?.vehicle || [];
-    const defaultCabin = vehicleCabins[0] || { cabinId: "", cabinName: "" };
-    setVehicleConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName }]);
+    setVehicleConditions(prev => [...prev, { id: Date.now(), payloadTypeId: "", payloadTypeName: "" }]);
   };
   const removeVehicleCondition = (id) => {
     setVehicleConditions(prev => prev.filter(c => c.id !== id));
@@ -238,9 +255,9 @@ export default function AddPromotionPage() {
     // Cargo service promotion
     if (cargoEnabled) {
       const cargoEligibility = cargoConditions
-        .filter(c => c.cabinId)
+        .filter(c => c.payloadTypeId)
         .map(c => ({
-          cabinId: c.cabinId,
+          payloadId: c.payloadTypeId,
         }));
 
       // Only add cargo if we have valid eligibility
@@ -275,9 +292,9 @@ export default function AddPromotionPage() {
     // Vehicle service promotion
     if (vehicleEnabled) {
       const vehicleEligibility = vehicleConditions
-        .filter(c => c.cabinId)
+        .filter(c => c.payloadTypeId)
         .map(c => ({
-          cabinId: c.cabinId,
+          payloadId: c.payloadTypeId,
         }));
 
       // Only add vehicle if we have valid eligibility
@@ -777,16 +794,16 @@ export default function AddPromotionPage() {
                                   <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
                                     <select
                                       className="form-select"
-                                      value={condition.cabinId}
+                                      value={condition.payloadTypeId}
                                       onChange={(e) => {
-                                        const cabin = selectedTripData?.tripCapacityDetails?.cargo?.find(c => c.cabinId === e.target.value);
-                                        updateCargoCondition(condition.id, "cabinId", e.target.value);
-                                        updateCargoCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                        const payloadType = cargoPayloadTypes.find(p => p._id === e.target.value);
+                                        updateCargoCondition(condition.id, "payloadTypeId", e.target.value);
+                                        updateCargoCondition(condition.id, "payloadTypeName", payloadType?.name || "");
                                       }}
                                     >
-                                      <option value="">-- Select Cabin --</option>
-                                      {selectedTripData?.tripCapacityDetails?.cargo?.map((cabin) => (
-                                        <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                      <option value="">-- Select Payload Type --</option>
+                                      {cargoPayloadTypes.map((pt) => (
+                                        <option key={pt._id} value={pt._id}>{pt.name}</option>
                                       ))}
                                     </select>
                                     <button
@@ -803,7 +820,7 @@ export default function AddPromotionPage() {
                                   type="button"
                                   className="btn btn-success btn-sm mt-2"
                                   onClick={addCargoCondition}
-                                  disabled={!selectedTripData?.tripCapacityDetails?.cargo?.length}
+                                  disabled={cargoPayloadTypes.length === 0}
                                 >
                                   + Add Condition
                                 </button>
@@ -933,16 +950,16 @@ export default function AddPromotionPage() {
                                   <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
                                     <select
                                       className="form-select"
-                                      value={condition.cabinId}
+                                      value={condition.payloadTypeId}
                                       onChange={(e) => {
-                                        const cabin = selectedTripData?.tripCapacityDetails?.vehicle?.find(c => c.cabinId === e.target.value);
-                                        updateVehicleCondition(condition.id, "cabinId", e.target.value);
-                                        updateVehicleCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                        const payloadType = vehiclePayloadTypes.find(p => p._id === e.target.value);
+                                        updateVehicleCondition(condition.id, "payloadTypeId", e.target.value);
+                                        updateVehicleCondition(condition.id, "payloadTypeName", payloadType?.name || "");
                                       }}
                                     >
-                                      <option value="">-- Select Cabin --</option>
-                                      {selectedTripData?.tripCapacityDetails?.vehicle?.map((cabin) => (
-                                        <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                      <option value="">-- Select Payload Type --</option>
+                                      {vehiclePayloadTypes.map((pt) => (
+                                        <option key={pt._id} value={pt._id}>{pt.name}</option>
                                       ))}
                                     </select>
                                     <button
@@ -959,7 +976,7 @@ export default function AddPromotionPage() {
                                   type="button"
                                   className="btn btn-success btn-sm mt-2"
                                   onClick={addVehicleCondition}
-                                  disabled={!selectedTripData?.tripCapacityDetails?.vehicle?.length}
+                                  disabled={vehiclePayloadTypes.length === 0}
                                 >
                                   + Add Condition
                                 </button>
