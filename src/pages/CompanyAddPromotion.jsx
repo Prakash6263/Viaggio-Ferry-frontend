@@ -19,11 +19,39 @@ export default function AddPromotionPage() {
   const [status, setStatus] = useState("active");
   const [basis, setBasis] = useState("period");
   const [selectedTrip, setSelectedTrip] = useState("");
+  const [selectedTripData, setSelectedTripData] = useState(null);
 
   // Trips state
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
   const [tripsError, setTripsError] = useState(null);
+
+  // Handle trip selection to get cabin details
+  const handleTripChange = (tripId) => {
+    setSelectedTrip(tripId);
+    if (tripId) {
+      const trip = trips.find(t => t._id === tripId);
+      setSelectedTripData(trip || null);
+      // Reset conditions when trip changes
+      if (trip?.tripCapacityDetails) {
+        const passengerCabins = trip.tripCapacityDetails.passenger || [];
+        const cargoCabins = trip.tripCapacityDetails.cargo || [];
+        const vehicleCabins = trip.tripCapacityDetails.vehicle || [];
+        
+        if (passengerCabins.length > 0) {
+          setPassengerConditions([{ id: 1, cabinId: passengerCabins[0].cabinId, cabinName: passengerCabins[0].cabinName }]);
+        }
+        if (cargoCabins.length > 0) {
+          setCargoConditions([{ id: 1, cabinId: cargoCabins[0].cabinId, cabinName: cargoCabins[0].cabinName }]);
+        }
+        if (vehicleCabins.length > 0) {
+          setVehicleConditions([{ id: 1, cabinId: vehicleCabins[0].cabinId, cabinName: vehicleCabins[0].cabinName }]);
+        }
+      }
+    } else {
+      setSelectedTripData(null);
+    }
+  };
 
   // Fetch trips on component mount
   useEffect(() => {
@@ -54,7 +82,7 @@ export default function AddPromotionPage() {
   const [passengerBasis, setPassengerBasis] = useState("quantity"); // quantity or totalValue
   const [passengerMinValue, setPassengerMinValue] = useState("");
   const [passengerConditions, setPassengerConditions] = useState([
-    { id: 1, passengerType: "Adult", class: "Economy" }
+    { id: 1, cabinId: "", cabinName: "" }
   ]);
   
   const [cargoEnabled, setCargoEnabled] = useState(false);
@@ -65,7 +93,7 @@ export default function AddPromotionPage() {
   const [cargoBuyX, setCargoBuyX] = useState("");
   const [cargoGetY, setCargoGetY] = useState("");
   const [cargoConditions, setCargoConditions] = useState([
-    { id: 1, cargoType: "General Goods" }
+    { id: 1, cabinId: "", cabinName: "" }
   ]);
   
   const [vehicleEnabled, setVehicleEnabled] = useState(false);
@@ -76,12 +104,14 @@ export default function AddPromotionPage() {
   const [vehicleBuyX, setVehicleBuyX] = useState("");
   const [vehicleGetY, setVehicleGetY] = useState("");
   const [vehicleConditions, setVehicleConditions] = useState([
-    { id: 1, vehicleType: "Car" }
+    { id: 1, cabinId: "", cabinName: "" }
   ]);
 
   // Eligibility condition handlers - Passenger
   const addPassengerCondition = () => {
-    setPassengerConditions(prev => [...prev, { id: Date.now(), passengerType: "Adult", class: "Economy" }]);
+    const passengerCabins = selectedTripData?.tripCapacityDetails?.passenger || [];
+    const defaultCabin = passengerCabins[0] || { cabinId: "", cabinName: "" };
+    setPassengerConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName }]);
   };
   const removePassengerCondition = (id) => {
     setPassengerConditions(prev => prev.filter(c => c.id !== id));
@@ -92,7 +122,9 @@ export default function AddPromotionPage() {
 
   // Eligibility condition handlers - Cargo
   const addCargoCondition = () => {
-    setCargoConditions(prev => [...prev, { id: Date.now(), cargoType: "General Goods" }]);
+    const cargoCabins = selectedTripData?.tripCapacityDetails?.cargo || [];
+    const defaultCabin = cargoCabins[0] || { cabinId: "", cabinName: "" };
+    setCargoConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName }]);
   };
   const removeCargoCondition = (id) => {
     setCargoConditions(prev => prev.filter(c => c.id !== id));
@@ -103,7 +135,9 @@ export default function AddPromotionPage() {
 
   // Eligibility condition handlers - Vehicle
   const addVehicleCondition = () => {
-    setVehicleConditions(prev => [...prev, { id: Date.now(), vehicleType: "Car" }]);
+    const vehicleCabins = selectedTripData?.tripCapacityDetails?.vehicle || [];
+    const defaultCabin = vehicleCabins[0] || { cabinId: "", cabinName: "" };
+    setVehicleConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName }]);
   };
   const removeVehicleCondition = (id) => {
     setVehicleConditions(prev => prev.filter(c => c.id !== id));
@@ -317,7 +351,7 @@ export default function AddPromotionPage() {
                     {basis === "trip" && (
                       <div className="mt-3">
                         <label className="form-label">Select Trip</label>
-                        <select id="trip-select" className="form-select" value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} disabled={tripsLoading}>
+                        <select id="trip-select" className="form-select" value={selectedTrip} onChange={(e) => handleTripChange(e.target.value)} disabled={tripsLoading}>
                           <option value="">-- Select a Trip --</option>
                           {tripsLoading && <option value="">Loading trips...</option>}
                           {tripsError && <option value="">{`Error: ${tripsError}`}</option>}
@@ -457,22 +491,17 @@ export default function AddPromotionPage() {
                                   <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
                                     <select
                                       className="form-select"
-                                      value={condition.passengerType}
-                                      onChange={(e) => updatePassengerCondition(condition.id, "passengerType", e.target.value)}
+                                      value={condition.cabinId}
+                                      onChange={(e) => {
+                                        const cabin = selectedTripData?.tripCapacityDetails?.passenger?.find(c => c.cabinId === e.target.value);
+                                        updatePassengerCondition(condition.id, "cabinId", e.target.value);
+                                        updatePassengerCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                      }}
                                     >
-                                      <option value="Adult">Adult</option>
-                                      <option value="Child">Child</option>
-                                      <option value="Infant">Infant</option>
-                                      <option value="Senior">Senior</option>
-                                    </select>
-                                    <select
-                                      className="form-select"
-                                      value={condition.class}
-                                      onChange={(e) => updatePassengerCondition(condition.id, "class", e.target.value)}
-                                    >
-                                      <option value="Economy">Economy</option>
-                                      <option value="Business">Business</option>
-                                      <option value="First">First</option>
+                                      <option value="">-- Select Cabin --</option>
+                                      {selectedTripData?.tripCapacityDetails?.passenger?.map((cabin) => (
+                                        <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                      ))}
                                     </select>
                                     <button
                                       type="button"
@@ -486,8 +515,9 @@ export default function AddPromotionPage() {
                                 ))}
                                 <button
                                   type="button"
-                                  className="btn btn-primary btn-sm mt-2"
+                                  className="btn btn-success btn-sm mt-2"
                                   onClick={addPassengerCondition}
+                                  disabled={!selectedTripData?.tripCapacityDetails?.passenger?.length}
                                 >
                                   + Add Condition
                                 </button>
@@ -617,14 +647,17 @@ export default function AddPromotionPage() {
                                   <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
                                     <select
                                       className="form-select"
-                                      value={condition.cargoType}
-                                      onChange={(e) => updateCargoCondition(condition.id, "cargoType", e.target.value)}
+                                      value={condition.cabinId}
+                                      onChange={(e) => {
+                                        const cabin = selectedTripData?.tripCapacityDetails?.cargo?.find(c => c.cabinId === e.target.value);
+                                        updateCargoCondition(condition.id, "cabinId", e.target.value);
+                                        updateCargoCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                      }}
                                     >
-                                      <option value="General Goods">General Goods</option>
-                                      <option value="Fragile">Fragile</option>
-                                      <option value="Perishable">Perishable</option>
-                                      <option value="Hazardous">Hazardous</option>
-                                      <option value="Oversized">Oversized</option>
+                                      <option value="">-- Select Cabin --</option>
+                                      {selectedTripData?.tripCapacityDetails?.cargo?.map((cabin) => (
+                                        <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                      ))}
                                     </select>
                                     <button
                                       type="button"
@@ -640,6 +673,7 @@ export default function AddPromotionPage() {
                                   type="button"
                                   className="btn btn-success btn-sm mt-2"
                                   onClick={addCargoCondition}
+                                  disabled={!selectedTripData?.tripCapacityDetails?.cargo?.length}
                                 >
                                   + Add Condition
                                 </button>
@@ -769,14 +803,17 @@ export default function AddPromotionPage() {
                                   <div key={condition.id} className="d-flex gap-2 align-items-center mb-2">
                                     <select
                                       className="form-select"
-                                      value={condition.vehicleType}
-                                      onChange={(e) => updateVehicleCondition(condition.id, "vehicleType", e.target.value)}
+                                      value={condition.cabinId}
+                                      onChange={(e) => {
+                                        const cabin = selectedTripData?.tripCapacityDetails?.vehicle?.find(c => c.cabinId === e.target.value);
+                                        updateVehicleCondition(condition.id, "cabinId", e.target.value);
+                                        updateVehicleCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                      }}
                                     >
-                                      <option value="Car">Car</option>
-                                      <option value="Motorcycle">Motorcycle</option>
-                                      <option value="Truck">Truck</option>
-                                      <option value="Bus">Bus</option>
-                                      <option value="Van">Van</option>
+                                      <option value="">-- Select Cabin --</option>
+                                      {selectedTripData?.tripCapacityDetails?.vehicle?.map((cabin) => (
+                                        <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                      ))}
                                     </select>
                                     <button
                                       type="button"
@@ -792,6 +829,7 @@ export default function AddPromotionPage() {
                                   type="button"
                                   className="btn btn-success btn-sm mt-2"
                                   onClick={addVehicleCondition}
+                                  disabled={!selectedTripData?.tripCapacityDetails?.vehicle?.length}
                                 >
                                   + Add Condition
                                 </button>
