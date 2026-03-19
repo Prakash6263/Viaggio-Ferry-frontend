@@ -225,7 +225,7 @@ export default function AddPromotionPage() {
           ...(c.payloadTypeId && { passengerTypeId: c.payloadTypeId }),
         }));
 
-      // Only add passenger if we have valid data
+      // Build passenger promo object
       const passengerPromo = {
         isEnabled: true,
         calculationType: passengerBasis,
@@ -233,23 +233,22 @@ export default function AddPromotionPage() {
       };
 
       if (passengerBasis === "quantity") {
-        const buyXVal = parseInt(passengerBuyX);
-        const getYVal = parseInt(passengerGetY);
-        if (buyXVal > 0 && getYVal > 0) {
-          passengerPromo.buyX = buyXVal;
-          passengerPromo.getY = getYVal;
-          servicePromotions.passenger = passengerPromo;
-        }
+        const buyXVal = parseInt(passengerBuyX) || 0;
+        const getYVal = parseInt(passengerGetY) || 0;
+        if (buyXVal > 0) passengerPromo.buyX = buyXVal;
+        if (getYVal > 0) passengerPromo.getY = getYVal;
       } else if (passengerBasis === "totalValue") {
-        const minVal = parseInt(passengerMinValue);
-        const discountVal = parseInt(passengerValue);
-        if (minVal > 0 && discountVal > 0) {
-          passengerPromo.minValue = minVal;
+        const minVal = parseInt(passengerMinValue) || 0;
+        const discountVal = parseInt(passengerValue) || 0;
+        if (minVal > 0) passengerPromo.minValue = minVal;
+        if (discountVal > 0) {
           passengerPromo.discountType = passengerType;
           passengerPromo.discountValue = discountVal;
-          servicePromotions.passenger = passengerPromo;
         }
       }
+      
+      // Always add passenger if enabled
+      servicePromotions.passenger = passengerPromo;
     }
 
     // Cargo service promotion
@@ -260,33 +259,29 @@ export default function AddPromotionPage() {
           payloadId: c.payloadTypeId,
         }));
 
-      // Only add cargo if we have valid eligibility
-      if (cargoEligibility.length > 0) {
-        const cargoPromo = {
-          isEnabled: true,
-          calculationType: cargoBasis,
-          eligibility: cargoEligibility,
-        };
+      const cargoPromo = {
+        isEnabled: true,
+        calculationType: cargoBasis,
+        eligibility: cargoEligibility,
+      };
 
-        if (cargoBasis === "quantity") {
-          const buyXVal = parseInt(cargoBuyX);
-          const getYVal = parseInt(cargoGetY);
-          if (buyXVal > 0 && getYVal > 0) {
-            cargoPromo.buyX = buyXVal;
-            cargoPromo.getY = getYVal;
-            servicePromotions.cargo = cargoPromo;
-          }
-        } else if (cargoBasis === "totalValue") {
-          const minVal = parseInt(cargoMinValue);
-          const discountVal = parseInt(cargoValue);
-          if (minVal > 0 && discountVal > 0) {
-            cargoPromo.minValue = minVal;
-            cargoPromo.discountType = cargoType;
-            cargoPromo.discountValue = discountVal;
-            servicePromotions.cargo = cargoPromo;
-          }
+      if (cargoBasis === "quantity") {
+        const buyXVal = parseInt(cargoBuyX) || 0;
+        const getYVal = parseInt(cargoGetY) || 0;
+        if (buyXVal > 0) cargoPromo.buyX = buyXVal;
+        if (getYVal > 0) cargoPromo.getY = getYVal;
+      } else if (cargoBasis === "totalValue") {
+        const minVal = parseInt(cargoMinValue) || 0;
+        const discountVal = parseInt(cargoValue) || 0;
+        if (minVal > 0) cargoPromo.minValue = minVal;
+        if (discountVal > 0) {
+          cargoPromo.discountType = cargoType;
+          cargoPromo.discountValue = discountVal;
         }
       }
+      
+      // Always add cargo if enabled
+      servicePromotions.cargo = cargoPromo;
     }
 
     // Vehicle service promotion
@@ -297,33 +292,29 @@ export default function AddPromotionPage() {
           payloadId: c.payloadTypeId,
         }));
 
-      // Only add vehicle if we have valid eligibility
-      if (vehicleEligibility.length > 0) {
-        const vehiclePromo = {
-          isEnabled: true,
-          calculationType: vehicleBasis,
-          eligibility: vehicleEligibility,
-        };
+      const vehiclePromo = {
+        isEnabled: true,
+        calculationType: vehicleBasis,
+        eligibility: vehicleEligibility,
+      };
 
-        if (vehicleBasis === "quantity") {
-          const buyXVal = parseInt(vehicleBuyX);
-          const getYVal = parseInt(vehicleGetY);
-          if (buyXVal > 0 && getYVal > 0) {
-            vehiclePromo.buyX = buyXVal;
-            vehiclePromo.getY = getYVal;
-            servicePromotions.vehicle = vehiclePromo;
-          }
-        } else if (vehicleBasis === "totalValue") {
-          const minVal = parseInt(vehicleMinValue);
-          const discountVal = parseInt(vehicleValue);
-          if (minVal > 0 && discountVal > 0) {
-            vehiclePromo.minValue = minVal;
-            vehiclePromo.discountType = vehicleType;
-            vehiclePromo.discountValue = discountVal;
-            servicePromotions.vehicle = vehiclePromo;
-          }
+      if (vehicleBasis === "quantity") {
+        const buyXVal = parseInt(vehicleBuyX) || 0;
+        const getYVal = parseInt(vehicleGetY) || 0;
+        if (buyXVal > 0) vehiclePromo.buyX = buyXVal;
+        if (getYVal > 0) vehiclePromo.getY = getYVal;
+      } else if (vehicleBasis === "totalValue") {
+        const minVal = parseInt(vehicleMinValue) || 0;
+        const discountVal = parseInt(vehicleValue) || 0;
+        if (minVal > 0) vehiclePromo.minValue = minVal;
+        if (discountVal > 0) {
+          vehiclePromo.discountType = vehicleType;
+          vehiclePromo.discountValue = discountVal;
         }
       }
+      
+      // Always add vehicle if enabled
+      servicePromotions.vehicle = vehiclePromo;
     }
 
     // Build final payload
