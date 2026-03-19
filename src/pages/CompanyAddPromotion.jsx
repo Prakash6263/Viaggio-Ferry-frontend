@@ -9,6 +9,7 @@ import Can from "../components/Can";
 import { tripsApi } from "../api/tripsApi";
 import { promotionApi } from "../api/promotionApi";
 import { payloadTypesApi } from "../api/payloadTypesApi";
+import { cabinsApi } from "../api/cabinsApi";
 
 export default function AddPromotionPage() {
   const navigate = useNavigate();
@@ -31,6 +32,9 @@ export default function AddPromotionPage() {
   const [passengerPayloadTypes, setPassengerPayloadTypes] = useState([]);
   const [cargoPayloadTypes, setCargoPayloadTypes] = useState([]);
   const [vehiclePayloadTypes, setVehiclePayloadTypes] = useState([]);
+
+  // Period-based cabin lists (fetched from /api/cabins by type)
+  const [periodPassengerCabins, setPeriodPassengerCabins] = useState([]);
 
   // Handle trip selection to get cabin details
   const handleTripChange = (tripId) => {
@@ -105,10 +109,22 @@ export default function AddPromotionPage() {
       }
     };
 
+    const fetchPeriodPassengerCabins = async () => {
+      try {
+        const response = await cabinsApi.getCabins(1, 100, "", "passenger");
+        if (response && response.data && response.data.cabins) {
+          setPeriodPassengerCabins(response.data.cabins);
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching passenger cabins:", error.message);
+      }
+    };
+
     fetchTrips();
     fetchPassengerPayloadTypes();
     fetchCargoPayloadTypes();
     fetchVehiclePayloadTypes();
+    fetchPeriodPassengerCabins();
   }, []);
 
   // benefits
@@ -703,15 +719,26 @@ export default function AddPromotionPage() {
                                       className="form-select"
                                       value={condition.cabinId}
                                       onChange={(e) => {
-                                        const cabin = selectedTripData?.tripCapacityDetails?.passenger?.find(c => c.cabinId === e.target.value);
-                                        updatePassengerCondition(condition.id, "cabinId", e.target.value);
-                                        updatePassengerCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                        if (basis === "Trip") {
+                                          const cabin = selectedTripData?.tripCapacityDetails?.passenger?.find(c => c.cabinId === e.target.value);
+                                          updatePassengerCondition(condition.id, "cabinId", e.target.value);
+                                          updatePassengerCondition(condition.id, "cabinName", cabin?.cabinName || "");
+                                        } else {
+                                          const cabin = periodPassengerCabins.find(c => c._id === e.target.value);
+                                          updatePassengerCondition(condition.id, "cabinId", e.target.value);
+                                          updatePassengerCondition(condition.id, "cabinName", cabin?.name || "");
+                                        }
                                       }}
                                     >
                                       <option value="">-- Select Cabin --</option>
-                                      {selectedTripData?.tripCapacityDetails?.passenger?.map((cabin) => (
-                                        <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
-                                      ))}
+                                      {basis === "Trip"
+                                        ? selectedTripData?.tripCapacityDetails?.passenger?.map((cabin) => (
+                                            <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                          ))
+                                        : periodPassengerCabins.map((cabin) => (
+                                            <option key={cabin._id} value={cabin._id}>{cabin.name}</option>
+                                          ))
+                                      }
                                     </select>
                                     <select
                                       className="form-select"
