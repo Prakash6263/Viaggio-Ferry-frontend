@@ -96,6 +96,8 @@ export default function AddPromotionPage() {
   const [passengerType, setPassengerType] = useState("percentage");
   const [passengerBasis, setPassengerBasis] = useState("quantity"); // quantity or totalValue
   const [passengerMinValue, setPassengerMinValue] = useState("");
+  const [passengerBuyX, setPassengerBuyX] = useState("");
+  const [passengerGetY, setPassengerGetY] = useState("");
   const [passengerConditions, setPassengerConditions] = useState([
     { id: 1, cabinId: "", cabinName: "", payloadTypeId: "", payloadTypeName: "" }
   ]);
@@ -105,6 +107,8 @@ export default function AddPromotionPage() {
   const [cargoType, setCargoType] = useState("percentage");
   const [cargoBasis, setCargoBasis] = useState("quantity"); // quantity or totalValue
   const [cargoMinValue, setCargoMinValue] = useState("");
+  const [cargoBuyX, setCargoBuyX] = useState("");
+  const [cargoGetY, setCargoGetY] = useState("");
   const [cargoBuyX, setCargoBuyX] = useState("");
   const [cargoGetY, setCargoGetY] = useState("");
   const [cargoConditions, setCargoConditions] = useState([
