@@ -442,6 +442,13 @@ export default function AddPromotionPage() {
       <Header />
       <Sidebar />
       <PageWrapper>
+        {/* Back Button - outside Can so always visible */}
+        <div className="mb-3">
+          <Link to="/company/partner-management/promotions" className="btn btn-turquoise">
+            <i className="bi bi-arrow-left"></i> Back to List
+          </Link>
+        </div>
+
         <Can action="create" path="/company/partner-management/promotions">
           <div className="page-header">
             <div className="content-page-header">
@@ -1060,9 +1067,9 @@ export default function AddPromotionPage() {
 
                   {/* Footer buttons */}
                   <div className="d-flex justify-content-end gap-2 mt-4">
-                    <button type="button" className="btn btn-secondary" onClick={() => window.history.back()} disabled={isSaving}>
-                      Cancel
-                    </button>
+                    <Link to="/company/partner-management/promotions" className="btn btn-turquoise" style={{ pointerEvents: isSaving ? "none" : "auto", opacity: isSaving ? 0.65 : 1 }}>
+                      <i className="bi bi-arrow-left"></i> Back to List
+                    </Link>
                     <button type="submit" className="btn btn-primary" disabled={isSaving}>
                       {isSaving ? "Saving..." : "Save Promotion"}
                     </button>
