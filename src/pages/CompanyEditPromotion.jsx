@@ -214,25 +214,86 @@ export default function CompanyEditPromotion() {
             }
           }
           
-          // Set passenger benefit
-          if (promo.passengerBenefit) {
-            setPassengerEnabled(promo.passengerBenefit.isEnabled);
-            setPassengerValue(promo.passengerBenefit.value.toString());
-            setPassengerType(promo.passengerBenefit.valueType);
-          }
-          
-          // Set cargo benefit
-          if (promo.cargoBenefit) {
-            setCargoEnabled(promo.cargoBenefit.isEnabled);
-            setCargoValue(promo.cargoBenefit.value.toString());
-            setCargoType(promo.cargoBenefit.valueType);
-          }
-          
-          // Set vehicle benefit
-          if (promo.vehicleBenefit) {
-            setVehicleEnabled(promo.vehicleBenefit.isEnabled);
-            setVehicleValue(promo.vehicleBenefit.value.toString());
-            setVehicleType(promo.vehicleBenefit.valueType);
+          // Set service promotions from API response
+          if (promo.servicePromotions) {
+            const sp = promo.servicePromotions;
+            
+            // Set passenger service promotion
+            if (sp.passenger) {
+              setPassengerEnabled(sp.passenger.isEnabled || false);
+              if (sp.passenger.isEnabled) {
+                setPassengerBasis(sp.passenger.calculationType || "quantity");
+                if (sp.passenger.calculationType === "quantity") {
+                  setPassengerBuyX(sp.passenger.buyX?.toString() || "");
+                  setPassengerGetY(sp.passenger.getY?.toString() || "");
+                } else if (sp.passenger.calculationType === "totalValue") {
+                  setPassengerMinValue(sp.passenger.minValue?.toString() || "");
+                  setPassengerType(sp.passenger.discountType || "percentage");
+                  setPassengerValue(sp.passenger.discountValue?.toString() || "");
+                }
+                // Set passenger eligibility conditions
+                if (sp.passenger.eligibility && sp.passenger.eligibility.length > 0) {
+                  const passengerConds = sp.passenger.eligibility.map((e, idx) => ({
+                    id: idx + 1,
+                    cabinId: e.cabinId?._id || e.cabinId || "",
+                    cabinName: e.cabinId?.name || "",
+                    payloadTypeId: e.passengerTypeId?._id || e.passengerTypeId || "",
+                    payloadTypeName: e.passengerTypeId?.name || "",
+                  }));
+                  setPassengerConditions(passengerConds);
+                }
+              }
+            }
+            
+            // Set cargo service promotion
+            if (sp.cargo) {
+              setCargoEnabled(sp.cargo.isEnabled || false);
+              if (sp.cargo.isEnabled) {
+                setCargoBasis(sp.cargo.calculationType || "quantity");
+                if (sp.cargo.calculationType === "quantity") {
+                  setCargoBuyX(sp.cargo.buyX?.toString() || "");
+                  setCargoGetY(sp.cargo.getY?.toString() || "");
+                } else if (sp.cargo.calculationType === "totalValue") {
+                  setCargoMinValue(sp.cargo.minValue?.toString() || "");
+                  setCargoType(sp.cargo.discountType || "percentage");
+                  setCargoValue(sp.cargo.discountValue?.toString() || "");
+                }
+                // Set cargo eligibility conditions
+                if (sp.cargo.eligibility && sp.cargo.eligibility.length > 0) {
+                  const cargoConds = sp.cargo.eligibility.map((e, idx) => ({
+                    id: idx + 1,
+                    payloadTypeId: e.payloadId?._id || e.payloadId || "",
+                    payloadTypeName: e.payloadId?.name || "",
+                  }));
+                  setCargoConditions(cargoConds);
+                }
+              }
+            }
+            
+            // Set vehicle service promotion
+            if (sp.vehicle) {
+              setVehicleEnabled(sp.vehicle.isEnabled || false);
+              if (sp.vehicle.isEnabled) {
+                setVehicleBasis(sp.vehicle.calculationType || "quantity");
+                if (sp.vehicle.calculationType === "quantity") {
+                  setVehicleBuyX(sp.vehicle.buyX?.toString() || "");
+                  setVehicleGetY(sp.vehicle.getY?.toString() || "");
+                } else if (sp.vehicle.calculationType === "totalValue") {
+                  setVehicleMinValue(sp.vehicle.minValue?.toString() || "");
+                  setVehicleType(sp.vehicle.discountType || "percentage");
+                  setVehicleValue(sp.vehicle.discountValue?.toString() || "");
+                }
+                // Set vehicle eligibility conditions
+                if (sp.vehicle.eligibility && sp.vehicle.eligibility.length > 0) {
+                  const vehicleConds = sp.vehicle.eligibility.map((e, idx) => ({
+                    id: idx + 1,
+                    payloadTypeId: e.payloadId?._id || e.payloadId || "",
+                    payloadTypeName: e.payloadId?.name || "",
+                  }));
+                  setVehicleConditions(vehicleConds);
+                }
+              }
+            }
           }
           
         }
