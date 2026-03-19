@@ -910,7 +910,7 @@ export default function CompanyEditPromotion() {
                                   type="button"
                                   className="btn btn-success btn-sm mt-2"
                                   onClick={addPassengerCondition}
-                                  disabled={!selectedTripData?.tripCapacityDetails?.passenger?.length}
+                                  disabled={basis === "Trip" ? !selectedTripData?.tripCapacityDetails?.passenger?.length : !periodPassengerCabins.length}
                                 >
                                   + Add Condition
                                 </button>
