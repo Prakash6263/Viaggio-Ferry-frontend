@@ -27,8 +27,7 @@ const moduleSubmodules = {
     { name: "Users", code: "users", permissions: ["Read", "Write", "Edit", "Delete"] },
     { name: "Currency", code: "currency", permissions: ["Read", "Write", "Edit", "Delete"] },
     { name: "Taxes", code: "taxes", permissions: ["Read", "Write", "Edit", "Delete"] },
-    { name: "Promotions", code: "promotions", permissions: ["Read", "Write", "Edit", "Delete"] },
-    { name: "Contact Messages", code: "contact-messages", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "Contact Messages", code: "contact-messages", permissions: ["Read", "Write", "Edit"] },
     { name: "Term & Conditions", code: "terms-conditions", permissions: ["Read", "Write", "Edit"] },
   ],
   "ship-trips": [
@@ -37,7 +36,7 @@ const moduleSubmodules = {
   ],
   "partners-management": [
     { name: "Business Partners", code: "business-partners", permissions: ["Read", "Write", "Edit", "Delete"] },
-    { name: "Service Partners", code: "service-partners", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "B2C Customers", code: "b2c-customers", permissions: ["Read", "Write", "Edit", "Delete"] },
     { name: "Salesmen", code: "salesmen", permissions: ["Read", "Write", "Edit", "Delete"] },
     {
       name: "Markup & Discount Board",
@@ -45,6 +44,7 @@ const moduleSubmodules = {
       permissions: ["Read", "Write", "Edit", "Delete"],
     },
     { name: "Commission Board", code: "commissions", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "Promotions", code: "promotions", permissions: ["Read", "Write", "Edit", "Delete"] },
   ],
   "sales-bookings": [
     { name: "Price List", code: "price-list", permissions: ["Read", "Write", "Edit", "Delete"] },

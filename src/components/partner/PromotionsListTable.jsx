@@ -3,12 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CirclesWithBar } from "react-loader-spinner";
-import CanDisable from "../CanDisable";
+import Can from "../Can";
+import { usePermissions } from "../../hooks/usePermissions";
 import { promotionApi } from "../../api/promotionApi";
 import Swal from "sweetalert2";
 
 export default function PromotionsListTable() {
   const navigate = useNavigate();
+  const permissions = usePermissions("/company/partner-management/promotions");
+  const canUpdate = permissions?.update === true;
+  const canDelete = permissions?.delete === true;
+  const showActionsColumn = canUpdate || canDelete;
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -222,53 +227,55 @@ export default function PromotionsListTable() {
         {!loading && !error && (
           <div className="table-responsive">
             <table id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
-              <thead>
-                <tr>
-                  <th>Promotion Name</th>
-                  <th>Status</th>
-                  <th>Basis</th>
-                  <th>Benefits</th>
-                  <th>Eligibility</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="promotions-table-body">
-                {promotions && promotions.length > 0 ? (
-                  promotions.map((promo) => (
-                    <tr key={promo._id}>
-                      <td>{promo.promotionName}</td>
-                      <td><span className={`status ${getStatusClass(promo.status)}`}>{promo.status}</span></td>
-                      <td>
-                        {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period: ${formatDate(promo.startDate)} - ${formatDate(promo.endDate)}`}
-                      </td>
-                      <td style={{ whiteSpace: "pre-line" }}>{formatBenefitsColumn(promo)}</td>
-                      <td style={{ whiteSpace: "pre-line" }}>{formatEligibilityColumn(promo)}</td>
-                      <td>
-                        <CanDisable action="update" path="/company/partner-management/promotions">
-                          <button 
-                            className="btn btn-outline-primary btn-sm"
-                            onClick={() => navigate(`/company/partner-management/promotions/${promo._id}/edit`)}
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
-                        </CanDisable>
-                        <CanDisable action="delete" path="/company/partner-management/promotions">
-                          <button 
-                            className="btn btn-outline-danger btn-sm ms-1" 
-                            onClick={() => handleDeletePromotion(promo._id, promo.promotionName)}
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        </CanDisable>
-                      </td>
+                  <thead>
+                    <tr>
+                      <th>Promotion Name</th>
+                      <th>Status</th>
+                      <th>Basis</th>
+                      <th>Benefits</th>
+                      <th>Eligibility</th>
+                      {showActionsColumn && <th>Actions</th>}
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center">No promotions found</td>
-                  </tr>
-                )}
-              </tbody>
+                  </thead>
+                  <tbody id="promotions-table-body">
+                    {promotions && promotions.length > 0 ? (
+                      promotions.map((promo) => (
+                        <tr key={promo._id}>
+                          <td>{promo.promotionName}</td>
+                          <td><span className={`status ${getStatusClass(promo.status)}`}>{promo.status}</span></td>
+                          <td>
+                            {promo.promotionBasis === "Trip" && promo.trip ? `Trip: ${promo.trip.tripName}` : `Period: ${formatDate(promo.startDate)} - ${formatDate(promo.endDate)}`}
+                          </td>
+                          <td style={{ whiteSpace: "pre-line" }}>{formatBenefitsColumn(promo)}</td>
+                          <td style={{ whiteSpace: "pre-line" }}>{formatEligibilityColumn(promo)}</td>
+                          {showActionsColumn && (
+                            <td className="action-buttons">
+                              <Can action="update" path="/company/partner-management/promotions">
+                                <button
+                                  className="btn btn-outline-primary btn-sm"
+                                  onClick={() => navigate(`/company/partner-management/promotions/${promo._id}/edit`)}
+                                >
+                                  <i className="bi bi-pencil"></i>
+                                </button>
+                              </Can>
+                              <Can action="delete" path="/company/partner-management/promotions">
+                                <button
+                                  className="btn btn-outline-danger btn-sm ms-1"
+                                  onClick={() => handleDeletePromotion(promo._id, promo.promotionName)}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </Can>
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={showActionsColumn ? "6" : "5"} className="text-center">No promotions found</td>
+                      </tr>
+                    )}
+                  </tbody>
             </table>
           </div>
         )}
