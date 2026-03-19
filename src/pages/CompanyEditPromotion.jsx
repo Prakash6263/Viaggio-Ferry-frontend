@@ -802,23 +802,26 @@ export default function CompanyEditPromotion() {
                               <div className="p-3 border rounded mb-3">
                                 <div className="row g-2">
                                   <div className="col-md-6">
+                                    <label className="form-label">Buy X</label>
                                     <input
-                                      placeholder="Discount amount"
+                                      placeholder="Buy quantity (e.g., 2)"
                                       className="form-control"
                                       type="number"
-                                      value={passengerValue}
-                                      onChange={(e) => setPassengerValue(e.target.value)}
+                                      min="1"
+                                      value={passengerBuyX}
+                                      onChange={(e) => setPassengerBuyX(e.target.value)}
                                     />
                                   </div>
                                   <div className="col-md-6">
-                                    <select
-                                      className="form-select"
-                                      value={passengerType}
-                                      onChange={(e) => setPassengerType(e.target.value)}
-                                    >
-                                      <option value="percentage">Percentage (%)</option>
-                                      <option value="fixed">Fixed Amount</option>
-                                    </select>
+                                    <label className="form-label">Get Y Free</label>
+                                    <input
+                                      placeholder="Get quantity free (e.g., 1)"
+                                      className="form-control"
+                                      type="number"
+                                      min="1"
+                                      value={passengerGetY}
+                                      onChange={(e) => setPassengerGetY(e.target.value)}
+                                    />
                                   </div>
                                 </div>
                               </div>
