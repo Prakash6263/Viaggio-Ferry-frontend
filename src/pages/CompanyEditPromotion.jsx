@@ -425,10 +425,10 @@ export default function CompanyEditPromotion() {
     // Passenger service promotion
     if (passengerEnabled) {
       const passengerEligibility = passengerConditions
-        .filter(c => c.cabinId || c.payloadTypeId)
+        .filter(c => c.cabinId && c.payloadTypeId) // Both required for passenger
         .map(c => ({
-          ...(c.cabinId && { cabinId: c.cabinId }),
-          ...(c.payloadTypeId && { passengerTypeId: c.payloadTypeId }),
+          passengerTypeId: c.payloadTypeId,
+          cabinId: c.cabinId,
         }));
 
       // Build passenger promo object
