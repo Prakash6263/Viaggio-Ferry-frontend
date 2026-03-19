@@ -109,8 +109,6 @@ export default function AddPromotionPage() {
   const [cargoMinValue, setCargoMinValue] = useState("");
   const [cargoBuyX, setCargoBuyX] = useState("");
   const [cargoGetY, setCargoGetY] = useState("");
-  const [cargoBuyX, setCargoBuyX] = useState("");
-  const [cargoGetY, setCargoGetY] = useState("");
   const [cargoConditions, setCargoConditions] = useState([
     { id: 1, cabinId: "", cabinName: "" }
   ]);
