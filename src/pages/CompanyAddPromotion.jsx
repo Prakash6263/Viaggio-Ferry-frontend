@@ -213,6 +213,82 @@ export default function AddPromotionPage() {
       return;
     }
 
+    // Validate service promotions
+    if (passengerEnabled && passengerBasis === "quantity") {
+      const buyXVal = parseInt(passengerBuyX);
+      const getYVal = parseInt(passengerGetY);
+      if (!buyXVal || buyXVal <= 0 || !getYVal || getYVal <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Passenger Benefit",
+          text: "Please enter valid Buy X and Get Y values (greater than 0) for passenger",
+        });
+        return;
+      }
+    }
+    if (passengerEnabled && passengerBasis === "totalValue") {
+      const minVal = parseInt(passengerMinValue);
+      const discountVal = parseInt(passengerValue);
+      if (!minVal || minVal <= 0 || !discountVal || discountVal <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Passenger Benefit",
+          text: "Please enter valid Min Value and Discount Value (greater than 0) for passenger",
+        });
+        return;
+      }
+    }
+
+    if (cargoEnabled && cargoBasis === "quantity") {
+      const buyXVal = parseInt(cargoBuyX);
+      const getYVal = parseInt(cargoGetY);
+      if (!buyXVal || buyXVal <= 0 || !getYVal || getYVal <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Cargo Benefit",
+          text: "Please enter valid Buy X and Get Y values (greater than 0) for cargo",
+        });
+        return;
+      }
+    }
+    if (cargoEnabled && cargoBasis === "totalValue") {
+      const minVal = parseInt(cargoMinValue);
+      const discountVal = parseInt(cargoValue);
+      if (!minVal || minVal <= 0 || !discountVal || discountVal <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Cargo Benefit",
+          text: "Please enter valid Min Value and Discount Value (greater than 0) for cargo",
+        });
+        return;
+      }
+    }
+
+    if (vehicleEnabled && vehicleBasis === "quantity") {
+      const buyXVal = parseInt(vehicleBuyX);
+      const getYVal = parseInt(vehicleGetY);
+      if (!buyXVal || buyXVal <= 0 || !getYVal || getYVal <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Vehicle Benefit",
+          text: "Please enter valid Buy X and Get Y values (greater than 0) for vehicle",
+        });
+        return;
+      }
+    }
+    if (vehicleEnabled && vehicleBasis === "totalValue") {
+      const minVal = parseInt(vehicleMinValue);
+      const discountVal = parseInt(vehicleValue);
+      if (!minVal || minVal <= 0 || !discountVal || discountVal <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Vehicle Benefit",
+          text: "Please enter valid Min Value and Discount Value (greater than 0) for vehicle",
+        });
+        return;
+      }
+    }
+
     // Build servicePromotions object
     const servicePromotions = {};
 
