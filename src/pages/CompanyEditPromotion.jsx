@@ -8,6 +8,7 @@ import { PageWrapper } from "../components/layout/PageWrapper";
 import Can from "../components/Can";
 import { tripsApi } from "../api/tripsApi";
 import { promotionApi } from "../api/promotionApi";
+import { payloadTypesApi } from "../api/payloadTypesApi";
 
 export default function CompanyEditPromotion() {
   const navigate = useNavigate();
@@ -28,6 +29,9 @@ export default function CompanyEditPromotion() {
   const [tripsLoading, setTripsLoading] = useState(false);
   const [tripsError, setTripsError] = useState(null);
 
+  // Passenger payload types state
+  const [passengerPayloadTypes, setPassengerPayloadTypes] = useState([]);
+
   // Handle trip selection to get cabin details
   const handleTripChange = (tripId) => {
     setSelectedTrip(tripId);
@@ -41,7 +45,7 @@ export default function CompanyEditPromotion() {
         const vehicleCabins = trip.tripCapacityDetails.vehicle || [];
         
         if (passengerCabins.length > 0) {
-          setPassengerConditions([{ id: 1, cabinId: passengerCabins[0].cabinId, cabinName: passengerCabins[0].cabinName }]);
+          setPassengerConditions([{ id: 1, cabinId: passengerCabins[0].cabinId, cabinName: passengerCabins[0].cabinName, payloadTypeId: "", payloadTypeName: "" }]);
         }
         if (cargoCabins.length > 0) {
           setCargoConditions([{ id: 1, cabinId: cargoCabins[0].cabinId, cabinName: cargoCabins[0].cabinName }]);
@@ -62,7 +66,7 @@ export default function CompanyEditPromotion() {
   const [passengerBasis, setPassengerBasis] = useState("quantity"); // quantity or totalValue
   const [passengerMinValue, setPassengerMinValue] = useState("");
   const [passengerConditions, setPassengerConditions] = useState([
-    { id: 1, cabinId: "", cabinName: "" }
+    { id: 1, cabinId: "", cabinName: "", payloadTypeId: "", payloadTypeName: "" }
   ]);
   
   const [cargoEnabled, setCargoEnabled] = useState(false);
@@ -91,7 +95,7 @@ export default function CompanyEditPromotion() {
   const addPassengerCondition = () => {
     const passengerCabins = selectedTripData?.tripCapacityDetails?.passenger || [];
     const defaultCabin = passengerCabins[0] || { cabinId: "", cabinName: "" };
-    setPassengerConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName }]);
+    setPassengerConditions(prev => [...prev, { id: Date.now(), cabinId: defaultCabin.cabinId, cabinName: defaultCabin.cabinName, payloadTypeId: "", payloadTypeName: "" }]);
   };
   const removePassengerCondition = (id) => {
     setPassengerConditions(prev => prev.filter(c => c.id !== id));
@@ -139,11 +143,20 @@ export default function CompanyEditPromotion() {
         
         // Fetch trips
         const tripsResponse = await tripsApi.getTrips(1, 100);
-        console.log("[v0] Trips response:", tripsResponse);
         let fetchedTrips = [];
         if (tripsResponse && tripsResponse.data && tripsResponse.data.trips) {
           fetchedTrips = tripsResponse.data.trips;
           setTrips(fetchedTrips);
+        }
+
+        // Fetch passenger payload types
+        try {
+          const payloadTypesResponse = await payloadTypesApi.getPayloadTypes(1, 100, "passenger");
+          if (payloadTypesResponse && payloadTypesResponse.data && payloadTypesResponse.data.payloadTypes) {
+            setPassengerPayloadTypes(payloadTypesResponse.data.payloadTypes);
+          }
+        } catch (error) {
+          console.error("[v0] Error fetching passenger payload types:", error.message);
         }
 
         // Fetch promotion details
@@ -178,7 +191,7 @@ export default function CompanyEditPromotion() {
               // Initialize conditions with first cabin from each category
               if (tripData.tripCapacityDetails?.passenger?.length > 0) {
                 const cabin = tripData.tripCapacityDetails.passenger[0];
-                setPassengerConditions([{ id: 1, cabinId: cabin.cabinId, cabinName: cabin.cabinName }]);
+                setPassengerConditions([{ id: 1, cabinId: cabin.cabinId, cabinName: cabin.cabinName, payloadTypeId: "", payloadTypeName: "" }]);
               }
               if (tripData.tripCapacityDetails?.cargo?.length > 0) {
                 const cabin = tripData.tripCapacityDetails.cargo[0];
@@ -594,6 +607,20 @@ export default function CompanyEditPromotion() {
                                       <option value="">-- Select Cabin --</option>
                                       {selectedTripData?.tripCapacityDetails?.passenger?.map((cabin) => (
                                         <option key={cabin.cabinId} value={cabin.cabinId}>{cabin.cabinName}</option>
+                                      ))}
+                                    </select>
+                                    <select
+                                      className="form-select"
+                                      value={condition.payloadTypeId}
+                                      onChange={(e) => {
+                                        const payloadType = passengerPayloadTypes.find(p => p._id === e.target.value);
+                                        updatePassengerCondition(condition.id, "payloadTypeId", e.target.value);
+                                        updatePassengerCondition(condition.id, "payloadTypeName", payloadType?.name || "");
+                                      }}
+                                    >
+                                      <option value="">-- Select Payload Type --</option>
+                                      {passengerPayloadTypes.map((pt) => (
+                                        <option key={pt._id} value={pt._id}>{pt.name}</option>
                                       ))}
                                     </select>
                                     <button
