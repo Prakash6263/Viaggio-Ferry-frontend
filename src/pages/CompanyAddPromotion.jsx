@@ -194,33 +194,95 @@ export default function AddPromotionPage() {
       return;
     }
 
-    // Build payload
+    // Build servicePromotions object
+    const servicePromotions = {};
+
+    // Passenger service promotion
+    if (passengerEnabled) {
+      const passengerEligibility = passengerConditions
+        .filter(c => c.cabinId || c.payloadTypeId)
+        .map(c => ({
+          ...(c.cabinId && { cabinId: c.cabinId }),
+          ...(c.payloadTypeId && { passengerTypeId: c.payloadTypeId }),
+        }));
+
+      servicePromotions.passenger = {
+        isEnabled: true,
+        calculationType: passengerBasis, // "quantity" or "totalValue"
+        ...(passengerBasis === "quantity" && {
+          buyX: parseInt(passengerBuyX) || 0,
+          getY: parseInt(passengerGetY) || 0,
+        }),
+        ...(passengerBasis === "totalValue" && {
+          minValue: parseInt(passengerMinValue) || 0,
+          discountType: passengerType, // "percentage" or "fixed"
+          discountValue: parseInt(passengerValue) || 0,
+        }),
+        eligibility: passengerEligibility.length > 0 ? passengerEligibility : [],
+      };
+    }
+
+    // Cargo service promotion
+    if (cargoEnabled) {
+      const cargoEligibility = cargoConditions
+        .filter(c => c.cabinId)
+        .map(c => ({
+          ...(c.cabinId && { cabinId: c.cabinId }),
+        }));
+
+      servicePromotions.cargo = {
+        isEnabled: true,
+        calculationType: cargoBasis, // "quantity" or "totalValue"
+        ...(cargoBasis === "quantity" && {
+          buyX: parseInt(cargoBuyX) || 0,
+          getY: parseInt(cargoGetY) || 0,
+        }),
+        ...(cargoBasis === "totalValue" && {
+          minValue: parseInt(cargoMinValue) || 0,
+          discountType: cargoType, // "percentage" or "fixed"
+          discountValue: parseInt(cargoValue) || 0,
+        }),
+        eligibility: cargoEligibility.length > 0 ? cargoEligibility : [],
+      };
+    }
+
+    // Vehicle service promotion
+    if (vehicleEnabled) {
+      const vehicleEligibility = vehicleConditions
+        .filter(c => c.cabinId)
+        .map(c => ({
+          ...(c.cabinId && { cabinId: c.cabinId }),
+        }));
+
+      servicePromotions.vehicle = {
+        isEnabled: true,
+        calculationType: vehicleBasis, // "quantity" or "totalValue"
+        ...(vehicleBasis === "quantity" && {
+          buyX: parseInt(vehicleBuyX) || 0,
+          getY: parseInt(vehicleGetY) || 0,
+        }),
+        ...(vehicleBasis === "totalValue" && {
+          minValue: parseInt(vehicleMinValue) || 0,
+          discountType: vehicleType, // "percentage" or "fixed"
+          discountValue: parseInt(vehicleValue) || 0,
+        }),
+        eligibility: vehicleEligibility.length > 0 ? vehicleEligibility : [],
+      };
+    }
+
+    // Build final payload
     const payload = {
       promotionName: promoName,
       description: promoDesc,
       promotionBasis: basis === "period" ? "Period" : "Trip",
-      status: status.charAt(0).toUpperCase() + status.slice(1),
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
+      ...(basis === "period" && {
+        startDate: startDate ? new Date(startDate).toISOString().split('T')[0] : null,
+        endDate: endDate ? new Date(endDate).toISOString().split('T')[0] : null,
+      }),
       ...(basis === "trip" && { trip: selectedTrip }),
-      passengerBenefit: {
-        isEnabled: passengerEnabled,
-        valueType: passengerType,
-        value: passengerEnabled ? parseInt(passengerValue) || 0 : 0,
-      },
-      cargoBenefit: {
-        isEnabled: cargoEnabled,
-        valueType: cargoType,
-        value: cargoEnabled ? parseInt(cargoValue) || 0 : 0,
-      },
-      vehicleBenefit: {
-        isEnabled: vehicleEnabled,
-        valueType: vehicleType,
-        value: vehicleEnabled ? parseInt(vehicleValue) || 0 : 0,
-      },
+      servicePromotions,
     };
 
-    console.log("[v0] Save promotion payload:", payload);
     savePromotionAPI(payload);
   }
 
