@@ -114,28 +114,33 @@ export default function PromotionsListTable() {
     return "status-inactive";
   };
 
-  const formatBenefitValue = (benefit) => {
-    if (!benefit || !benefit.isEnabled) return "-";
-    return benefit.valueType === "percentage" ? `${benefit.value}%` : `${benefit.value} units`;
+  const formatServiceBenefit = (service, serviceName) => {
+    if (!service || !service.isEnabled) return null;
+    
+    if (service.calculationType === "quantity" && service.buyX && service.getY) {
+      return `${serviceName}: Buy ${service.buyX} Get ${service.getY}`;
+    } else if (service.calculationType === "totalValue" && service.minValue && service.discountValue) {
+      const discountStr = service.discountType === "percentage" 
+        ? `${service.discountValue}% off` 
+        : `${service.discountValue} off`;
+      return `${serviceName}: Min ${service.minValue}, ${discountStr}`;
+    }
+    return `${serviceName}: Enabled`;
   };
 
   const formatBenefitsColumn = (promo) => {
     const benefits = [];
+    const sp = promo.servicePromotions;
     
-    if (promo.passengerBenefit && promo.passengerBenefit.isEnabled) {
-      benefits.push(`Passenger: ${formatBenefitValue(promo.passengerBenefit)}`);
-    }
-    if (promo.cargoBenefit && promo.cargoBenefit.isEnabled) {
-      benefits.push(`Cargo: ${formatBenefitValue(promo.cargoBenefit)}`);
-    }
-    if (promo.vehicleBenefit && promo.vehicleBenefit.isEnabled) {
-      benefits.push(`Vehicle: ${formatBenefitValue(promo.vehicleBenefit)}`);
-    }
-    if (promo.serviceBenefits && promo.serviceBenefits.length > 0) {
-      promo.serviceBenefits.forEach((service) => {
-        const serviceValue = service.valueType === "percentage" ? `${service.value}%` : `${service.value} units`;
-        benefits.push(`${service.title}: ${serviceValue}`);
-      });
+    if (sp) {
+      const passengerBenefit = formatServiceBenefit(sp.passenger, "Passenger");
+      if (passengerBenefit) benefits.push(passengerBenefit);
+      
+      const cargoBenefit = formatServiceBenefit(sp.cargo, "Cargo");
+      if (cargoBenefit) benefits.push(cargoBenefit);
+      
+      const vehicleBenefit = formatServiceBenefit(sp.vehicle, "Vehicle");
+      if (vehicleBenefit) benefits.push(vehicleBenefit);
     }
     
     return benefits.length > 0 ? benefits.join("\n") : "-";
@@ -143,15 +148,43 @@ export default function PromotionsListTable() {
 
   const formatEligibilityColumn = (promo) => {
     const eligibility = [];
+    const sp = promo.servicePromotions;
     
-    if (promo.passengerBenefit && promo.passengerBenefit.isEnabled) {
-      eligibility.push(`Passenger: ${formatBenefitValue(promo.passengerBenefit)}`);
-    }
-    if (promo.cargoBenefit && promo.cargoBenefit.isEnabled) {
-      eligibility.push(`Cargo: ${formatBenefitValue(promo.cargoBenefit)}`);
-    }
-    if (promo.vehicleBenefit && promo.vehicleBenefit.isEnabled) {
-      eligibility.push(`Vehicle: ${formatBenefitValue(promo.vehicleBenefit)}`);
+    if (sp) {
+      // Passenger eligibility
+      if (sp.passenger && sp.passenger.isEnabled && sp.passenger.eligibility?.length > 0) {
+        const passengerItems = sp.passenger.eligibility.map(e => {
+          const parts = [];
+          if (e.cabinId?.name) parts.push(e.cabinId.name);
+          if (e.passengerTypeId?.name) parts.push(e.passengerTypeId.name);
+          return parts.join(" - ");
+        }).filter(Boolean);
+        if (passengerItems.length > 0) {
+          eligibility.push(`Passenger: ${passengerItems.join(", ")}`);
+        }
+      }
+      
+      // Cargo eligibility
+      if (sp.cargo && sp.cargo.isEnabled && sp.cargo.eligibility?.length > 0) {
+        const cargoItems = sp.cargo.eligibility.map(e => {
+          if (e.payloadId?.name) return e.payloadId.name;
+          return null;
+        }).filter(Boolean);
+        if (cargoItems.length > 0) {
+          eligibility.push(`Cargo: ${cargoItems.join(", ")}`);
+        }
+      }
+      
+      // Vehicle eligibility
+      if (sp.vehicle && sp.vehicle.isEnabled && sp.vehicle.eligibility?.length > 0) {
+        const vehicleItems = sp.vehicle.eligibility.map(e => {
+          if (e.payloadId?.name) return e.payloadId.name;
+          return null;
+        }).filter(Boolean);
+        if (vehicleItems.length > 0) {
+          eligibility.push(`Vehicle: ${vehicleItems.join(", ")}`);
+        }
+      }
     }
     
     return eligibility.length > 0 ? eligibility.join("\n") : "-";
