@@ -19,8 +19,6 @@ export default function PromotionsListTable() {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
-  const [tableKey, setTableKey] = useState(0);
-
   useEffect(() => {
     fetchPromotions();
   }, []);
@@ -60,9 +58,14 @@ export default function PromotionsListTable() {
       try {
         await promotionApi.deletePromotion(promotionId);
 
-        // Remove from state and bump tableKey to force DataTable full remount
+        // IMPORTANT: Destroy DataTable BEFORE updating React state to avoid DOM conflicts
+        const el = document.getElementById("promotionsTable");
+        if (el && el._dt) {
+          try { el._dt.destroy(); el._dt = null; } catch {}
+        }
+
+        // Now safely update state - DataTable will reinit via useEffect
         setPromotions((prev) => prev.filter((p) => p._id !== promotionId));
-        setTableKey((k) => k + 1);
 
         Swal.fire({
           title: "Deleted!",
@@ -114,7 +117,7 @@ export default function PromotionsListTable() {
       try { dt.destroy(); } catch {}
       el._dt = null;
     };
-  }, [tableKey, loading]);
+  }, [promotions, loading]);
 
   const getStatusClass = (status) => {
     if (status === "Active") return "status-active";
@@ -230,7 +233,7 @@ export default function PromotionsListTable() {
 
         {!loading && !error && (
           <div className="table-responsive">
-            <table key={tableKey} id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
+            <table id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
                   <thead>
                     <tr>
                       <th>Promotion Name</th>
