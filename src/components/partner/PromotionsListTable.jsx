@@ -19,6 +19,8 @@ export default function PromotionsListTable() {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
+  const [tableKey, setTableKey] = useState(0);
+
   useEffect(() => {
     fetchPromotions();
   }, []);
@@ -28,7 +30,6 @@ export default function PromotionsListTable() {
       setLoading(true);
       setError(null);
       const response = await promotionApi.getPromotions(pagination.page, pagination.limit);
-      console.log("[v0] Promotions response:", response);
       if (response && response.data) {
         setPromotions(response.data);
         if (response.pagination) {
@@ -59,8 +60,9 @@ export default function PromotionsListTable() {
       try {
         await promotionApi.deletePromotion(promotionId);
 
-        // Immediately remove from state so table re-renders without stale data
+        // Remove from state and bump tableKey to force DataTable full remount
         setPromotions((prev) => prev.filter((p) => p._id !== promotionId));
+        setTableKey((k) => k + 1);
 
         Swal.fire({
           title: "Deleted!",
@@ -81,11 +83,12 @@ export default function PromotionsListTable() {
   };
 
   useEffect(() => {
-    if (loading || !promotions.length) return;
-    
+    if (loading) return;
+
     const el = document.getElementById("promotionsTable");
     if (!el || !window.DataTable) return;
 
+    // Always destroy existing instance before reinitialising
     try { if (el._dt) { el._dt.destroy(); el._dt = null; } } catch {}
 
     const dt = new window.DataTable(el, {
@@ -96,7 +99,7 @@ export default function PromotionsListTable() {
       ordering: true,
       info: true,
       columnDefs: [
-        { orderable: false, targets: -1 } // disable sorting on Actions column
+        { orderable: false, targets: -1 }
       ],
       layout: {
         topStart: "pageLength",
@@ -106,8 +109,12 @@ export default function PromotionsListTable() {
       },
     });
     el._dt = dt;
-    return () => { try { dt.destroy(); } catch {} el._dt = null; };
-  }, [promotions, loading]);
+
+    return () => {
+      try { dt.destroy(); } catch {}
+      el._dt = null;
+    };
+  }, [tableKey, loading]);
 
   const getStatusClass = (status) => {
     if (status === "Active") return "status-active";
@@ -223,7 +230,7 @@ export default function PromotionsListTable() {
 
         {!loading && !error && (
           <div className="table-responsive">
-            <table id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
+            <table key={tableKey} id="promotionsTable" className="table table-striped" style={{ width: "100%" }}>
                   <thead>
                     <tr>
                       <th>Promotion Name</th>
