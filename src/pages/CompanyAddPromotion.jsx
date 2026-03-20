@@ -1,6 +1,6 @@
 // src/pages/AddPromotionPage.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -317,10 +317,10 @@ export default function AddPromotionPage() {
           cabinId: c.cabinId,
         }));
 
-      // Build passenger promo object
+      // Build passenger promo object (backend expects "value" not "totalValue")
       const passengerPromo = {
         isEnabled: true,
-        calculationType: passengerBasis,
+        calculationType: passengerBasis === "totalValue" ? "value" : passengerBasis,
         eligibility: passengerEligibility,
       };
 
@@ -351,9 +351,10 @@ export default function AddPromotionPage() {
           payloadId: c.payloadTypeId,
         }));
 
+      // Backend expects "value" not "totalValue"
       const cargoPromo = {
         isEnabled: true,
-        calculationType: cargoBasis,
+        calculationType: cargoBasis === "totalValue" ? "value" : cargoBasis,
         eligibility: cargoEligibility,
       };
 
@@ -384,9 +385,10 @@ export default function AddPromotionPage() {
           payloadId: c.payloadTypeId,
         }));
 
+      // Backend expects "value" not "totalValue"
       const vehiclePromo = {
         isEnabled: true,
-        calculationType: vehicleBasis,
+        calculationType: vehicleBasis === "totalValue" ? "value" : vehicleBasis,
         eligibility: vehicleEligibility,
       };
 
@@ -768,7 +770,7 @@ export default function AddPromotionPage() {
                                   type="button"
                                   className="btn btn-success btn-sm mt-2"
                                   onClick={addPassengerCondition}
-                                  disabled={!selectedTripData?.tripCapacityDetails?.passenger?.length}
+                                  disabled={basis === "Trip" ? !selectedTripData?.tripCapacityDetails?.passenger?.length : !periodPassengerCabins.length}
                                 >
                                   + Add Condition
                                 </button>

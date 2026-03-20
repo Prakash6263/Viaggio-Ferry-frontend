@@ -28,7 +28,6 @@ export default function PromotionsListTable() {
       setLoading(true);
       setError(null);
       const response = await promotionApi.getPromotions(pagination.page, pagination.limit);
-      console.log("[v0] Promotions response:", response);
       if (response && response.data) {
         setPromotions(response.data);
         if (response.pagination) {
@@ -57,9 +56,17 @@ export default function PromotionsListTable() {
 
     if (result.isConfirmed) {
       try {
-        setLoading(true); // show loader during deletion
         await promotionApi.deletePromotion(promotionId);
-        
+
+        // IMPORTANT: Destroy DataTable BEFORE updating React state to avoid DOM conflicts
+        const el = document.getElementById("promotionsTable");
+        if (el && el._dt) {
+          try { el._dt.destroy(); el._dt = null; } catch {}
+        }
+
+        // Now safely update state - DataTable will reinit via useEffect
+        setPromotions((prev) => prev.filter((p) => p._id !== promotionId));
+
         Swal.fire({
           title: "Deleted!",
           text: "The promotion has been successfully deleted.",
@@ -67,9 +74,6 @@ export default function PromotionsListTable() {
           timer: 2000,
           showConfirmButton: false,
         });
-
-        // Refresh the promotions list
-        fetchPromotions();
       } catch (err) {
         console.error("[v0] Error deleting promotion:", err.message);
         Swal.fire({
@@ -77,18 +81,17 @@ export default function PromotionsListTable() {
           text: `Failed to delete promotion: ${err.message}`,
           icon: "error",
         });
-      } finally {
-        setLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    if (loading || !promotions.length) return;
-    
+    if (loading) return;
+
     const el = document.getElementById("promotionsTable");
     if (!el || !window.DataTable) return;
 
+    // Always destroy existing instance before reinitialising
     try { if (el._dt) { el._dt.destroy(); el._dt = null; } } catch {}
 
     const dt = new window.DataTable(el, {
@@ -99,7 +102,7 @@ export default function PromotionsListTable() {
       ordering: true,
       info: true,
       columnDefs: [
-        { orderable: false, targets: -1 } // disable sorting on Actions column
+        { orderable: false, targets: -1 }
       ],
       layout: {
         topStart: "pageLength",
@@ -109,7 +112,11 @@ export default function PromotionsListTable() {
       },
     });
     el._dt = dt;
-    return () => { try { dt.destroy(); } catch {} el._dt = null; };
+
+    return () => {
+      try { dt.destroy(); } catch {}
+      el._dt = null;
+    };
   }, [promotions, loading]);
 
   const getStatusClass = (status) => {
