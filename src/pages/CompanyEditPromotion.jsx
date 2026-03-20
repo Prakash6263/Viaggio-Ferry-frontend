@@ -236,11 +236,13 @@ export default function CompanyEditPromotion() {
             if (sp.passenger) {
               setPassengerEnabled(sp.passenger.isEnabled || false);
               if (sp.passenger.isEnabled) {
-                setPassengerBasis(sp.passenger.calculationType || "quantity");
+                // Backend sends "value", UI uses "totalValue"
+                const passengerCalcType = sp.passenger.calculationType === "value" ? "totalValue" : (sp.passenger.calculationType || "quantity");
+                setPassengerBasis(passengerCalcType);
                 if (sp.passenger.calculationType === "quantity") {
                   setPassengerBuyX(sp.passenger.buyX?.toString() || "");
                   setPassengerGetY(sp.passenger.getY?.toString() || "");
-                } else if (sp.passenger.calculationType === "totalValue") {
+                } else if (sp.passenger.calculationType === "value") {
                   setPassengerMinValue(sp.passenger.minValue?.toString() || "");
                   setPassengerType(sp.passenger.discountType || "percentage");
                   setPassengerValue(sp.passenger.discountValue?.toString() || "");
@@ -263,11 +265,13 @@ export default function CompanyEditPromotion() {
             if (sp.cargo) {
               setCargoEnabled(sp.cargo.isEnabled || false);
               if (sp.cargo.isEnabled) {
-                setCargoBasis(sp.cargo.calculationType || "quantity");
+                // Backend sends "value", UI uses "totalValue"
+                const cargoCalcType = sp.cargo.calculationType === "value" ? "totalValue" : (sp.cargo.calculationType || "quantity");
+                setCargoBasis(cargoCalcType);
                 if (sp.cargo.calculationType === "quantity") {
                   setCargoBuyX(sp.cargo.buyX?.toString() || "");
                   setCargoGetY(sp.cargo.getY?.toString() || "");
-                } else if (sp.cargo.calculationType === "totalValue") {
+                } else if (sp.cargo.calculationType === "value") {
                   setCargoMinValue(sp.cargo.minValue?.toString() || "");
                   setCargoType(sp.cargo.discountType || "percentage");
                   setCargoValue(sp.cargo.discountValue?.toString() || "");
@@ -288,11 +292,13 @@ export default function CompanyEditPromotion() {
             if (sp.vehicle) {
               setVehicleEnabled(sp.vehicle.isEnabled || false);
               if (sp.vehicle.isEnabled) {
-                setVehicleBasis(sp.vehicle.calculationType || "quantity");
+                // Backend sends "value", UI uses "totalValue"
+                const vehicleCalcType = sp.vehicle.calculationType === "value" ? "totalValue" : (sp.vehicle.calculationType || "quantity");
+                setVehicleBasis(vehicleCalcType);
                 if (sp.vehicle.calculationType === "quantity") {
                   setVehicleBuyX(sp.vehicle.buyX?.toString() || "");
                   setVehicleGetY(sp.vehicle.getY?.toString() || "");
-                } else if (sp.vehicle.calculationType === "totalValue") {
+                } else if (sp.vehicle.calculationType === "value") {
                   setVehicleMinValue(sp.vehicle.minValue?.toString() || "");
                   setVehicleType(sp.vehicle.discountType || "percentage");
                   setVehicleValue(sp.vehicle.discountValue?.toString() || "");
@@ -445,10 +451,10 @@ export default function CompanyEditPromotion() {
           cabinId: c.cabinId,
         }));
 
-      // Build passenger promo object
+      // Build passenger promo object (backend expects "value" not "totalValue")
       const passengerPromo = {
         isEnabled: true,
-        calculationType: passengerBasis,
+        calculationType: passengerBasis === "totalValue" ? "value" : passengerBasis,
         eligibility: passengerEligibility,
       };
 
@@ -479,9 +485,10 @@ export default function CompanyEditPromotion() {
           payloadId: c.payloadTypeId,
         }));
 
+      // Backend expects "value" not "totalValue"
       const cargoPromo = {
         isEnabled: true,
-        calculationType: cargoBasis,
+        calculationType: cargoBasis === "totalValue" ? "value" : cargoBasis,
         eligibility: cargoEligibility,
       };
 
@@ -512,9 +519,10 @@ export default function CompanyEditPromotion() {
           payloadId: c.payloadTypeId,
         }));
 
+      // Backend expects "value" not "totalValue"
       const vehiclePromo = {
         isEnabled: true,
-        calculationType: vehicleBasis,
+        calculationType: vehicleBasis === "totalValue" ? "value" : vehicleBasis,
         eligibility: vehicleEligibility,
       };
 

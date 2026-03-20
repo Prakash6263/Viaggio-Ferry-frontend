@@ -317,10 +317,10 @@ export default function AddPromotionPage() {
           cabinId: c.cabinId,
         }));
 
-      // Build passenger promo object
+      // Build passenger promo object (backend expects "value" not "totalValue")
       const passengerPromo = {
         isEnabled: true,
-        calculationType: passengerBasis,
+        calculationType: passengerBasis === "totalValue" ? "value" : passengerBasis,
         eligibility: passengerEligibility,
       };
 
@@ -351,9 +351,10 @@ export default function AddPromotionPage() {
           payloadId: c.payloadTypeId,
         }));
 
+      // Backend expects "value" not "totalValue"
       const cargoPromo = {
         isEnabled: true,
-        calculationType: cargoBasis,
+        calculationType: cargoBasis === "totalValue" ? "value" : cargoBasis,
         eligibility: cargoEligibility,
       };
 
@@ -384,9 +385,10 @@ export default function AddPromotionPage() {
           payloadId: c.payloadTypeId,
         }));
 
+      // Backend expects "value" not "totalValue"
       const vehiclePromo = {
         isEnabled: true,
-        calculationType: vehicleBasis,
+        calculationType: vehicleBasis === "totalValue" ? "value" : vehicleBasis,
         eligibility: vehicleEligibility,
       };
 
