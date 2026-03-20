@@ -57,9 +57,11 @@ export default function PromotionsListTable() {
 
     if (result.isConfirmed) {
       try {
-        setLoading(true); // show loader during deletion
         await promotionApi.deletePromotion(promotionId);
-        
+
+        // Immediately remove from state so table re-renders without stale data
+        setPromotions((prev) => prev.filter((p) => p._id !== promotionId));
+
         Swal.fire({
           title: "Deleted!",
           text: "The promotion has been successfully deleted.",
@@ -67,9 +69,6 @@ export default function PromotionsListTable() {
           timer: 2000,
           showConfirmButton: false,
         });
-
-        // Refresh the promotions list
-        fetchPromotions();
       } catch (err) {
         console.error("[v0] Error deleting promotion:", err.message);
         Swal.fire({
@@ -77,8 +76,6 @@ export default function PromotionsListTable() {
           text: `Failed to delete promotion: ${err.message}`,
           icon: "error",
         });
-      } finally {
-        setLoading(false);
       }
     }
   };
