@@ -119,7 +119,7 @@ export default function CompanyEditTrip() {
           console.error("[v0] Error fetching ports:", err);
           return { data: { ports: [] } };
         }),
-        partnerApi.getChildPartners(1, 100, "Active&data=sort").catch(err => {
+        partnerApi.getChildPartnersForSelect().catch(err => {
           console.error("[v0] Error fetching partners:", err);
           return { data: [] };
         }),
