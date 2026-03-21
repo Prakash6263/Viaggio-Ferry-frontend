@@ -2,11 +2,7 @@
 import React from "react";
 
 export default function PartnerKanban({ partners = [] }) {
-  const data = partners.length ? partners : [
-    { id: 1, name: "Marine Transport Co.", phone: "+123456789", layer: "Marine", status: "Active" },
-    { id: 2, name: "Commercial Freight Inc.", phone: "+987654321", layer: "Commercial", status: "Active" },
-    { id: 3, name: "Selling Solutions Ltd.", phone: "+1122334455", layer: "Selling", status: "Inactive" },
-  ];
+  const data = partners.length ? partners : [];
 
   const columns = {
     Marine: data.filter((p) => p.layer?.toLowerCase() === "marine"),

@@ -119,9 +119,9 @@ export default function CompanyEditTrip() {
           console.error("[v0] Error fetching ports:", err);
           return { data: { ports: [] } };
         }),
-        partnerApi.getPartnersList().catch(err => {
+        partnerApi.getChildPartnersForSelect().catch(err => {
           console.error("[v0] Error fetching partners:", err);
-          return [];
+          return { data: [] };
         }),
         tripsApi.getTripById(tripId).catch(err => {
           console.error("[v0] Error fetching trip:", err);
@@ -136,7 +136,7 @@ export default function CompanyEditTrip() {
       // Extract data from responses
       const shipsList = shipsRes?.data?.ships || [];
       const portsList = portsRes?.data?.ports || [];
-      const partnersList = Array.isArray(partnersRes) ? partnersRes : (partnersRes?.data || []);
+      const partnersList = partnersRes?.data || [];
 
       console.log("[v0] Ships loaded:", shipsList);
       console.log("[v0] Ports loaded:", portsList);

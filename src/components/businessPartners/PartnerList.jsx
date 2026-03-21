@@ -152,11 +152,11 @@ export default function PartnerList({ partners = [], onUpdate, onDisable, onEnab
     : [
         {
           id: 1,
-          name: "Marine Transport Co.",
-          phone: "+123456789",
-          address: "123 Ocean St.",
-          layer: "Marine",
-          status: "Active",
+          name: "",
+          phone: "",
+          address: "",
+          layer: "Do not have any partner yet. Please add a partner.",
+          status: "",
         },
       ]
 
