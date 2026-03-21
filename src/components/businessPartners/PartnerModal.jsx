@@ -178,6 +178,10 @@ export default function PartnerModal({ open, onClose, onSave, editingPartner = n
       users,
     }
 
+    // Remove parentCompany from payload - it's a computed/populated field from backend
+    // Should not be sent back in update/create requests
+    delete payload.parentCompany
+
     // Combine country code with phone number for submission
     if (payload.phone) {
       payload.phone = `${countryCode}${payload.phone}`
