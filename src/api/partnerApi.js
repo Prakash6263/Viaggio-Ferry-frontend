@@ -54,4 +54,9 @@ export const partnerApi = {
   getChildPartners: async (page = 1, limit = 10, status = "Active") => {
     return apiRequest(`/api/partners/children?page=${page}&limit=${limit}&status=${status}`)
   },
+
+  // 9. Get child partners sorted (lightweight - returns only _id and name)
+  getChildPartnersSorted: async (status = "Active") => {
+    return apiRequest(`/api/partners/children?page=1&limit=100&status=${status}&data=sort`)
+  },
 }

@@ -130,9 +130,9 @@ export default function CompanyAddTrip() {
           console.error("[v0] Error fetching trips:", err);
           return { data: { trips: [] } };
         }),
-        partnerApi.getPartnersList().catch(err => {
+        partnerApi.getChildPartnersSorted().catch(err => {
           console.error("[v0] Error fetching partners:", err);
-          return [];
+          return { data: [] };
         })
       ]);
 
@@ -140,7 +140,7 @@ export default function CompanyAddTrip() {
       const shipsList = shipsRes?.data?.ships || [];
       const portsList = portsRes?.data?.ports || [];
       const tripsList = tripsRes?.data?.trips || [];
-      const partnersList = Array.isArray(partnersRes) ? partnersRes : (partnersRes?.data || []);
+      const partnersList = partnersRes?.data || [];
 
       console.log("[v0] Ships loaded:", shipsList);
       console.log("[v0] Ports loaded:", portsList);
