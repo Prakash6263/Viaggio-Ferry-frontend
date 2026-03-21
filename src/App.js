@@ -37,6 +37,8 @@ import CompanyEditTrip from "./pages/CompanyEditTrip"
 import CompanyPromotionsList from "./pages/CompanyPromotionsList"
 import CompanyAddPromotion from "./pages/CompanyAddPromotion"
 import CompanyEditPromotion from "./pages/CompanyEditPromotion"
+import AllocationListPage from "./pages/AllocationListPage"
+import AllocateToChildPage from "./pages/AllocateToChildPage"
 import BusinessPartnersPage from "./pages/BusinessPartners"
 import B2CCustomersPage from "./pages/B2CCustomersPage"
 import SalesmenPage from "./pages/SalesmenPage"
@@ -236,6 +238,20 @@ function AppRoutes() {
         <Route path="/company/commission" element={<ProtectedRoute element={<CommissionBoardPage />} />} />
         <Route path="/company/commission/add" element={<ProtectedRoute element={<AddCommissionPage />} />} />
         <Route path="/company/commission/edit/:ruleId" element={<ProtectedRoute element={<EditCommissionPage />} />} />
+
+        {/* Allocation */}
+        <Route
+          path="/company/partner-management/allocation"
+          element={<ProtectedRoute element={<AllocationListPage />} />}
+        />
+        <Route
+          path="/company/partner-management/allocation/:id/allocate"
+          element={<ProtectedRoute element={<AllocateToChildPage />} />}
+        />
+        <Route
+          path="/company/partner-management/allocation/:id/view"
+          element={<ProtectedRoute element={<AllocateToChildPage />} />}
+        />
 
         {/* Sales and Booking */}
         <Route path="/company/pricelist" element={<ProtectedRoute element={<PriceListPage />} />} />
