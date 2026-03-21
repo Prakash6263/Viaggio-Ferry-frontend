@@ -130,7 +130,7 @@ export default function CompanyAddTrip() {
           console.error("[v0] Error fetching trips:", err);
           return { data: { trips: [] } };
         }),
-        partnerApi.getChildPartnersSorted().catch(err => {
+        partnerApi.getChildPartners(1, 100, "Active&data=sort").catch(err => {
           console.error("[v0] Error fetching partners:", err);
           return { data: [] };
         })
