@@ -16,7 +16,52 @@ import { fetchSidebar, extractRoutesFromMenu, isPathAuthorized, getPermissionsFo
 import { loginApi, AUTH_LOGIN_EVENT } from "../api/loginApi"
 import { AUTH_LOGOUT_EVENT } from "../api/apiClient"
 
-const SidebarContext = createContext(null)
+/**
+ * Inject any frontend-only submodules that the backend hasn't added yet.
+ * This is a temporary bridge — remove each entry once the backend adds it.
+ *
+ * Structure mirrors what the backend returns for a submodule:
+ *   { label, route, displayOrder, permissions: { read, create, update, delete } }
+ */
+const FRONTEND_SUBMODULE_INJECTIONS = {
+  "partners-management": {
+    allocation: {
+      label: "My Allocations",
+      route: "/company/partner-management/allocation",
+      displayOrder: 60,
+      permissions: { read: true, create: true, update: true, delete: true },
+    },
+  },
+}
+
+/**
+ * Merge frontend-injected submodules into the backend menu.
+ * Only injects if the parent module exists AND the submodule is not already present.
+ */
+const injectFrontendSubmodules = (menu) => {
+  if (!menu) return menu
+  const patched = { ...menu }
+
+  for (const [moduleCode, submodulesToInject] of Object.entries(FRONTEND_SUBMODULE_INJECTIONS)) {
+    if (!patched[moduleCode]) continue // parent module not in menu, skip
+    patched[moduleCode] = {
+      ...patched[moduleCode],
+      submodules: {
+        ...patched[moduleCode].submodules,
+        // Only inject if backend hasn't already sent this submodule
+        ...Object.fromEntries(
+          Object.entries(submodulesToInject).filter(
+            ([code]) => !patched[moduleCode]?.submodules?.[code]
+          )
+        ),
+      },
+    }
+  }
+
+  return patched
+}
+
+
 
 /**
  * Sidebar Provider Component
@@ -47,11 +92,13 @@ export function SidebarProvider({ children }) {
     try {
       const data = await fetchSidebar()
 
-      setMenu(data.menu || {})
+      const patchedMenu = injectFrontendSubmodules(data.menu || {})
+
+      setMenu(patchedMenu)
       setUser(data.user || null)
       setCompany(data.company || null)
       setVersion(data.version || "1.0")
-      setRoutes(extractRoutesFromMenu(data.menu))
+      setRoutes(extractRoutesFromMenu(patchedMenu))
     } catch (err) {
       console.error("[v0] Failed to load sidebar:", err.message)
       setError(err.message || "Unable to load system menu")
