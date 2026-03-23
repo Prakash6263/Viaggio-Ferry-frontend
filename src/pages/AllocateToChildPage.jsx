@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -102,6 +102,19 @@ export default function AllocateToChildPage() {
   };
 
   const availableTypes = (myAllocation?.allocations || []).map((a) => a.type);
+
+  // Build a flat map of cabinId -> cabinName from myAllocation so plain ID strings can be resolved
+  const cabinNameMap = useMemo(() => {
+    const map = {};
+    (myAllocation?.allocations || []).forEach((typeAlloc) => {
+      (typeAlloc.cabins || []).forEach((c) => {
+        if (c.cabin?._id && c.cabin?.name) {
+          map[c.cabin._id] = c.cabin.name;
+        }
+      });
+    });
+    return map;
+  }, [myAllocation]);
 
   // Returns types not yet used in the given blocks array (to prevent duplicates)
   const unusedTypes = (blocks) => {
@@ -686,8 +699,8 @@ export default function AllocateToChildPage() {
                       return allCabinRows.map(({ typeAlloc, cabin, ti, ci }, rowIndex) => {
                         const cabinKey = typeof cabin.cabin === "object" ? cabin.cabin?._id : cabin.cabin;
                         const cabinName = typeof cabin.cabin === "object"
-                          ? (cabin.cabin?.name || cabinKey || "-")
-                          : (cabinKey || "-");
+                          ? (cabin.cabin?.name || cabinNameMap[cabinKey] || "-")
+                          : (cabinNameMap[cabinKey] || cabinKey || "-");
                         const isFirstRow = rowIndex === 0;
 
                         return (
