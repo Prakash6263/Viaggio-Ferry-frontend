@@ -18,17 +18,60 @@ export const allocationApi = {
     }
   },
 
-  // Fetch single allocation detail by allocationId
-  getMyTripById: async (allocationId) => {
+  // Create a child allocation
+  // POST /api/allocations/child
+  createChildAllocation: async (payload) => {
     try {
-      const response = await apiFetch(`${BASE_URL}/my-trips/${allocationId}`, { method: "GET" })
+      const response = await apiFetch(`${BASE_URL}/child`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
       if (!response.ok) {
         const err = await response.json()
-        throw new Error(err.message || "Failed to fetch allocation detail")
+        throw new Error(err.message || "Failed to create allocation")
       }
       return await response.json()
     } catch (error) {
-      console.error("[v0] Get My Trip By Id Error:", error.message)
+      console.error("[v0] Create Child Allocation Error:", error.message)
+      throw error
+    }
+  },
+
+  // Update an existing child allocation
+  // PUT /api/allocations/:allocationObjectId
+  updateAllocation: async (allocationObjectId, payload) => {
+    try {
+      const response = await apiFetch(`${BASE_URL}/${allocationObjectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.message || "Failed to update allocation")
+      }
+      return await response.json()
+    } catch (error) {
+      console.error("[v0] Update Allocation Error:", error.message)
+      throw error
+    }
+  },
+
+  // Delete an existing child allocation
+  // DELETE /api/allocations/:allocationObjectId
+  deleteAllocation: async (allocationObjectId) => {
+    try {
+      const response = await apiFetch(`${BASE_URL}/${allocationObjectId}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.message || "Failed to delete allocation")
+      }
+      return await response.json()
+    } catch (error) {
+      console.error("[v0] Delete Allocation Error:", error.message)
       throw error
     }
   },
