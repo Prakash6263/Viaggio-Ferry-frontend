@@ -36,20 +36,28 @@ export default function AllocateToChildPage() {
   const [cabinAllocations, setCabinAllocations] = useState({});
   const [isSaving, setIsSaving]                 = useState(false);
 
-  // Fetch allocation detail + child agents in parallel
+  // Fetch allocation detail by finding the matching allocationId in the list + child agents in parallel
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setPageLoading(true);
         setPageError(null);
         const [allocRes, agentsRes] = await Promise.all([
-          allocationApi.getMyTripById(id),
+          allocationApi.getMyTrips(1, 100),
           partnerApi.getChildPartnersForSelect().catch(() => ({ data: [] })),
         ]);
-        const data = allocRes?.data || {};
-        setTripData(data.trip || null);
-        setMyAllocation(data.myAllocation || null);
-        setChildAllocations(data.childAllocations || []);
+
+        // Find the entry whose allocationId matches the URL param
+        const allRecords = allocRes?.data || [];
+        const record = allRecords.find((r) => r.allocationId === id);
+
+        if (!record) {
+          throw new Error("Allocation not found.");
+        }
+
+        setTripData(record.trip || null);
+        setMyAllocation(record || null);
+        setChildAllocations(record.childAllocations || []);
         setChildAgents(agentsRes?.data || []);
       } catch (err) {
         setPageError(err.message);
@@ -61,12 +69,10 @@ export default function AllocateToChildPage() {
     fetchAll();
   }, [id]);
 
-  // Get cabins for selected availability type from myAllocation
+  // Get cabins for selected availability type from myAllocation.allocations
   const getCabinsForType = () => {
     if (!myAllocation) return [];
-    const typeData = myAllocation.allocations.find(
-      (a) => a.type === availabilityType
-    );
+    const typeData = myAllocation.allocations?.find((a) => a.type === availabilityType);
     return typeData?.cabins || [];
   };
 
@@ -249,8 +255,7 @@ export default function AllocateToChildPage() {
                       value={availabilityType}
                       onChange={(e) => handleAvailabilityTypeChange(e.target.value)}
                     >
-                      {(myAllocation?.allocations || []).map((a) => (
-                        <option key={a.type} value={a.type}>
+                      {(myAllocation?.allocations || []).map((a) => (                        <option key={a.type} value={a.type}>
                           {a.type.charAt(0).toUpperCase() + a.type.slice(1)}
                         </option>
                       ))}
