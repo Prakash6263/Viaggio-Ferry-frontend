@@ -170,9 +170,15 @@ export default function AllocateToChildPage() {
     const firstType = alloc.allocations?.[0];
     const initialValues = {};
     (firstType?.cabins || []).forEach((c) => {
-      initialValues[c.cabin] = c.allocatedSeats;
+      const key = typeof c.cabin === "object" ? c.cabin?._id : c.cabin;
+      initialValues[key] = c.allocatedSeats;
     });
-    setEditingAlloc({ allocationObjectId: alloc._id, type: firstType?.type, cabins: firstType?.cabins || [] });
+    // Normalise cabin references to plain ID strings for the payload
+    const normalisedCabins = (firstType?.cabins || []).map((c) => ({
+      ...c,
+      cabin: typeof c.cabin === "object" ? c.cabin?._id : c.cabin,
+    }));
+    setEditingAlloc({ allocationObjectId: alloc._id, type: firstType?.type, cabins: normalisedCabins });
     setEditCabinValues(initialValues);
   };
 
@@ -424,30 +430,47 @@ export default function AllocateToChildPage() {
                   {childAllocations.length === 0 ? (
                     <tr><td colSpan={7} className="text-center text-muted">No child allocations yet</td></tr>
                   ) : (
-                    childAllocations.flatMap((alloc) =>
-                      (alloc.allocations || []).flatMap((typeAlloc, ti) =>
-                        (typeAlloc.cabins || []).map((cabin, ci) => (
+                    childAllocations.flatMap((alloc) => {
+                      // Collect all cabins across all allocation types for this record
+                      const allCabinRows = (alloc.allocations || []).flatMap((typeAlloc, ti) =>
+                        (typeAlloc.cabins || []).map((cabin, ci) => ({ typeAlloc, cabin, ti, ci }))
+                      );
+                      const totalRows = allCabinRows.length || 1;
+
+                      return allCabinRows.map(({ typeAlloc, cabin, ti, ci }, rowIndex) => {
+                        const cabinKey = typeof cabin.cabin === "object" ? cabin.cabin?._id : cabin.cabin;
+                        const cabinName = typeof cabin.cabin === "object"
+                          ? (cabin.cabin?.name || cabinKey || "-")
+                          : (cabinKey || "-");
+                        const isFirstRow = rowIndex === 0;
+                        const isEditing = editingAlloc?.allocationObjectId === alloc._id;
+
+                        return (
                           <tr key={`${alloc._id}-${ti}-${ci}`}>
-                            <td>{alloc.agent?.name || "-"}</td>
-                            <td>{alloc.agent?.layer || "-"}</td>
+                            {isFirstRow && (
+                              <>
+                                <td rowSpan={totalRows} className="align-middle">{alloc.agent?.name || "-"}</td>
+                                <td rowSpan={totalRows} className="align-middle">{alloc.agent?.layer || "-"}</td>
+                              </>
+                            )}
                             <td>
                               <span className="badge badge-primary-light">
                                 {typeAlloc.type.charAt(0).toUpperCase() + typeAlloc.type.slice(1)}
                               </span>
                             </td>
-                            <td>{cabin.cabin || "-"}</td>
+                            <td>{cabinName}</td>
                             <td>
-                              {editingAlloc?.allocationObjectId === alloc._id ? (
+                              {isEditing ? (
                                 <input
                                   type="number"
                                   className="form-control form-control-sm"
                                   style={{ width: "90px" }}
                                   min={0}
-                                  value={editCabinValues[cabin.cabin] ?? cabin.allocatedSeats}
+                                  value={editCabinValues[cabinKey] ?? cabin.allocatedSeats}
                                   onChange={(e) =>
                                     setEditCabinValues((prev) => ({
                                       ...prev,
-                                      [cabin.cabin]: Math.max(0, parseInt(e.target.value) || 0),
+                                      [cabinKey]: Math.max(0, parseInt(e.target.value) || 0),
                                     }))
                                   }
                                 />
@@ -455,32 +478,36 @@ export default function AllocateToChildPage() {
                                 cabin.allocatedSeats
                               )}
                             </td>
-                            <td>{formatDate(alloc.createdAt)}</td>
-                            <td>
-                              {editingAlloc?.allocationObjectId === alloc._id ? (
-                                <>
-                                  <button className="btn btn-sm btn-success me-1" onClick={handleEditSave}>
-                                    <i className="fe fe-check"></i>
-                                  </button>
-                                  <button className="btn btn-sm btn-secondary" onClick={() => { setEditingAlloc(null); setEditCabinValues({}); }}>
-                                    <i className="fe fe-x"></i>
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button className="btn btn-sm btn-outline-primary me-1" onClick={() => handleEditClick(alloc)} title="Edit">
-                                    <i className="fe fe-edit"></i>
-                                  </button>
-                                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(alloc._id)} title="Delete">
-                                    <i className="fe fe-trash-2"></i>
-                                  </button>
-                                </>
-                              )}
-                            </td>
+                            {isFirstRow && (
+                              <>
+                                <td rowSpan={totalRows} className="align-middle">{formatDate(alloc.createdAt)}</td>
+                                <td rowSpan={totalRows} className="align-middle">
+                                  {isEditing ? (
+                                    <>
+                                      <button className="btn btn-sm btn-success me-1" onClick={handleEditSave}>
+                                        <i className="fe fe-check"></i>
+                                      </button>
+                                      <button className="btn btn-sm btn-secondary" onClick={() => { setEditingAlloc(null); setEditCabinValues({}); }}>
+                                        <i className="fe fe-x"></i>
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button className="btn btn-sm btn-outline-primary me-1" onClick={() => handleEditClick(alloc)} title="Edit">
+                                        <i className="fe fe-edit"></i>
+                                      </button>
+                                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(alloc._id)} title="Delete">
+                                        <i className="fe fe-trash-2"></i>
+                                      </button>
+                                    </>
+                                  )}
+                                </td>
+                              </>
+                            )}
                           </tr>
-                        ))
-                      )
-                    )
+                        );
+                      });
+                    })
                   )}
                 </tbody>
               </table>
