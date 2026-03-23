@@ -47,9 +47,9 @@ export default function AllocateToChildPage() {
           partnerApi.getChildPartnersForSelect().catch(() => ({ data: [] })),
         ]);
 
-        // Find the entry whose allocationId matches the URL param
+        // Find the entry whose trip._id matches the URL param (id = trip._id)
         const allRecords = allocRes?.data || [];
-        const record = allRecords.find((r) => r.allocationId === id);
+        const record = allRecords.find((r) => r.trip?._id === id);
 
         if (!record) {
           throw new Error("Allocation not found.");
