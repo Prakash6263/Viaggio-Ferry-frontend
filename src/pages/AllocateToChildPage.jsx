@@ -61,7 +61,7 @@ export default function AllocateToChildPage() {
       setChildAgents(agentsRes?.data || []);
 
       if (record.allocations?.length > 0) {
-        setAvailabilityType(record.allocations[0].type);
+        // type is now managed per-block in addBlocks
       }
     } catch (err) {
       setPageError(err.message);
@@ -424,22 +424,6 @@ export default function AllocateToChildPage() {
                     <option value="">{agentsLoading ? "Loading..." : "-- Select Child Agent --"}</option>
                     {childAgents.map((agent) => (
                       <option key={agent._id} value={agent._id}>{agent.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Availability Type */}
-                <div className="col-md-6">
-                  <label className="form-label">Availability Type <span className="text-danger">*</span></label>
-                  <select
-                    className="form-select"
-                    value={availabilityType}
-                    onChange={(e) => handleAvailabilityTypeChange(e.target.value)}
-                  >
-                    {(myAllocation?.allocations || []).map((a) => (
-                      <option key={a.type} value={a.type}>
-                        {a.type.charAt(0).toUpperCase() + a.type.slice(1)}
-                      </option>
                     ))}
                   </select>
                 </div>
