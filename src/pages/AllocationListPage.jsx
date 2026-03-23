@@ -13,13 +13,13 @@ function formatDate(dateStr) {
 }
 
 function getTripStatusClass(status) {
-  if (!status) return "badge badge-secondary-light";
+  if (!status) return "badge bg-secondary";
   switch (status.toUpperCase()) {
-    case "SCHEDULED": return "badge badge-primary-light";
-    case "ACTIVE":    return "badge badge-success-light";
-    case "COMPLETED": return "badge badge-secondary-light";
-    case "CANCELLED": return "badge badge-danger-light";
-    default:          return "badge badge-secondary-light";
+    case "SCHEDULED": return "badge bg-primary";
+    case "ACTIVE":    return "badge bg-success";
+    case "COMPLETED": return "badge bg-secondary";
+    case "CANCELLED": return "badge bg-danger";
+    default:          return "badge bg-secondary";
   }
 }
 
@@ -45,6 +45,15 @@ export default function AllocationListPage() {
       }
     };
     fetchData();
+
+    // Listen for allocation data changes from other pages
+    const handleAllocationChange = () => {
+      fetchData();
+    };
+    window.addEventListener("allocationDataChanged", handleAllocationChange);
+    return () => {
+      window.removeEventListener("allocationDataChanged", handleAllocationChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -97,12 +106,12 @@ export default function AllocationListPage() {
                 {loading && (
                   <div className="d-flex justify-content-center align-items-center py-5">
                     <CirclesWithBar
-                      height="60"
-                      width="60"
-                      color="#1aafa5"
-                      outerCircleColor="#1aafa5"
-                      innerCircleColor="#1aafa5"
-                      barColor="#1aafa5"
+                      height="100"
+                      width="100"
+                      color="#05468f"
+                      outerCircleColor="#05468f"
+                      innerCircleColor="#05468f"
+                      barColor="#05468f"
                       visible={true}
                     />
                   </div>

@@ -172,7 +172,6 @@ export default function AllocateToChildPage() {
     setAddBlocks((prev) => prev.filter((_, i) => i !== blockIndex));
   };
 
-  // ─── Create allocation ────────────────────────────────────────────────────
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedAgent) {
@@ -211,6 +210,8 @@ export default function AllocateToChildPage() {
       });
       setSelectedAgent("");
       setAddBlocks([{ type: availableTypes[0] || "", cabinValues: {} }]);
+      // Dispatch event for all allocation pages to re-fetch
+      window.dispatchEvent(new CustomEvent("allocationDataChanged"));
       await fetchChildAllocations();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
@@ -302,6 +303,8 @@ export default function AllocateToChildPage() {
       Swal.fire({ icon: "success", title: "Updated", text: "Allocation updated successfully.", timer: 2000, showConfirmButton: false });
       setEditingAlloc(null);
       setEditBlocks([]);
+      // Dispatch event for all allocation pages to re-fetch
+      window.dispatchEvent(new CustomEvent("allocationDataChanged"));
       await fetchChildAllocations();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
@@ -331,6 +334,8 @@ export default function AllocateToChildPage() {
       await allocationApi.deleteAllocation(allocationObjectId);
       setChildAllocations((prev) => prev.filter((a) => a._id !== allocationObjectId));
       Swal.fire({ icon: "success", title: "Deleted", text: "Allocation deleted successfully.", timer: 2000, showConfirmButton: false });
+      // Dispatch event for all allocation pages to re-fetch
+      window.dispatchEvent(new CustomEvent("allocationDataChanged"));
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     }
@@ -343,7 +348,7 @@ export default function AllocateToChildPage() {
         <Header /><Sidebar />
         <PageWrapper>
           <div className="d-flex justify-content-center align-items-center py-5">
-            <CirclesWithBar height="60" width="60" color="#1aafa5" outerCircleColor="#1aafa5" innerCircleColor="#1aafa5" barColor="#1aafa5" visible={true} />
+            <CirclesWithBar height="100" width="100" color="#05468f" outerCircleColor="#05468f" innerCircleColor="#05468f" barColor="#05468f" visible={true} />
           </div>
         </PageWrapper>
       </div>
