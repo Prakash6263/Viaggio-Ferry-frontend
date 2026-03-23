@@ -85,7 +85,7 @@ export default function AddRulePage() {
 
           if (response.success && response.data) {
             const userData = response.data;
-            const providerName = userData.company?.companyName || "Unknown";
+            const providerName = userData.fullName || userData.name || userData.username || userData.email || "Unknown";
             const userLayer = userData.layer || userData.role || "Company";
 
             setProvider(providerName);
