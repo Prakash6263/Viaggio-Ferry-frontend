@@ -115,7 +115,7 @@ export default function AllocateToChildPage() {
     }
 
     const payload = {
-      tripId: id,
+      tripId: tripData?._id,
       childAgentId: selectedAgent,
       allocations: [
         {
