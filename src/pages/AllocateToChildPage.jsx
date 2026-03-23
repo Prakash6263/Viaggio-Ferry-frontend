@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import Swal from "sweetalert2";
+import { partnerApi } from "../api/partnerApi";
 
 // Demo trip data (keyed by id)
 const DEMO_TRIPS = {
@@ -35,12 +36,6 @@ const DEMO_TRIPS = {
     arrivalDate: "2026-05-02",
   },
 };
-
-const DEMO_AGENTS = [
-  { id: "agent-001", name: "Marine Agent A" },
-  { id: "agent-002", name: "Commercial Agent B" },
-  { id: "agent-003", name: "Selling Agent C" },
-];
 
 const AVAILABILITY_TYPES = ["Passenger", "Cargo", "Vehicle"];
 
@@ -93,6 +88,25 @@ export default function AllocateToChildPage() {
   const [existingAllocations, setExistingAllocations] = useState(INITIAL_EXISTING_ALLOCATIONS);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Child agents from API
+  const [childAgents, setChildAgents] = useState([]);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        setAgentsLoading(true);
+        const res = await partnerApi.getChildPartnersForSelect();
+        setChildAgents(res?.data || []);
+      } catch (err) {
+        console.error("[v0] Error fetching child agents:", err.message);
+      } finally {
+        setAgentsLoading(false);
+      }
+    };
+    fetchAgents();
+  }, []);
+
   const cabins = DEMO_CABINS[availabilityType] || [];
 
   // Handle cabin allocation input change
@@ -141,7 +155,7 @@ export default function AllocateToChildPage() {
 
     // Simulate save
     setTimeout(() => {
-      const agentName = DEMO_AGENTS.find((a) => a.id === selectedAgent)?.name || selectedAgent;
+      const agentName = childAgents.find((a) => a._id === selectedAgent)?.name || selectedAgent;
       const newRows = allocatedCabins.map((c, i) => ({
         id: `ea-new-${Date.now()}-${i}`,
         childAgent: agentName,
@@ -278,10 +292,13 @@ export default function AllocateToChildPage() {
                       className="form-select"
                       value={selectedAgent}
                       onChange={(e) => setSelectedAgent(e.target.value)}
+                      disabled={agentsLoading}
                     >
-                      <option value="">-- Select Child Agent --</option>
-                      {DEMO_AGENTS.map((agent) => (
-                        <option key={agent.id} value={agent.id}>
+                      <option value="">
+                        {agentsLoading ? "Loading..." : "-- Select Child Agent --"}
+                      </option>
+                      {childAgents.map((agent) => (
+                        <option key={agent._id} value={agent._id}>
                           {agent.name}
                         </option>
                       ))}
