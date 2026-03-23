@@ -35,6 +35,22 @@ export const allocationApi = {
     }
   },
 
+  // Fetch child allocations for a trip
+  // GET /api/allocations/my-child-allocations/:tripId
+  getChildAllocations: async (tripId) => {
+    try {
+      const response = await apiFetch(`${BASE_URL}/my-child-allocations/${tripId}`, { method: "GET" })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.message || "Failed to fetch child allocations")
+      }
+      return await response.json()
+    } catch (error) {
+      console.error("[v0] Get Child Allocations Error:", error.message)
+      throw error
+    }
+  },
+
   // Create a child allocation
   // POST /api/allocations/child
   createChildAllocation: async (payload) => {

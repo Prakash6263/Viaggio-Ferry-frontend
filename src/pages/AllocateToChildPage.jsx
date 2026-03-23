@@ -39,7 +39,7 @@ export default function AllocateToChildPage() {
   const [editingAlloc, setEditingAlloc]     = useState(null); // { allocationObjectId, type, cabins }
   const [editCabinValues, setEditCabinValues] = useState({});
 
-  // ─── Fetch data ───────────────────────────────────────────────────────────
+  // ─── Fetch trip + allocation data ─────────────────────────────────────────
   const fetchData = async () => {
     try {
       setPageLoading(true);
@@ -56,8 +56,7 @@ export default function AllocateToChildPage() {
       if (!record) throw new Error("Allocation not found.");
 
       setTripData(record.trip || null);
-      setMyAllocation(record || null);          // record has .allocations[] with cabin details
-      setChildAllocations(record.childAllocations || []);
+      setMyAllocation(record || null);
       setChildAgents(agentsRes?.data || []);
 
       if (record.allocations?.length > 0) {
@@ -71,7 +70,21 @@ export default function AllocateToChildPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, [id]);
+  // ─── Fetch child allocations separately ───────────────────────────────────
+  const fetchChildAllocations = async () => {
+    try {
+      const res = await allocationApi.getChildAllocations(id);
+      setChildAllocations(res?.data || []);
+    } catch (err) {
+      console.error("[v0] Child allocations fetch error:", err.message);
+      setChildAllocations([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchChildAllocations();
+  }, [id]);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const getCabinsForType = (type = availabilityType, allocation = myAllocation) => {
@@ -144,7 +157,7 @@ export default function AllocateToChildPage() {
       });
       setSelectedAgent("");
       setCabinAllocations({});
-      await fetchData(); // refresh to show new child allocation
+      await fetchChildAllocations();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     } finally {
@@ -154,11 +167,10 @@ export default function AllocateToChildPage() {
 
   // ─── Edit allocation ──────────────────────────────────────────────────────
   const handleEditClick = (alloc) => {
-    // alloc = one child allocation object from childAllocations array
     const firstType = alloc.allocations?.[0];
     const initialValues = {};
     (firstType?.cabins || []).forEach((c) => {
-      initialValues[c.cabin._id] = c.allocatedSeats;
+      initialValues[c.cabin] = c.allocatedSeats;
     });
     setEditingAlloc({ allocationObjectId: alloc._id, type: firstType?.type, cabins: firstType?.cabins || [] });
     setEditCabinValues(initialValues);
@@ -171,8 +183,8 @@ export default function AllocateToChildPage() {
         {
           type: editingAlloc.type,
           cabins: editingAlloc.cabins.map((c) => ({
-            cabin: c.cabin._id,
-            allocatedSeats: editCabinValues[c.cabin._id] ?? c.allocatedSeats,
+            cabin: c.cabin,
+            allocatedSeats: editCabinValues[c.cabin] ?? c.allocatedSeats,
           })),
         },
       ],
@@ -182,7 +194,7 @@ export default function AllocateToChildPage() {
       Swal.fire({ icon: "success", title: "Updated", text: "Allocation updated successfully.", timer: 2000, showConfirmButton: false });
       setEditingAlloc(null);
       setEditCabinValues({});
-      await fetchData();
+      await fetchChildAllocations();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     }
@@ -423,20 +435,19 @@ export default function AllocateToChildPage() {
                                 {typeAlloc.type.charAt(0).toUpperCase() + typeAlloc.type.slice(1)}
                               </span>
                             </td>
-                            <td>{cabin.cabin?.name || "-"}</td>
+                            <td>{cabin.cabin || "-"}</td>
                             <td>
-                              {/* Inline edit input when this row is being edited */}
                               {editingAlloc?.allocationObjectId === alloc._id ? (
                                 <input
                                   type="number"
                                   className="form-control form-control-sm"
                                   style={{ width: "90px" }}
                                   min={0}
-                                  value={editCabinValues[cabin.cabin._id] ?? cabin.allocatedSeats}
+                                  value={editCabinValues[cabin.cabin] ?? cabin.allocatedSeats}
                                   onChange={(e) =>
                                     setEditCabinValues((prev) => ({
                                       ...prev,
-                                      [cabin.cabin._id]: Math.max(0, parseInt(e.target.value) || 0),
+                                      [cabin.cabin]: Math.max(0, parseInt(e.target.value) || 0),
                                     }))
                                   }
                                 />
