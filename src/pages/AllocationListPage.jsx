@@ -154,14 +154,14 @@ export default function AllocationListPage() {
                               </td>
                               <td>
                                 <Link
-                                  to={`/company/partner-management/allocation/${alloc.allocationId}/allocate`}
+                                  to={`/company/partner-management/allocation/${alloc.trip?._id}/allocate`}
                                   className="btn btn-sm btn-turquoise me-1"
                                   title="Allocate to Child"
                                 >
                                   <i className="fe fe-share-2"></i> Allocate
                                 </Link>
                                 <Link
-                                  to={`/company/partner-management/allocation/${alloc.allocationId}/view`}
+                                  to={`/company/partner-management/allocation/${alloc.trip?._id}/view`}
                                   className="btn btn-sm btn-outline-primary"
                                   title="View Allocation"
                                 >
