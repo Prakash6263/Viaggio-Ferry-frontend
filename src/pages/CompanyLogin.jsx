@@ -13,6 +13,7 @@ export default function CompanyLogin() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -135,15 +136,26 @@ export default function CompanyLogin() {
 
                   <div className="mb-3">
                     <label className="form-label">Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      className="form-control"
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
+                    <div className="input-group">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        className="form-control"
+                        placeholder="Enter your password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                        title={showPassword ? "Hide password" : "Show password"}
+                      >
+                        <i className={`fe ${showPassword ? "fe-eye-off" : "fe-eye"}`}></i>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="text-end mb-3">
