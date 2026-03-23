@@ -1,162 +1,207 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { Sidebar } from "../components/layout/Sidebar";
 import { PageWrapper } from "../components/layout/PageWrapper";
 import Swal from "sweetalert2";
+import { partnerApi } from "../api/partnerApi";
+import { allocationApi } from "../api/allocationApi";
+import { CirclesWithBar } from "react-loader-spinner";
 
-// Demo trip data (keyed by id)
-const DEMO_TRIPS = {
-  "alloc-001": {
-    tripCode: "TRP001",
-    tripName: "Mumbai Ferry",
-    ship: "MV Voyager",
-    departurePort: "Mumbai",
-    arrivalPort: "Goa",
-    departureDate: "2026-04-10",
-    arrivalDate: "2026-04-10",
-  },
-  "alloc-002": {
-    tripCode: "TRP002",
-    tripName: "Goa Ferry",
-    ship: "MV Explorer",
-    departurePort: "Goa",
-    arrivalPort: "Mumbai",
-    departureDate: "2026-04-15",
-    arrivalDate: "2026-04-15",
-  },
-  "alloc-003": {
-    tripCode: "TRP003",
-    tripName: "Coastal Express",
-    ship: "MV Neptune",
-    departurePort: "Chennai",
-    arrivalPort: "Colombo",
-    departureDate: "2026-05-01",
-    arrivalDate: "2026-05-02",
-  },
-};
-
-const DEMO_AGENTS = [
-  { id: "agent-001", name: "Marine Agent A" },
-  { id: "agent-002", name: "Commercial Agent B" },
-  { id: "agent-003", name: "Selling Agent C" },
-];
-
-const AVAILABILITY_TYPES = ["Passenger", "Cargo", "Vehicle"];
-
-// Demo cabins by availability type
-const DEMO_CABINS = {
-  Passenger: [
-    { id: "cabin-a", name: "Cabin A", totalSeats: 100, alreadyAllocated: 30 },
-    { id: "cabin-b", name: "Cabin B", totalSeats: 50, alreadyAllocated: 10 },
-    { id: "cabin-c", name: "Cabin C", totalSeats: 30, alreadyAllocated: 5 },
-  ],
-  Cargo: [
-    { id: "cargo-a", name: "Cargo Hold A", totalSeats: 500, alreadyAllocated: 120 },
-    { id: "cargo-b", name: "Cargo Hold B", totalSeats: 300, alreadyAllocated: 80 },
-  ],
-  Vehicle: [
-    { id: "vehicle-a", name: "Vehicle Deck A", totalSeats: 20, alreadyAllocated: 6 },
-    { id: "vehicle-b", name: "Vehicle Deck B", totalSeats: 10, alreadyAllocated: 2 },
-  ],
-};
-
-// Demo existing allocations
-const INITIAL_EXISTING_ALLOCATIONS = [
-  {
-    id: "ea-001",
-    childAgent: "Marine Agent A",
-    availabilityType: "Passenger",
-    cabin: "Cabin A",
-    allocatedSeats: 20,
-    createdDate: "2026-03-15",
-  },
-  {
-    id: "ea-002",
-    childAgent: "Commercial Agent B",
-    availabilityType: "Passenger",
-    cabin: "Cabin B",
-    allocatedSeats: 10,
-    createdDate: "2026-03-16",
-  },
-];
+function formatDate(dateStr) {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+}
 
 export default function AllocateToChildPage() {
-  const { id } = useParams();
-  const trip = DEMO_TRIPS[id] || DEMO_TRIPS["alloc-001"];
+  const { id } = useParams(); // id = trip._id
 
-  // Form state
-  const [selectedAgent, setSelectedAgent] = useState("");
-  const [availabilityType, setAvailabilityType] = useState("Passenger");
-  const [remarks, setRemarks] = useState("");
-  const [cabinAllocations, setCabinAllocations] = useState({});
-  const [existingAllocations, setExistingAllocations] = useState(INITIAL_EXISTING_ALLOCATIONS);
-  const [isSaving, setIsSaving] = useState(false);
+  // API data
+  const [tripData, setTripData]             = useState(null);
+  const [myAllocation, setMyAllocation]     = useState(null);
+  const [childAllocations, setChildAllocations] = useState([]);
+  const [pageLoading, setPageLoading]       = useState(true);
+  const [pageError, setPageError]           = useState(null);
 
-  const cabins = DEMO_CABINS[availabilityType] || [];
+  // Child agents dropdown
+  const [childAgents, setChildAgents]       = useState([]);
+  const [agentsLoading, setAgentsLoading]   = useState(true);
 
-  // Handle cabin allocation input change
-  const handleCabinAllocChange = (cabinId, value) => {
-    const cabin = cabins.find((c) => c.id === cabinId);
+  // Form state — multi-block (one block per allocation type)
+  const [selectedAgent, setSelectedAgent]   = useState("");
+  const [isSaving, setIsSaving]             = useState(false);
+  // addBlocks: [{ type: "passenger", cabinValues: { [cabinId]: number } }, ...]
+  const [addBlocks, setAddBlocks]           = useState([{ type: "", cabinValues: {} }]);
+
+  // Edit state — multi-block
+  const [editingAlloc, setEditingAlloc]     = useState(null);
+  // editBlocks: [{ type, cabinValues }]
+  const [editBlocks, setEditBlocks]         = useState([]);
+
+  // ─── Fetch trip + allocation data ─────────────────────────────────────────
+  const fetchData = async () => {
+    try {
+      setPageLoading(true);
+      setPageError(null);
+      const [allocRes, agentsRes] = await Promise.all([
+        allocationApi.getMyTrips(1, 100),
+        partnerApi.getChildPartnersForSelect().catch(() => ({ data: [] })),
+      ]);
+
+      // id from URL is trip._id — find the matching record
+      const allRecords = allocRes?.data || [];
+      const record = allRecords.find((r) => r.trip?._id === id);
+
+      if (!record) throw new Error("Allocation not found.");
+
+      setTripData(record.trip || null);
+      setMyAllocation(record || null);
+      setChildAgents(agentsRes?.data || []);
+
+      if (record.allocations?.length > 0) {
+        // type is now managed per-block in addBlocks
+      }
+    } catch (err) {
+      setPageError(err.message);
+    } finally {
+      setPageLoading(false);
+      setAgentsLoading(false);
+    }
+  };
+
+  // ─── Fetch child allocations separately ───────────────────────────────────
+  const fetchChildAllocations = async () => {
+    try {
+      const res = await allocationApi.getChildAllocations(id);
+      setChildAllocations(res?.data || []);
+    } catch (err) {
+      console.error("[v0] Child allocations fetch error:", err.message);
+      setChildAllocations([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchChildAllocations();
+  }, [id]);
+
+  // Seed the first add-block type once myAllocation loads
+  useEffect(() => {
+    if (myAllocation?.allocations?.length > 0) {
+      setAddBlocks([{ type: myAllocation.allocations[0].type, cabinValues: {} }]);
+    }
+  }, [myAllocation]);
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  const getCabinsForType = (type, allocation = myAllocation) => {
+    if (!allocation) return [];
+    const typeData = (allocation.allocations || []).find((a) => a.type === type);
+    return typeData?.cabins || [];
+  };
+
+  const availableTypes = (myAllocation?.allocations || []).map((a) => a.type);
+
+  // Build a flat map of cabinId -> cabinName from myAllocation so plain ID strings can be resolved
+  const cabinNameMap = useMemo(() => {
+    const map = {};
+    (myAllocation?.allocations || []).forEach((typeAlloc) => {
+      (typeAlloc.cabins || []).forEach((c) => {
+        if (c.cabin?._id && c.cabin?.name) {
+          map[c.cabin._id] = c.cabin.name;
+        }
+      });
+    });
+    return map;
+  }, [myAllocation]);
+
+  // Returns types not yet used in the given blocks array (to prevent duplicates)
+  const unusedTypes = (blocks) => {
+    const used = blocks.map((b) => b.type);
+    return availableTypes.filter((t) => !used.includes(t));
+  };
+
+  const validateCabinChange = (cabinId, value, cabins, setFn, blockIndex, isEdit) => {
+    const cabin = cabins.find((c) => c.cabin._id === cabinId);
     if (!cabin) return;
-    const remaining = cabin.totalSeats - cabin.alreadyAllocated;
-    const parsed = parseInt(value) || 0;
-
-    if (parsed > remaining) {
+    const parsed = Math.max(0, parseInt(value) || 0);
+    if (parsed > cabin.remainingSeats) {
       Swal.fire({
         icon: "warning",
         title: "Exceeds Remaining Seats",
-        text: `You can allocate at most ${remaining} seats for ${cabin.name}.`,
+        text: `Max ${cabin.remainingSeats} seats available for ${cabin.cabin.name}.`,
         timer: 2500,
         showConfirmButton: false,
       });
-      setCabinAllocations((prev) => ({ ...prev, [cabinId]: remaining }));
+      setFn((prev) => {
+        const updated = [...prev];
+        updated[blockIndex] = { ...updated[blockIndex], cabinValues: { ...updated[blockIndex].cabinValues, [cabinId]: cabin.remainingSeats } };
+        return updated;
+      });
       return;
     }
-    setCabinAllocations((prev) => ({ ...prev, [cabinId]: parsed < 0 ? 0 : parsed }));
+    setFn((prev) => {
+      const updated = [...prev];
+      updated[blockIndex] = { ...updated[blockIndex], cabinValues: { ...updated[blockIndex].cabinValues, [cabinId]: parsed } };
+      return updated;
+    });
   };
 
-  // When availability type changes, reset allocations
-  const handleAvailabilityTypeChange = (type) => {
-    setAvailabilityType(type);
-    setCabinAllocations({});
+  // ─── Add form block handlers ───────────────────────────────────────────────
+  const handleAddBlockTypeChange = (blockIndex, type) => {
+    setAddBlocks((prev) => {
+      const updated = [...prev];
+      updated[blockIndex] = { type, cabinValues: {} };
+      return updated;
+    });
   };
 
-  // Handle save allocation
-  const handleSave = (e) => {
+  const handleAddBlockCabinChange = (blockIndex, cabinId, value) => {
+    const cabins = getCabinsForType(addBlocks[blockIndex].type);
+    validateCabinChange(cabinId, value, cabins, setAddBlocks, blockIndex, false);
+  };
+
+  const handleAddBlock = () => {
+    const nextTypes = unusedTypes(addBlocks);
+    if (nextTypes.length === 0) return; // all types already added
+    setAddBlocks((prev) => [...prev, { type: nextTypes[0], cabinValues: {} }]);
+  };
+
+  const handleRemoveAddBlock = (blockIndex) => {
+    setAddBlocks((prev) => prev.filter((_, i) => i !== blockIndex));
+  };
+
+  // ─── Create allocation ────────────────────────────────────────────────────
+  const handleSave = async (e) => {
     e.preventDefault();
-
     if (!selectedAgent) {
       Swal.fire({ icon: "warning", title: "Required", text: "Please select a child agent." });
       return;
     }
+    const allocations = addBlocks
+      .filter((b) => b.type)
+      .map((b) => {
+        const cabins = getCabinsForType(b.type);
+        return {
+          type: b.type,
+          cabins: cabins
+            .filter((c) => (b.cabinValues[c.cabin._id] || 0) > 0)
+            .map((c) => ({ cabin: c.cabin._id, allocatedSeats: b.cabinValues[c.cabin._id] })),
+        };
+      })
+      .filter((a) => a.cabins.length > 0);
 
-    const allocatedCabins = cabins.filter((c) => cabinAllocations[c.id] > 0);
-    if (allocatedCabins.length === 0) {
+    if (allocations.length === 0) {
       Swal.fire({ icon: "warning", title: "Required", text: "Please allocate seats to at least one cabin." });
       return;
     }
 
-    setIsSaving(true);
+    const payload = { tripId: tripData?._id, childAgentId: selectedAgent, allocations };
 
-    // Simulate save
-    setTimeout(() => {
-      const agentName = DEMO_AGENTS.find((a) => a.id === selectedAgent)?.name || selectedAgent;
-      const newRows = allocatedCabins.map((c, i) => ({
-        id: `ea-new-${Date.now()}-${i}`,
-        childAgent: agentName,
-        availabilityType,
-        cabin: c.name,
-        allocatedSeats: cabinAllocations[c.id],
-        createdDate: new Date().toISOString().split("T")[0],
-      }));
-
-      setExistingAllocations((prev) => [...prev, ...newRows]);
-      setSelectedAgent("");
-      setRemarks("");
-      setCabinAllocations({});
-      setIsSaving(false);
-
+    try {
+      setIsSaving(true);
+      await allocationApi.createChildAllocation(payload);
       Swal.fire({
         icon: "success",
         title: "Allocation Saved",
@@ -164,33 +209,163 @@ export default function AllocateToChildPage() {
         timer: 2000,
         showConfirmButton: false,
       });
-    }, 800);
+      setSelectedAgent("");
+      setAddBlocks([{ type: availableTypes[0] || "", cabinValues: {} }]);
+      await fetchChildAllocations();
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Error", text: err.message });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Handle delete existing allocation
-  const handleDeleteAllocation = (allocId) => {
-    Swal.fire({
+  // ─── Edit form block handlers ──────────────────────────────────────────────
+  const handleEditClick = (alloc) => {
+    // Build editBlocks from the existing allocations, pre-filled with saved seat values
+    const blocks = (alloc.allocations || []).map((typeAlloc) => {
+      const type = typeAlloc.type;
+      const cabinValues = {};
+      getCabinsForType(type).forEach((c) => {
+        const existing = (typeAlloc.cabins || []).find((fc) => {
+          const fcId = typeof fc.cabin === "object" ? fc.cabin?._id : fc.cabin;
+          return fcId === c.cabin._id;
+        });
+        cabinValues[c.cabin._id] = existing?.allocatedSeats || 0;
+      });
+      return { type, cabinValues };
+    });
+    // If no blocks yet, seed with first available type
+    setEditBlocks(blocks.length > 0 ? blocks : [{ type: availableTypes[0] || "", cabinValues: {} }]);
+    setEditingAlloc(alloc);
+    setTimeout(() => {
+      document.getElementById("edit-allocation-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const handleEditBlockTypeChange = (blockIndex, type) => {
+    setEditBlocks((prev) => {
+      const updated = [...prev];
+      // Pre-fill with existing values for this type from editingAlloc
+      const existingType = (editingAlloc?.allocations || []).find((a) => a.type === type);
+      const cabinValues = {};
+      getCabinsForType(type).forEach((c) => {
+        const existing = (existingType?.cabins || []).find((fc) => {
+          const fcId = typeof fc.cabin === "object" ? fc.cabin?._id : fc.cabin;
+          return fcId === c.cabin._id;
+        });
+        cabinValues[c.cabin._id] = existing?.allocatedSeats || 0;
+      });
+      updated[blockIndex] = { type, cabinValues };
+      return updated;
+    });
+  };
+
+  const handleEditBlockCabinChange = (blockIndex, cabinId, value) => {
+    const cabins = getCabinsForType(editBlocks[blockIndex].type);
+    validateCabinChange(cabinId, value, cabins, setEditBlocks, blockIndex, true);
+  };
+
+  const handleAddEditBlock = () => {
+    const nextTypes = unusedTypes(editBlocks);
+    if (nextTypes.length === 0) return;
+    setEditBlocks((prev) => [...prev, { type: nextTypes[0], cabinValues: {} }]);
+  };
+
+  const handleRemoveEditBlock = (blockIndex) => {
+    setEditBlocks((prev) => prev.filter((_, i) => i !== blockIndex));
+  };
+
+  const handleEditSave = async (e) => {
+    e.preventDefault();
+    if (!editingAlloc) return;
+    const allocations = editBlocks
+      .filter((b) => b.type)
+      .map((b) => {
+        const cabins = getCabinsForType(b.type);
+        return {
+          type: b.type,
+          cabins: cabins
+            .filter((c) => (b.cabinValues[c.cabin._id] || 0) > 0)
+            .map((c) => ({ cabin: c.cabin._id, allocatedSeats: b.cabinValues[c.cabin._id] })),
+        };
+      })
+      .filter((a) => a.cabins.length > 0);
+
+    if (allocations.length === 0) {
+      Swal.fire({ icon: "warning", title: "Required", text: "Please allocate seats to at least one cabin." });
+      return;
+    }
+    const payload = { allocations };
+    try {
+      setIsSaving(true);
+      await allocationApi.updateAllocation(editingAlloc._id, payload);
+      Swal.fire({ icon: "success", title: "Updated", text: "Allocation updated successfully.", timer: 2000, showConfirmButton: false });
+      setEditingAlloc(null);
+      setEditBlocks([]);
+      await fetchChildAllocations();
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Error", text: err.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingAlloc(null);
+    setEditBlocks([]);
+  };
+
+  // ─── Delete allocation ────────────────────────────────────────────────────
+  const handleDelete = async (allocationObjectId) => {
+    const result = await Swal.fire({
       title: "Delete Allocation?",
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Delete",
-      cancelButtonText: "Cancel",
       confirmButtonColor: "#d33",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setExistingAllocations((prev) => prev.filter((a) => a.id !== allocId));
-        Swal.fire({ icon: "success", title: "Deleted", timer: 1500, showConfirmButton: false });
-      }
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, delete it",
     });
+    if (!result.isConfirmed) return;
+    try {
+      await allocationApi.deleteAllocation(allocationObjectId);
+      setChildAllocations((prev) => prev.filter((a) => a._id !== allocationObjectId));
+      Swal.fire({ icon: "success", title: "Deleted", text: "Allocation deleted successfully.", timer: 2000, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Error", text: err.message });
+    }
   };
+
+  // ─── Render guards ────────────────────────────────────────────────────────
+  if (pageLoading) {
+    return (
+      <div className="main-wrapper">
+        <Header /><Sidebar />
+        <PageWrapper>
+          <div className="d-flex justify-content-center align-items-center py-5">
+            <CirclesWithBar height="60" width="60" color="#1aafa5" outerCircleColor="#1aafa5" innerCircleColor="#1aafa5" barColor="#1aafa5" visible={true} />
+          </div>
+        </PageWrapper>
+      </div>
+    );
+  }
+
+  if (pageError) {
+    return (
+      <div className="main-wrapper">
+        <Header /><Sidebar />
+        <PageWrapper>
+          <div className="alert alert-danger">{pageError}</div>
+        </PageWrapper>
+      </div>
+    );
+  }
 
   return (
     <div className="main-wrapper">
       <Header />
       <Sidebar />
       <PageWrapper>
-        {/* Back Button */}
         <div className="mb-3">
           <Link to="/company/partner-management/allocation" className="btn btn-turquoise">
             <i className="bi bi-arrow-left"></i> Back to My Allocations
@@ -206,53 +381,37 @@ export default function AllocateToChildPage() {
         {/* Trip Information (Read Only) */}
         <div className="card mb-4">
           <div className="card-header">
-            <h6 className="card-title mb-0">
-              <i className="fe fe-info me-2"></i>Trip Information
-            </h6>
+            <h6 className="card-title mb-0"><i className="fe fe-info me-2"></i>Trip Information</h6>
           </div>
           <div className="card-body">
             <div className="row g-3">
               <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Trip Code</label>
-                  <input type="text" className="form-control" value={trip.tripCode} readOnly />
-                </div>
+                <label className="form-label">Trip Code</label>
+                <input type="text" className="form-control" value={tripData?.tripCode || "-"} readOnly />
               </div>
               <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Trip Name</label>
-                  <input type="text" className="form-control" value={trip.tripName} readOnly />
-                </div>
+                <label className="form-label">Trip Name</label>
+                <input type="text" className="form-control" value={tripData?.tripName || "-"} readOnly />
               </div>
               <div className="col-md-4">
-                <div className="form-group">
-                  <label className="form-label">Ship</label>
-                  <input type="text" className="form-control" value={trip.ship} readOnly />
-                </div>
+                <label className="form-label">Ship</label>
+                <input type="text" className="form-control" value={tripData?.ship?.name || "-"} readOnly />
               </div>
               <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Departure Port</label>
-                  <input type="text" className="form-control" value={trip.departurePort} readOnly />
-                </div>
+                <label className="form-label">Departure Port</label>
+                <input type="text" className="form-control" value={tripData?.departurePort?.name || "-"} readOnly />
               </div>
               <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Arrival Port</label>
-                  <input type="text" className="form-control" value={trip.arrivalPort} readOnly />
-                </div>
+                <label className="form-label">Arrival Port</label>
+                <input type="text" className="form-control" value={tripData?.arrivalPort?.name || "-"} readOnly />
               </div>
               <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Departure Date</label>
-                  <input type="text" className="form-control" value={trip.departureDate} readOnly />
-                </div>
+                <label className="form-label">Departure Date</label>
+                <input type="text" className="form-control" value={formatDate(tripData?.departureDateTime)} readOnly />
               </div>
               <div className="col-md-3">
-                <div className="form-group">
-                  <label className="form-label">Arrival Date</label>
-                  <input type="text" className="form-control" value={trip.arrivalDate} readOnly />
-                </div>
+                <label className="form-label">Arrival Date</label>
+                <input type="text" className="form-control" value={formatDate(tripData?.arrivalDateTime)} readOnly />
               </div>
             </div>
           </div>
@@ -261,145 +420,256 @@ export default function AllocateToChildPage() {
         {/* Allocation Form */}
         <div className="card mb-4">
           <div className="card-header">
-            <h6 className="card-title mb-0">
-              <i className="fe fe-share-2 me-2"></i>Allocation Form
-            </h6>
+            <h6 className="card-title mb-0"><i className="fe fe-share-2 me-2"></i>Allocation Form</h6>
           </div>
           <div className="card-body">
             <form onSubmit={handleSave}>
               <div className="row g-3 mb-4">
                 {/* Child Agent */}
                 <div className="col-md-6">
-                  <div className="form-group">
-                    <label className="form-label">
-                      Child Agent <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={selectedAgent}
-                      onChange={(e) => setSelectedAgent(e.target.value)}
-                    >
-                      <option value="">-- Select Child Agent --</option>
-                      {DEMO_AGENTS.map((agent) => (
-                        <option key={agent.id} value={agent.id}>
-                          {agent.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Availability Type */}
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label className="form-label">
-                      Availability Type <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={availabilityType}
-                      onChange={(e) => handleAvailabilityTypeChange(e.target.value)}
-                    >
-                      {AVAILABILITY_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Remarks */}
-                <div className="col-12">
-                  <div className="form-group">
-                    <label className="form-label">Remarks</label>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      placeholder="Optional remarks..."
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                    />
-                  </div>
+                  <label className="form-label">Child Agent <span className="text-danger">*</span></label>
+                  <select
+                    className="form-select"
+                    value={selectedAgent}
+                    onChange={(e) => setSelectedAgent(e.target.value)}
+                    disabled={agentsLoading}
+                  >
+                    <option value="">{agentsLoading ? "Loading..." : "-- Select Child Agent --"}</option>
+                    {childAgents.map((agent) => (
+                      <option key={agent._id} value={agent._id}>{agent.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {/* Cabin Allocation Table */}
-              <h6 className="fw-semibold mb-3">Cabin Allocation</h6>
-              <div className="table-responsive mb-4">
-                <table className="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Cabin</th>
-                      <th>Total Seats</th>
-                      <th>Already Allocated</th>
-                      <th>Remaining Seats</th>
-                      <th>Allocate Seats</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cabins.map((cabin) => {
-                      const remaining = cabin.totalSeats - cabin.alreadyAllocated;
-                      const allocated = cabinAllocations[cabin.id] || 0;
-                      const displayRemaining = remaining - allocated;
-                      return (
-                        <tr key={cabin.id}>
-                          <td>{cabin.name}</td>
-                          <td>{cabin.totalSeats}</td>
-                          <td>{cabin.alreadyAllocated}</td>
-                          <td>
-                            <span className={displayRemaining < 5 ? "text-danger fw-bold" : ""}>
-                              {displayRemaining}
-                            </span>
-                          </td>
-                          <td style={{ width: "160px" }}>
-                            <input
-                              type="number"
-                              className="form-control"
-                              min={0}
-                              max={remaining}
-                              value={allocated === 0 ? "" : allocated}
-                              placeholder="0"
-                              onChange={(e) => handleCabinAllocChange(cabin.id, e.target.value)}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* Allocation type blocks */}
+              {addBlocks.map((block, blockIndex) => {
+                const blockCabins = getCabinsForType(block.type);
+                const usedTypes = addBlocks.map((b) => b.type);
+                return (
+                  <div key={blockIndex} className="border rounded p-3 mb-3" style={{ background: "#f9fafb" }}>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <div className="col-md-5 ps-0">
+                        <label className="form-label mb-1">Availability Type <span className="text-danger">*</span></label>
+                        <select
+                          className="form-select"
+                          value={block.type}
+                          onChange={(e) => handleAddBlockTypeChange(blockIndex, e.target.value)}
+                        >
+                          {availableTypes.map((t) => (
+                            <option key={t} value={t} disabled={usedTypes.includes(t) && t !== block.type}>
+                              {t.charAt(0).toUpperCase() + t.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {addBlocks.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger mt-3"
+                          onClick={() => handleRemoveAddBlock(blockIndex)}
+                          title="Remove this type"
+                        >
+                          <i className="fe fe-trash-2 me-1"></i>Remove
+                        </button>
+                      )}
+                    </div>
 
-              {/* Form Actions */}
+                    <h6 className="fw-semibold mb-3">Cabin Allocation</h6>
+                    <div className="table-responsive">
+                      <table className="table table-bordered mb-0">
+                        <thead>
+                          <tr>
+                            <th>Cabin</th>
+                            <th>Allocated Seats</th>
+                            <th>Allocated to Children</th>
+                            <th>Remaining Seats</th>
+                            <th>Allocate Seats</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {blockCabins.length === 0 ? (
+                            <tr><td colSpan={5} className="text-center text-muted">No cabins available</td></tr>
+                          ) : (
+                            blockCabins.map((cabin) => {
+                              const inputVal = block.cabinValues[cabin.cabin._id] || 0;
+                              const liveRemaining = cabin.remainingSeats - inputVal;
+                              return (
+                                <tr key={cabin.cabin._id}>
+                                  <td>{cabin.cabin.name}</td>
+                                  <td>{cabin.allocatedSeats}</td>
+                                  <td>{cabin.allocatedToChildren}</td>
+                                  <td>
+                                    <span className={liveRemaining < 5 ? "text-danger fw-bold" : ""}>{liveRemaining}</span>
+                                  </td>
+                                  <td style={{ width: "160px" }}>
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      min={0}
+                                      max={cabin.remainingSeats}
+                                      value={inputVal === 0 ? "" : inputVal}
+                                      placeholder="0"
+                                      onChange={(e) => handleAddBlockCabinChange(blockIndex, cabin.cabin._id, e.target.value)}
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add another type button */}
+              {unusedTypes(addBlocks).length > 0 && (
+                <div className="mb-3">
+                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleAddBlock}>
+                    <i className="fe fe-plus me-1"></i>Add Allocation Type
+                  </button>
+                </div>
+              )}
+
               <div className="d-flex justify-content-end gap-2">
-                <Link
-                  to="/company/partner-management/allocation"
-                  className="btn btn-turquoise"
-                  style={{ pointerEvents: isSaving ? "none" : "auto", opacity: isSaving ? 0.65 : 1 }}
-                >
-                  <i className="bi bi-arrow-left"></i> Back to List
-                </Link>
                 <button type="submit" className="btn btn-primary" disabled={isSaving}>
                   {isSaving ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Allocation"
-                  )}
+                    <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...</>
+                  ) : "Save Allocation"}
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-        {/* Existing Allocations Table */}
+        {/* Edit Allocation Form — shown only when editing */}
+        {editingAlloc && (
+          <div className="card mb-4 border border-warning" id="edit-allocation-form">
+            <div className="card-header d-flex justify-content-between align-items-center" style={{ backgroundColor: "#fff8e1" }}>
+              <h6 className="card-title mb-0">
+                <i className="fe fe-edit me-2"></i>Edit Allocation — {editingAlloc.agent?.name || ""}
+              </h6>
+              <button type="button" className="btn-close" onClick={handleEditCancel} aria-label="Close"></button>
+            </div>
+            <div className="card-body">
+              <form onSubmit={handleEditSave}>
+                <div className="row g-3 mb-4">
+                  <div className="col-md-6">
+                    <label className="form-label">Child Agent</label>
+                    <input type="text" className="form-control" value={editingAlloc.agent?.name || "-"} readOnly />
+                  </div>
+                </div>
+
+                {/* Edit allocation type blocks */}
+                {editBlocks.map((block, blockIndex) => {
+                  const blockCabins = getCabinsForType(block.type);
+                  const usedTypes = editBlocks.map((b) => b.type);
+                  return (
+                    <div key={blockIndex} className="border rounded p-3 mb-3" style={{ background: "#f9fafb" }}>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <div className="col-md-5 ps-0">
+                          <label className="form-label mb-1">Availability Type <span className="text-danger">*</span></label>
+                          <select
+                            className="form-select"
+                            value={block.type}
+                            onChange={(e) => handleEditBlockTypeChange(blockIndex, e.target.value)}
+                          >
+                            {availableTypes.map((t) => (
+                              <option key={t} value={t} disabled={usedTypes.includes(t) && t !== block.type}>
+                                {t.charAt(0).toUpperCase() + t.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {editBlocks.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger mt-3"
+                            onClick={() => handleRemoveEditBlock(blockIndex)}
+                            title="Remove this type"
+                          >
+                            <i className="fe fe-trash-2 me-1"></i>Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <h6 className="fw-semibold mb-3">Cabin Allocation</h6>
+                      <div className="table-responsive">
+                        <table className="table table-bordered mb-0">
+                          <thead>
+                            <tr>
+                              <th>Cabin</th>
+                              <th>Allocated Seats</th>
+                              <th>Allocated to Children</th>
+                              <th>Remaining Seats</th>
+                              <th>Allocate Seats</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {blockCabins.length === 0 ? (
+                              <tr><td colSpan={5} className="text-center text-muted">No cabins available</td></tr>
+                            ) : (
+                              blockCabins.map((cabin) => {
+                                const inputVal = block.cabinValues[cabin.cabin._id] || 0;
+                                const liveRemaining = cabin.remainingSeats - inputVal;
+                                return (
+                                  <tr key={cabin.cabin._id}>
+                                    <td>{cabin.cabin.name}</td>
+                                    <td>{cabin.allocatedSeats}</td>
+                                    <td>{cabin.allocatedToChildren}</td>
+                                    <td>
+                                      <span className={liveRemaining < 5 ? "text-danger fw-bold" : ""}>{liveRemaining}</span>
+                                    </td>
+                                    <td style={{ width: "160px" }}>
+                                      <input
+                                        type="number"
+                                        className="form-control"
+                                        min={0}
+                                        max={cabin.remainingSeats}
+                                        value={inputVal === 0 ? "" : inputVal}
+                                        placeholder="0"
+                                        onChange={(e) => handleEditBlockCabinChange(blockIndex, cabin.cabin._id, e.target.value)}
+                                      />
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Add another type to edit */}
+                {unusedTypes(editBlocks).length > 0 && (
+                  <div className="mb-3">
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleAddEditBlock}>
+                      <i className="fe fe-plus me-1"></i>Add Allocation Type
+                    </button>
+                  </div>
+                )}
+
+                <div className="d-flex justify-content-end gap-2">
+                  <button type="button" className="btn btn-secondary" onClick={handleEditCancel}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                    {isSaving ? (
+                      <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...</>
+                    ) : "Update Allocation"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Child Allocations Table */}
         <div className="card">
           <div className="card-header">
-            <h6 className="card-title mb-0">
-              <i className="fe fe-list me-2"></i>Existing Allocations
-            </h6>
+            <h6 className="card-title mb-0"><i className="fe fe-list me-2"></i>Child Allocations</h6>
           </div>
           <div className="card-body">
             <div className="table-responsive">
@@ -407,6 +677,7 @@ export default function AllocateToChildPage() {
                 <thead>
                   <tr>
                     <th>Child Agent</th>
+                    <th>Layer</th>
                     <th>Availability Type</th>
                     <th>Cabin</th>
                     <th>Allocated Seats</th>
@@ -415,71 +686,66 @@ export default function AllocateToChildPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {existingAllocations.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center text-muted">
-                        No allocations yet
-                      </td>
-                    </tr>
+                  {childAllocations.length === 0 ? (
+                    <tr><td colSpan={7} className="text-center text-muted">No child allocations yet</td></tr>
                   ) : (
-                    existingAllocations.map((alloc) => (
-                      <tr key={alloc.id}>
-                        <td>{alloc.childAgent}</td>
-                        <td>
-                          <span className="badge badge-primary-light">{alloc.availabilityType}</span>
-                        </td>
-                        <td>{alloc.cabin}</td>
-                        <td>{alloc.allocatedSeats}</td>
-                        <td>{alloc.createdDate}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-outline-primary me-1"
-                            title="View"
-                            onClick={() =>
-                              Swal.fire({
-                                title: "Allocation Detail",
-                                html: `<div class="text-start">
-                                  <p><strong>Child Agent:</strong> ${alloc.childAgent}</p>
-                                  <p><strong>Type:</strong> ${alloc.availabilityType}</p>
-                                  <p><strong>Cabin:</strong> ${alloc.cabin}</p>
-                                  <p><strong>Allocated Seats:</strong> ${alloc.allocatedSeats}</p>
-                                  <p><strong>Created:</strong> ${alloc.createdDate}</p>
-                                </div>`,
-                                icon: "info",
-                              })
-                            }
-                          >
-                            <i className="fe fe-eye"></i>
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-secondary me-1"
-                            title="Edit"
-                            onClick={() =>
-                              Swal.fire({
-                                icon: "info",
-                                title: "Edit",
-                                text: "Edit functionality will connect to API in the next phase.",
-                              })
-                            }
-                          >
-                            <i className="fe fe-edit"></i>
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            title="Delete"
-                            onClick={() => handleDeleteAllocation(alloc.id)}
-                          >
-                            <i className="fe fe-trash-2"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    childAllocations.flatMap((alloc) => {
+                      const allCabinRows = (alloc.allocations || []).flatMap((typeAlloc, ti) =>
+                        (typeAlloc.cabins || []).map((cabin, ci) => ({ typeAlloc, cabin, ti, ci }))
+                      );
+                      const totalRows = allCabinRows.length || 1;
+                      const isActiveEdit = editingAlloc?._id === alloc._id;
+
+                      return allCabinRows.map(({ typeAlloc, cabin, ti, ci }, rowIndex) => {
+                        const cabinKey = typeof cabin.cabin === "object" ? cabin.cabin?._id : cabin.cabin;
+                        const cabinName = typeof cabin.cabin === "object"
+                          ? (cabin.cabin?.name || cabinNameMap[cabinKey] || "-")
+                          : (cabinNameMap[cabinKey] || cabinKey || "-");
+                        const isFirstRow = rowIndex === 0;
+
+                        return (
+                          <tr key={`${alloc._id}-${ti}-${ci}`} className={isActiveEdit ? "table-warning" : ""}>
+                            {isFirstRow && (
+                              <>
+                                <td rowSpan={totalRows} className="align-middle">{alloc.agent?.name || "-"}</td>
+                                <td rowSpan={totalRows} className="align-middle">{alloc.agent?.layer || "-"}</td>
+                              </>
+                            )}
+                            <td>
+                              <span className="service-badge">
+                                {typeAlloc.type.charAt(0).toUpperCase() + typeAlloc.type.slice(1)}
+                              </span>
+                            </td>
+                            <td>{cabinName}</td>
+                            <td>{cabin.allocatedSeats}</td>
+                            {isFirstRow && (
+                              <>
+                                <td rowSpan={totalRows} className="align-middle">{formatDate(alloc.createdAt)}</td>
+                                <td rowSpan={totalRows} className="align-middle">
+                                  <button
+                                    className={`btn btn-sm me-1 ${isActiveEdit ? "btn-warning" : "btn-outline-primary"}`}
+                                    onClick={() => isActiveEdit ? handleEditCancel() : handleEditClick(alloc)}
+                                    title={isActiveEdit ? "Cancel Edit" : "Edit"}
+                                  >
+                                    <i className={`fe ${isActiveEdit ? "fe-x" : "fe-edit"}`}></i>
+                                  </button>
+                                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(alloc._id)} title="Delete">
+                                    <i className="fe fe-trash-2"></i>
+                                  </button>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      });
+                    })
                   )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
+
       </PageWrapper>
     </div>
   );

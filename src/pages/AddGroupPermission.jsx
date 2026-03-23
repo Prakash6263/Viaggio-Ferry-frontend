@@ -45,6 +45,7 @@ const moduleSubmodules = {
     },
     { name: "Commission Board", code: "commissions", permissions: ["Read", "Write", "Edit", "Delete"] },
     { name: "Promotions", code: "promotions", permissions: ["Read", "Write", "Edit", "Delete"] },
+    { name: "Allocation", code: "allocation", permissions: ["Read", "Write", "Edit", "Delete"] },
   ],
   "sales-bookings": [
     { name: "Price List", code: "price-list", permissions: ["Read", "Write", "Edit", "Delete"] },
