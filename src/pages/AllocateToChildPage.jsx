@@ -712,7 +712,7 @@ export default function AllocateToChildPage() {
                               </>
                             )}
                             <td>
-                              <span className="badge badge-primary-light">
+                              <span className="service-badge">
                                 {typeAlloc.type.charAt(0).toUpperCase() + typeAlloc.type.slice(1)}
                               </span>
                             </td>
