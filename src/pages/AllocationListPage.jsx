@@ -57,7 +57,8 @@ export default function AllocationListPage() {
   }, []);
 
   useEffect(() => {
-    if (loading || !tableRef.current || !window.DataTable) return;
+    // Only initialize DataTables when there is data and table is not loading
+    if (loading || !tableRef.current || !window.DataTable || allocations.length === 0) return;
 
     if (dtRef.current) {
       try { dtRef.current.destroy(); } catch {}
@@ -121,7 +122,15 @@ export default function AllocationListPage() {
                   <div className="alert alert-danger">{error}</div>
                 )}
 
-                {!loading && !error && (
+                {!loading && !error && allocations.length === 0 && (
+                  <div className="text-center py-5">
+                    <i className="fe fe-inbox" style={{ fontSize: "48px", color: "#ccc", marginBottom: "1rem", display: "block" }}></i>
+                    <h5 className="text-muted">No Allocations Found</h5>
+                    <p className="text-muted mb-0">You don't have any allocations yet. Create one to get started.</p>
+                  </div>
+                )}
+
+                {!loading && !error && allocations.length > 0 && (
                   <div className="table-responsive">
                     <table
                       ref={tableRef}
@@ -144,46 +153,40 @@ export default function AllocationListPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {allocations.length > 0 ? (
-                          allocations.map((alloc) => (
-                            <tr key={alloc.allocationId}>
-                              <td>{alloc.trip?.tripCode || "-"}</td>
-                              <td>{alloc.trip?.tripName || "-"}</td>
-                              <td>{alloc.trip?.ship?.name || "-"}</td>
-                              <td>{alloc.trip?.departurePort?.name || "-"}</td>
-                              <td>{alloc.trip?.arrivalPort?.name || "-"}</td>
-                              <td>{formatDate(alloc.trip?.departureDateTime)}</td>
-                              <td>{alloc.allocatedPassengerSeats ?? 0}</td>
-                              <td>{alloc.allocatedCargoSeats ?? 0}</td>
-                              <td>{alloc.allocatedVehicleSeats ?? 0}</td>
-                              <td>
-                                <span className={getTripStatusClass(alloc.trip?.status)}>
-                                  {alloc.trip?.status || "-"}
-                                </span>
-                              </td>
-                              <td>
-                                <Link
-                                  to={`/company/partner-management/allocation/${alloc.trip?._id}/allocate`}
-                                  className="btn btn-sm btn-turquoise me-1"
-                                  title="Allocate to Child"
-                                >
-                                  <i className="fe fe-share-2"></i> Allocate
-                                </Link>
-                                <Link
-                                  to={`/company/partner-management/allocation/${alloc.trip?._id}/view`}
-                                  className="btn btn-sm btn-outline-primary"
-                                  title="View Allocation"
-                                >
-                                  <i className="fe fe-eye"></i> View
-                                </Link>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="11" className="text-center">No allocations found</td>
+                        {allocations.map((alloc) => (
+                          <tr key={alloc.allocationId}>
+                            <td>{alloc.trip?.tripCode || "-"}</td>
+                            <td>{alloc.trip?.tripName || "-"}</td>
+                            <td>{alloc.trip?.ship?.name || "-"}</td>
+                            <td>{alloc.trip?.departurePort?.name || "-"}</td>
+                            <td>{alloc.trip?.arrivalPort?.name || "-"}</td>
+                            <td>{formatDate(alloc.trip?.departureDateTime)}</td>
+                            <td>{alloc.allocatedPassengerSeats ?? 0}</td>
+                            <td>{alloc.allocatedCargoSeats ?? 0}</td>
+                            <td>{alloc.allocatedVehicleSeats ?? 0}</td>
+                            <td>
+                              <span className={getTripStatusClass(alloc.trip?.status)}>
+                                {alloc.trip?.status || "-"}
+                              </span>
+                            </td>
+                            <td>
+                              <Link
+                                to={`/company/partner-management/allocation/${alloc.trip?._id}/allocate`}
+                                className="btn btn-sm btn-turquoise me-1"
+                                title="Allocate to Child"
+                              >
+                                <i className="fe fe-share-2"></i> Allocate
+                              </Link>
+                              <Link
+                                to={`/company/partner-management/allocation/${alloc.trip?._id}/view`}
+                                className="btn btn-sm btn-outline-primary"
+                                title="View Allocation"
+                              >
+                                <i className="fe fe-eye"></i> View
+                              </Link>
+                            </td>
                           </tr>
-                        )}
+                        ))}
                       </tbody>
                     </table>
                   </div>
