@@ -45,24 +45,19 @@ export default function AllocateToChildPage() {
       setPageLoading(true);
       setPageError(null);
       const [allocRes, agentsRes] = await Promise.all([
-        allocationApi.getMyTrips(1, 100),
+        allocationApi.getMyTripById(id),
         partnerApi.getChildPartnersForSelect().catch(() => ({ data: [] })),
       ]);
 
-      const allRecords = allocRes?.data || [];
-      // id from URL is trip._id
-      const record = allRecords.find((r) => r.trip?._id === id);
-
-      if (!record) throw new Error("Allocation not found for this trip.");
-
-      setTripData(record.trip || null);
-      setMyAllocation(record || null);
-      setChildAllocations(record.childAllocations || []);
+      // Detail API returns { success, data: { trip, myAllocation, childAllocations } }
+      const detail = allocRes?.data || {};
+      setTripData(detail.trip || null);
+      setMyAllocation(detail.myAllocation || null);
+      setChildAllocations(detail.childAllocations || []);
       setChildAgents(agentsRes?.data || []);
 
-      // Default availability type to first available
-      if (record.allocations?.length > 0) {
-        setAvailabilityType(record.allocations[0].type);
+      if (detail.myAllocation?.allocations?.length > 0) {
+        setAvailabilityType(detail.myAllocation.allocations[0].type);
       }
     } catch (err) {
       setPageError(err.message);
