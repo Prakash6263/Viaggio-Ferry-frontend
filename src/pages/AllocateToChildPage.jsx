@@ -309,9 +309,15 @@ export default function AllocateToChildPage() {
       Swal.fire({ icon: "success", title: "Updated", text: "Allocation updated successfully.", timer: 2000, showConfirmButton: false });
       setEditingAlloc(null);
       setEditBlocks([]);
+      
       // Dispatch event for all allocation pages to re-fetch
       window.dispatchEvent(new CustomEvent("allocationDataChanged"));
-      await fetchChildAllocations();
+      
+      // Refetch child allocations and related data
+      await Promise.all([
+        fetchChildAllocations(),
+        fetchData()
+      ]);
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     } finally {
