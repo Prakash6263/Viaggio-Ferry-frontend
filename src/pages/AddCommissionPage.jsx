@@ -39,18 +39,27 @@ const getLayerFromToken = () => {
   }
 }
 
+// Helper function to normalize layer value (removes -agent suffix and converts to lowercase)
+const normalizeLayerValue = (layer) => {
+  if (!layer) return ""
+  // Convert to lowercase and remove "-agent" suffix if present
+  const normalized = layer.toLowerCase().replace(/-agent$/, "").replace(/ agent$/i, "")
+  return normalized
+}
+
 // Helper function to map current layer to next applicable layer
 // If provider layer is company → applied layer is marine
-// If provider layer is commercial → applied layer is selling
+// If provider layer is marine/marine-agent → applied layer is commercial
+// If provider layer is commercial/commercial-agent → applied layer is selling
 const getNextApplicableLayer = (currentLayer) => {
   const layerHierarchy = {
-    "company": "marine",
-    "marine": "commercial",
-    "commercial": "selling",
-    "selling": null // No next layer for selling agent
+    "company": "marine",      // company → marine
+    "marine": "commercial",   // marine → commercial
+    "commercial": "selling",  // commercial → selling
+    "selling": null           // No next layer for selling agent
   }
   
-  const normalizedLayer = currentLayer?.toLowerCase() || ""
+  const normalizedLayer = normalizeLayerValue(currentLayer)
   return layerHierarchy[normalizedLayer] || null
 }
 
@@ -62,7 +71,8 @@ const getAppliedLayerDisplayName = (layer) => {
     "selling": "Selling Agent",
     "company": "Company"
   }
-  return displayNames[layer?.toLowerCase()] || layer
+  const normalizedLayer = normalizeLayerValue(layer)
+  return displayNames[normalizedLayer] || layer
 }
 
 /**
