@@ -41,16 +41,29 @@ const getLayerFromToken = () => {
 }
 
 // Helper function to map current layer to next applicable layer
+// If provider layer is company → applied layer is marine
+// If provider layer is commercial → applied layer is selling
 const getNextApplicableLayer = (currentLayer) => {
   const layerHierarchy = {
-    "company": "Marine Agent",
-    "marine": "Commercial Agent",
-    "commercial": "Selling Agent",
+    "company": "marine",
+    "marine": "commercial",
+    "commercial": "selling",
     "selling": null // No next layer for selling agent
   }
   
   const normalizedLayer = currentLayer?.toLowerCase() || ""
   return layerHierarchy[normalizedLayer] || null
+}
+
+// Helper function to get display name for applied layer
+const getAppliedLayerDisplayName = (layer) => {
+  const displayNames = {
+    "marine": "Marine Agent",
+    "commercial": "Commercial Agent",
+    "selling": "Selling Agent",
+    "company": "Company"
+  }
+  return displayNames[layer?.toLowerCase()] || layer
 }
 
 export default function AddRulePage() {
@@ -109,11 +122,11 @@ export default function AddRulePage() {
             setProvider(providerName);
             setProviderLayer("company");
             
-            // Company layer always maps to Marine Agent
-            setAppliedLayer("Marine Agent");
+            // Company layer always maps to marine
+            setAppliedLayer("marine");
             setCurrentUserId(companyData._id || "");
 
-            console.log("[v0] Company profile loaded - Provider:", providerName, "Provider Layer: company", "Applied Layer: Marine Agent", "CompanyID:", companyData._id);
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Provider Layer: company", "Applied Layer: marine", "CompanyID:", companyData._id);
           }
         }
       } catch (error) {
@@ -328,9 +341,9 @@ export default function AddRulePage() {
         return;
       }
 
-      // Validate appliedLayer matches backend APPLIED_LAYERS
-      const validAppliedLayers = ["Company", "Marine Agent", "Commercial Agent", "Selling Agent"];
-      if (!appliedLayer || !validAppliedLayers.includes(appliedLayer)) {
+      // Validate appliedLayer matches backend APPLIED_LAYERS (lowercase values)
+      const validAppliedLayers = ["company", "marine", "commercial", "selling"];
+      if (!appliedLayer || !validAppliedLayers.includes(appliedLayer.toLowerCase())) {
         Swal.fire({
           icon: "warning",
           title: "Validation Error",
@@ -534,7 +547,7 @@ export default function AddRulePage() {
                     <input 
                       type="text" 
                       className="form-control" 
-                      value={appliedLayer} 
+                      value={getAppliedLayerDisplayName(appliedLayer)} 
                       readOnly 
                       disabled
                       style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
