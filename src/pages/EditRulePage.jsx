@@ -41,16 +41,28 @@ const getLayerFromToken = () => {
   }
 }
 
+// Helper function to normalize layer value (removes -agent suffix and converts to lowercase)
+const normalizeLayerValue = (layer) => {
+  if (!layer) return ""
+  // Convert to lowercase and remove "-agent" suffix if present
+  const normalized = layer.toLowerCase().replace(/-agent$/, "").replace(/ agent$/i, "")
+  return normalized
+}
+
 // Helper function to map current layer to next applicable layer
+// Returns exact backend enum values: "Company", "Marine Agent", "Commercial Agent", "Selling Agent"
+// If provider layer is company → applied layer is "Marine Agent"
+// If provider layer is marine/marine-agent → applied layer is "Commercial Agent"
+// If provider layer is commercial/commercial-agent → applied layer is "Selling Agent"
 const getNextApplicableLayer = (currentLayer) => {
   const layerHierarchy = {
-    "company": "Marine Agent",
-    "marine": "Commercial Agent",
-    "commercial": "Selling Agent",
-    "selling": null // No next layer for selling agent
+    "company": "Marine Agent",       // company → Marine Agent
+    "marine": "Commercial Agent",    // marine → Commercial Agent
+    "commercial": "Selling Agent",   // commercial → Selling Agent
+    "selling": null                  // No next layer for selling agent
   }
   
-  const normalizedLayer = currentLayer?.toLowerCase() || ""
+  const normalizedLayer = normalizeLayerValue(currentLayer)
   return layerHierarchy[normalizedLayer] || null
 }
 
@@ -260,7 +272,7 @@ export default function EditRulePage() {
               setProvider(providerName);
             }
 
-            console.log("[v0] Company profile loaded - Provider Layer: company, Applied Layer: Marine Agent");
+            console.log("[v0] Company profile loaded - Provider Layer: company, Applied Layer: marine");
           }
         }
       } catch (error) {
@@ -433,7 +445,7 @@ export default function EditRulePage() {
       return;
     }
 
-    // Validate appliedLayer matches backend APPLIED_LAYERS
+    // Validate appliedLayer matches backend APPLIED_LAYERS enum
     const validAppliedLayers = ["Company", "Marine Agent", "Commercial Agent", "Selling Agent"];
     if (!appliedLayer || !validAppliedLayers.includes(appliedLayer)) {
       Swal.fire({
