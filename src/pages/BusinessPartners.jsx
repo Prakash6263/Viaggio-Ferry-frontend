@@ -236,17 +236,23 @@ export default function BusinessPartnersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editingPartner, setEditingPartner] = useState(null) // Track partner being edited
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
 
   useEffect(() => {
-    fetchPartners()
-  }, [])
+    fetchPartners(page)
+  }, [page])
 
-  const fetchPartners = async () => {
+  const fetchPartners = async (currentPage = 1) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await partnerApi.getPartnersList()
+      const response = await partnerApi.getPartnersList({ page: currentPage, limit })
       setPartners(response.data || [])
+      setTotal(response.total || 0)
+      setTotalPages(response.pages || 1)
     } catch (err) {
       console.error("[v0] Error fetching partners:", err)
       setError(err.message)
@@ -277,7 +283,7 @@ export default function BusinessPartnersPage() {
           showConfirmButton: false,
         })
       }
-      await fetchPartners() // refresh the list
+      await fetchPartners(page) // refresh the list
       setModalOpen(false)
       setEditingPartner(null)
     } catch (err) {
@@ -311,7 +317,7 @@ export default function BusinessPartnersPage() {
         try {
           await partnerApi.disablePartner(partner._id)
           Swal.fire("Disabled!", "Partner has been disabled.", "success")
-          await fetchPartners()
+          await fetchPartners(page)
         } catch (err) {
           Swal.fire("Error", "Failed to disable partner: " + err.message, "error")
         }
@@ -323,7 +329,7 @@ export default function BusinessPartnersPage() {
     try {
       await partnerApi.enablePartner(partner._id)
       Swal.fire("Enabled!", "Partner has been enabled.", "success")
-      await fetchPartners()
+      await fetchPartners(page)
     } catch (err) {
       Swal.fire("Error", "Failed to enable partner: " + err.message, "error")
     }
@@ -410,6 +416,11 @@ export default function BusinessPartnersPage() {
                       onUpdate={handleUpdatePartner}
                       onDisable={handleDisablePartner}
                       onEnable={handleEnablePartner}
+                      page={page}
+                      totalPages={totalPages}
+                      total={total}
+                      limit={limit}
+                      onPageChange={setPage}
                     />
                   ) : (
                     <PartnerKanban partners={partners} />

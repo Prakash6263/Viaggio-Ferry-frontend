@@ -11,7 +11,14 @@ export const partnerApi = {
 
   // 2. Get all partners list
   getPartnersList: async (params = {}) => {
-    return apiRequest("/api/partners")
+    const query = new URLSearchParams()
+    if (params.page)   query.set("page",   params.page)
+    if (params.limit)  query.set("limit",  params.limit)
+    if (params.layer)  query.set("layer",  params.layer)
+    if (params.role)   query.set("role",   params.role)
+    if (params.status) query.set("status", params.status)
+    const qs = query.toString()
+    return apiRequest(`/api/partners${qs ? `?${qs}` : ""}`)
   },
 
   // 3. Get partner by ID
