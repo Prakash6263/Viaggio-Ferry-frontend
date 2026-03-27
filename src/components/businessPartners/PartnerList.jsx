@@ -140,14 +140,23 @@ export default function PartnerList({
     } catch (err) {}
 
     const dt = new window.DataTable(el, {
-      paging: false, // Disable DataTable pagination - using backend pagination
+      paging: true, // Enable to show length menu at top
       searching: true,
       ordering: true,
-      info: false, // Disable DataTable info - using custom info for backend pagination
+      info: true, // Enable to show info at bottom
       lengthChange: true,
       pageLength: limit,
       lengthMenu: [10, 25, 50, 100],
     })
+    
+    // Hide DataTable's built-in pagination (we use custom backend pagination)
+    const wrapper = el.closest('.dataTables_wrapper')
+    if (wrapper) {
+      const dtPaginate = wrapper.querySelector('.dataTables_paginate')
+      const dtInfo = wrapper.querySelector('.dataTables_info')
+      if (dtPaginate) dtPaginate.style.display = 'none'
+      if (dtInfo) dtInfo.style.display = 'none'
+    }
 
     el._dt = dt
     return () => {
