@@ -118,10 +118,16 @@ export default function PartnerList({
   onUpdate,
   onDisable,
   onEnable,
+  page = 1,
+  totalPages = 1,
+  total = 0,
+  limit = 10,
+  onPageChange,
+  onLimitChange,
 }) {
   const tableRef = useRef(null)
 
-  // Initialize DataTable with client-side search and pagination
+  // Initialize DataTable with built-in search only (no DataTable pagination)
   useEffect(() => {
     const el = tableRef.current
     if (!el || !partners.length || !window.DataTable) return
@@ -134,17 +140,12 @@ export default function PartnerList({
     } catch (err) {}
 
     const dt = new window.DataTable(el, {
-      paging: true,
-      pageLength: 10,
-      lengthMenu: [10, 25, 50, 100],
-      searching: true,
+      paging: false, // Disable DataTable pagination - use backend pagination
+      searching: true, // Keep search enabled
       ordering: true,
-      info: true,
+      info: false, // Disable info since we show custom info
       layout: {
-        topStart: "pageLength",
-        topEnd: "search",
-        bottomStart: "info",
-        bottomEnd: "paging",
+        topEnd: "search", // Only show search box
       },
     })
 
@@ -170,9 +171,50 @@ export default function PartnerList({
         },
       ]
 
+  const startRecord = total === 0 ? 0 : (page - 1) * limit + 1
+  const endRecord = Math.min(page * limit, total)
+
   return (
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
+
+      {/* Top Controls - Entries Per Page and Page Selector */}
+      {total > 0 && (
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="d-flex gap-2 align-items-center">
+            <label htmlFor="partner-entries-select" className="form-label mb-0" style={{ fontSize: "0.875rem" }}>
+              <span>{limit}</span> entries per page
+            </label>
+            <select
+              id="partner-entries-select"
+              className="form-select form-select-sm"
+              style={{ maxWidth: "120px" }}
+              value={limit}
+              onChange={(e) => onLimitChange?.(Number(e.target.value))}
+            >
+              <option value="10">10 entries per page</option>
+              <option value="25">25 entries per page</option>
+              <option value="50">50 entries per page</option>
+              <option value="100">100 entries per page</option>
+            </select>
+          </div>
+
+          <div>
+            <select
+              className="form-select form-select-sm"
+              style={{ maxWidth: "100px" }}
+              value={page}
+              onChange={(e) => onPageChange?.(Number(e.target.value))}
+            >
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <option key={p} value={p}>
+                  Page {p}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       <div className="table-responsive">
         <table
@@ -238,6 +280,61 @@ export default function PartnerList({
           </tbody>
         </table>
       </div>
+
+      {/* Bottom Controls - Pagination */}
+      {total > 0 && (
+        <div className="d-flex align-items-center justify-content-between mt-3 px-1">
+          <span className="text-muted" style={{ fontSize: "0.875rem" }}>
+            Showing {startRecord} to {endRecord} of {total} entries
+          </span>
+          <nav>
+            <ul className="pagination pagination-sm mb-0">
+              <li className={`page-item ${page <= 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => onPageChange?.(page - 1)}
+                  disabled={page <= 1}
+                >
+                  Previous
+                </button>
+              </li>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) {
+                    acc.push("ellipsis-" + p)
+                  }
+                  acc.push(p)
+                  return acc
+                }, [])
+                .map((item) =>
+                  typeof item === "string" ? (
+                    <li key={item} className="page-item disabled">
+                      <span className="page-link">…</span>
+                    </li>
+                  ) : (
+                    <li key={item} className={`page-item ${item === page ? "active" : ""}`}>
+                      <button className="page-link" onClick={() => onPageChange?.(item)}>
+                        {item}
+                      </button>
+                    </li>
+                  )
+                )}
+
+              <li className={`page-item ${page >= totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => onPageChange?.(page + 1)}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
     </div>
   )
 }
