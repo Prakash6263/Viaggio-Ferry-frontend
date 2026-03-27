@@ -226,52 +226,68 @@ export default function PartnerList({
           <span className="text-muted" style={{ fontSize: "0.875rem" }}>
             Showing {startRecord} to {endRecord} of {total} entries
           </span>
-          <nav>
-            <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${page <= 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => onPageChange?.(page - 1)}
-                  disabled={page <= 1}
-                >
-                  Previous
-                </button>
-              </li>
+          <div className="d-flex gap-2 align-items-center">
+            <div>
+              <select
+                className="form-select form-select-sm"
+                style={{ maxWidth: "100px" }}
+                value={page}
+                onChange={(e) => onPageChange?.(Number(e.target.value))}
+              >
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <option key={p} value={p}>
+                    Page {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <nav>
+              <ul className="pagination pagination-sm mb-0">
+                <li className={`page-item ${page <= 1 ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => onPageChange?.(page - 1)}
+                    disabled={page <= 1}
+                  >
+                    Previous
+                  </button>
+                </li>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
-                .reduce((acc, p, idx, arr) => {
-                  if (idx > 0 && p - arr[idx - 1] > 1) {
-                    acc.push("ellipsis-" + p)
-                  }
-                  acc.push(p)
-                  return acc
-                }, [])
-                .map((item) =>
-                  typeof item === "string" ? (
-                    <li key={item} className="page-item disabled">
-                      <span className="page-link">…</span>
-                    </li>
-                  ) : (
-                    <li key={item} className={`page-item ${item === page ? "active" : ""}`}>
-                      <button className="page-link" onClick={() => onPageChange?.(item)}>
-                        {item}
-                      </button>
-                    </li>
-                  )
-                )}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) {
+                      acc.push("ellipsis-" + p)
+                    }
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((item) =>
+                    typeof item === "string" ? (
+                      <li key={item} className="page-item disabled">
+                        <span className="page-link">…</span>
+                      </li>
+                    ) : (
+                      <li key={item} className={`page-item ${item === page ? "active" : ""}`}>
+                        <button className="page-link" onClick={() => onPageChange?.(item)}>
+                          {item}
+                        </button>
+                      </li>
+                    )
+                  )}
 
-              <li className={`page-item ${page >= totalPages ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => onPageChange?.(page + 1)}
-                  disabled={page >= totalPages}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
+                <li className={`page-item ${page >= totalPages ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => onPageChange?.(page + 1)}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       )}
     </div>
