@@ -149,6 +149,13 @@ export default function PartnerList({
       lengthMenu: [10, 25, 50, 100],
     })
     
+    // Listen for length change to trigger backend pagination
+    dt.on('length.dt', function(e, settings, len) {
+      if (onLimitChange) {
+        onLimitChange(len)
+      }
+    })
+    
     // Hide DataTable's built-in pagination (we use custom backend pagination)
     const wrapper = el.closest('.dataTables_wrapper')
     if (wrapper) {
@@ -165,7 +172,7 @@ export default function PartnerList({
       } catch (err) {}
       if (el) el._dt = null
     }
-  }, [partners, limit])
+  }, [partners, limit, onLimitChange])
 
   const data = partners.length
     ? partners
