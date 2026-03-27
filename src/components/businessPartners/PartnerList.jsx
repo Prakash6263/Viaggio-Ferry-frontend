@@ -178,25 +178,28 @@ export default function PartnerList({
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
 
-      {/* Top Controls - Entries Per Page */}
+      {/* Top Controls - Entries Per Page - Matching CustomerList DataTable styling */}
       {total > 0 && (
-        <div className="mb-3">
-          <div className="d-flex gap-2 align-items-center">
-            <label htmlFor="partner-entries-select" className="form-label mb-0" style={{ fontSize: "0.875rem" }}>
-              <span>{limit}</span> entries per page
-            </label>
-            <select
-              id="partner-entries-select"
-              className="form-select form-select-sm"
-              style={{ maxWidth: "120px" }}
-              value={limit}
-              onChange={(e) => onLimitChange?.(Number(e.target.value))}
-            >
-              <option value="10">10 entries per page</option>
-              <option value="25">25 entries per page</option>
-              <option value="50">50 entries per page</option>
-              <option value="100">100 entries per page</option>
-            </select>
+        <div className="dataTables_wrapper">
+          <div className="row align-items-center mb-3">
+            <div className="col-sm-12 col-md-6">
+              <div className="dataTables_length d-flex align-items-center">
+                <label className="d-flex align-items-center mb-0">
+                  <span>{limit}</span> entries per page
+                  <select
+                    className="form-select form-select-sm ms-2"
+                    style={{ width: "auto" }}
+                    value={limit}
+                    onChange={(e) => onLimitChange?.(Number(e.target.value))}
+                  >
+                    <option value="10">10 entries per page</option>
+                    <option value="25">25 entries per page</option>
+                    <option value="50">50 entries per page</option>
+                    <option value="100">100 entries per page</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       )}
