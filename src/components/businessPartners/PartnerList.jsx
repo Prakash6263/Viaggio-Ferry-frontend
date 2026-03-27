@@ -123,6 +123,8 @@ export default function PartnerList({
   limit = 10,
   onPageChange,
   onLimitChange,
+  searchTerm = "",
+  onSearchChange,
 }) {
   const data = partners.length
     ? partners
@@ -144,10 +146,10 @@ export default function PartnerList({
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
       
-      {/* Items per page dropdown */}
+      {/* Search and Filter Controls */}
       {total > 0 && (
-        <div className="mb-3">
-          <div className="d-flex align-items-center gap-2">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="d-flex gap-2 align-items-center">
             <label htmlFor="partner-entries-select" className="form-label mb-0" style={{ fontSize: "0.875rem" }}>
               <span>{limit}</span> entries per page
             </label>
@@ -163,6 +165,24 @@ export default function PartnerList({
               <option value="50">50 entries per page</option>
               <option value="100">100 entries per page</option>
             </select>
+          </div>
+
+          {/* Search Input */}
+          <div className="d-flex gap-2">
+            <div className="input-group input-group-sm" style={{ maxWidth: "250px" }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search partners..."
+                value={searchTerm}
+                onChange={(e) => {
+                  onSearchChange?.(e.target.value)
+                }}
+              />
+              <button className="btn btn-outline-secondary" type="button">
+                <i className="bi bi-search"></i>
+              </button>
+            </div>
           </div>
         </div>
       )}

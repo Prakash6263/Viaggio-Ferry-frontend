@@ -240,16 +240,21 @@ export default function BusinessPartnersPage() {
   const [limit, setLimit] = useState(10)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchPartners(page, limit)
-  }, [page, limit])
+    fetchPartners(1, limit, searchTerm)
+  }, [limit, searchTerm])
 
-  const fetchPartners = async (currentPage = 1, currentLimit = limit) => {
+  useEffect(() => {
+    fetchPartners(page, limit, searchTerm)
+  }, [page])
+
+  const fetchPartners = async (currentPage = 1, currentLimit = limit, search = searchTerm) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await partnerApi.getPartnersList({ page: currentPage, limit: currentLimit })
+      const response = await partnerApi.getPartnersList({ page: currentPage, limit: currentLimit, search })
       setPartners(response.data || [])
       setTotal(response.total || 0)
       setTotalPages(response.pages || 1)
@@ -350,6 +355,11 @@ export default function BusinessPartnersPage() {
     setPage(1) // Reset to first page when limit changes
   }
 
+  const handleSearchChange = (value) => {
+    setSearchTerm(value)
+    setPage(1) // Reset to first page when search changes
+  }
+
   return (
     <div className="main-wrapper">
       <Header />
@@ -427,6 +437,8 @@ export default function BusinessPartnersPage() {
                       limit={limit}
                       onPageChange={setPage}
                       onLimitChange={handleLimitChange}
+                      searchTerm={searchTerm}
+                      onSearchChange={handleSearchChange}
                     />
                   ) : (
                     <PartnerKanban partners={partners} />
