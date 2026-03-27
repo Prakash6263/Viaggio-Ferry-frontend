@@ -144,11 +144,20 @@ export default function PartnerList({
       searching: true, // Keep search enabled
       ordering: true,
       info: false, // Disable info since we show custom info
-      lengthChange: false, // Disable DataTable's length menu - using custom one
+      lengthChange: true, // Enable DataTable's length menu
+      pageLength: limit,
+      lengthMenu: [10, 25, 50, 100],
       layout: {
-        topStart: null, // No length menu from DataTable
-        topEnd: "search", // Only show search box
+        topStart: "length", // Show length menu on the left
+        topEnd: "search", // Show search box on the right
       },
+    })
+
+    // Listen for length change event to trigger backend pagination
+    dt.on("length.dt", function (e, settings, len) {
+      if (onLimitChange) {
+        onLimitChange(len)
+      }
     })
 
     el._dt = dt
@@ -158,7 +167,7 @@ export default function PartnerList({
       } catch (err) {}
       if (el) el._dt = null
     }
-  }, [partners])
+  }, [partners, limit, onLimitChange])
 
   const data = partners.length
     ? partners
@@ -180,26 +189,7 @@ export default function PartnerList({
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
 
-      {/* Top Controls - Entries Per Page - Using DataTable wrapper classes for proper styling */}
-      {total > 0 && (
-        <div className="dt-layout-row mb-3">
-          <div className="dt-layout-cell dt-layout-start">
-            <div className="dt-length">
-              <select
-                className="dt-input"
-                value={limit}
-                onChange={(e) => onLimitChange?.(Number(e.target.value))}
-              >
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-              <label> entries per page</label>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       <div className="table-responsive">
         <table
