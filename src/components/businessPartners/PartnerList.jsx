@@ -144,7 +144,9 @@ export default function PartnerList({
       searching: true, // Keep search enabled
       ordering: true,
       info: false, // Disable info since we show custom info
+      lengthChange: false, // Disable DataTable's length menu - using custom one
       layout: {
+        topStart: null, // No length menu from DataTable
         topEnd: "search", // Only show search box
       },
     })
@@ -178,27 +180,22 @@ export default function PartnerList({
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
 
-      {/* Top Controls - Entries Per Page - Matching CustomerList DataTable styling */}
+      {/* Top Controls - Entries Per Page - Using DataTable wrapper classes for proper styling */}
       {total > 0 && (
-        <div className="dataTables_wrapper">
-          <div className="row align-items-center mb-3">
-            <div className="col-sm-12 col-md-6">
-              <div className="dataTables_length d-flex align-items-center">
-                <label className="d-flex align-items-center mb-0">
-                  <span>{limit}</span> entries per page
-                  <select
-                    className="form-select form-select-sm ms-2"
-                    style={{ width: "auto" }}
-                    value={limit}
-                    onChange={(e) => onLimitChange?.(Number(e.target.value))}
-                  >
-                    <option value="10">10 entries per page</option>
-                    <option value="25">25 entries per page</option>
-                    <option value="50">50 entries per page</option>
-                    <option value="100">100 entries per page</option>
-                  </select>
-                </label>
-              </div>
+        <div className="dt-layout-row mb-3">
+          <div className="dt-layout-cell dt-layout-start">
+            <div className="dt-length">
+              <select
+                className="dt-input"
+                value={limit}
+                onChange={(e) => onLimitChange?.(Number(e.target.value))}
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <label> entries per page</label>
             </div>
           </div>
         </div>
