@@ -178,9 +178,9 @@ export default function PartnerList({
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
 
-      {/* Top Controls - Entries Per Page and Page Selector */}
+      {/* Top Controls - Entries Per Page */}
       {total > 0 && (
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="mb-3">
           <div className="d-flex gap-2 align-items-center">
             <label htmlFor="partner-entries-select" className="form-label mb-0" style={{ fontSize: "0.875rem" }}>
               <span>{limit}</span> entries per page
@@ -196,21 +196,6 @@ export default function PartnerList({
               <option value="25">25 entries per page</option>
               <option value="50">50 entries per page</option>
               <option value="100">100 entries per page</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              className="form-select form-select-sm"
-              style={{ maxWidth: "100px" }}
-              value={page}
-              onChange={(e) => onPageChange?.(Number(e.target.value))}
-            >
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <option key={p} value={p}>
-                  Page {p}
-                </option>
-              ))}
             </select>
           </div>
         </div>
