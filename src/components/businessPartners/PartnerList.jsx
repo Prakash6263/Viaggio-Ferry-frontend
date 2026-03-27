@@ -118,12 +118,16 @@ export default function PartnerList({
   onUpdate,
   onDisable,
   onEnable,
+  page = 1,
+  totalPages = 1,
+  total = 0,
   limit = 10,
+  onPageChange,
   onLimitChange,
 }) {
   const tableRef = useRef(null)
 
-  // Initialize DataTable with built-in controls (same as CustomerList)
+  // Initialize DataTable - same config as CustomerList for consistent styling
   useEffect(() => {
     const el = tableRef.current
     if (!el || !partners.length || !window.DataTable) return
@@ -136,20 +140,13 @@ export default function PartnerList({
     } catch (err) {}
 
     const dt = new window.DataTable(el, {
-      paging: true, // Enable paging to show length menu and pagination
-      searching: true, // Enable search
+      paging: false, // Disable DataTable pagination - using backend pagination
+      searching: true,
       ordering: true,
-      info: true, // Enable info text
-      lengthChange: true, // Enable length menu
+      info: false, // Disable DataTable info - using custom info for backend pagination
+      lengthChange: true,
       pageLength: limit,
       lengthMenu: [10, 25, 50, 100],
-    })
-
-    // Listen for length change event
-    dt.on("length.dt", function (e, settings, len) {
-      if (onLimitChange) {
-        onLimitChange(len)
-      }
     })
 
     el._dt = dt
@@ -159,7 +156,7 @@ export default function PartnerList({
       } catch (err) {}
       if (el) el._dt = null
     }
-  }, [partners, limit, onLimitChange])
+  }, [partners, limit])
 
   const data = partners.length
     ? partners
@@ -173,6 +170,9 @@ export default function PartnerList({
           status: "",
         },
       ]
+
+  const startRecord = total === 0 ? 0 : (page - 1) * limit + 1
+  const endRecord = Math.min(page * limit, total)
 
   return (
     <div id="list-view" className="card-table active">
@@ -245,6 +245,64 @@ export default function PartnerList({
         </table>
       </div>
 
+      {/* Bottom Controls - Backend Pagination with DataTable styling */}
+      {total > 0 && (
+        <div className="row mt-3">
+          <div className="col-sm-12 col-md-5">
+            <div className="dataTables_info">
+              Showing {startRecord} to {endRecord} of {total} entries
+            </div>
+          </div>
+          <div className="col-sm-12 col-md-7">
+            <div className="dataTables_paginate paging_simple_numbers">
+              <ul className="pagination">
+                <li className={`paginate_button page-item previous ${page <= 1 ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => onPageChange?.(page - 1)}
+                    disabled={page <= 1}
+                  >
+                    Previous
+                  </button>
+                </li>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) {
+                      acc.push("ellipsis-" + p)
+                    }
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((item) =>
+                    typeof item === "string" ? (
+                      <li key={item} className="paginate_button page-item disabled">
+                        <span className="page-link">...</span>
+                      </li>
+                    ) : (
+                      <li key={item} className={`paginate_button page-item ${item === page ? "active" : ""}`}>
+                        <button className="page-link" onClick={() => onPageChange?.(item)}>
+                          {item}
+                        </button>
+                      </li>
+                    )
+                  )}
+
+                <li className={`paginate_button page-item next ${page >= totalPages ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => onPageChange?.(page + 1)}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
