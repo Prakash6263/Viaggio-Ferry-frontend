@@ -110,6 +110,7 @@
 "use client"
 
 // src/components/businessPartners/PartnerList.jsx
+import { useEffect, useRef } from "react"
 import CanDisable from "../CanDisable"
 
 export default function PartnerList({
@@ -117,12 +118,45 @@ export default function PartnerList({
   onUpdate,
   onDisable,
   onEnable,
-  page = 1,
-  totalPages = 1,
-  total = 0,
-  limit = 10,
-  onPageChange,
 }) {
+  const tableRef = useRef(null)
+
+  // Initialize DataTable with client-side search and pagination
+  useEffect(() => {
+    const el = tableRef.current
+    if (!el || !partners.length || !window.DataTable) return
+
+    try {
+      if (el._dt) {
+        el._dt.destroy()
+        el._dt = null
+      }
+    } catch (err) {}
+
+    const dt = new window.DataTable(el, {
+      paging: true,
+      pageLength: 10,
+      lengthMenu: [10, 25, 50, 100],
+      searching: true,
+      ordering: true,
+      info: true,
+      layout: {
+        topStart: "pageLength",
+        topEnd: "search",
+        bottomStart: "info",
+        bottomEnd: "paging",
+      },
+    })
+
+    el._dt = dt
+    return () => {
+      try {
+        dt.destroy()
+      } catch (err) {}
+      if (el) el._dt = null
+    }
+  }, [partners])
+
   const data = partners.length
     ? partners
     : [
@@ -136,14 +170,16 @@ export default function PartnerList({
         },
       ]
 
-  const startRecord = total === 0 ? 0 : (page - 1) * limit + 1
-  const endRecord = Math.min(page * limit, total)
-
   return (
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
+
       <div className="table-responsive">
-        <table className="partner-table table table-striped">
+        <table
+          ref={tableRef}
+          className="partner-table table table-striped"
+          id="partnerTable"
+        >
           <thead>
             <tr>
               <th>Name</th>
@@ -162,11 +198,19 @@ export default function PartnerList({
                 <td>{p.phone}</td>
                 <td>{p.address}</td>
                 <td>{p.layer}</td>
-                <td>{p.layer === "Marine" ? p.parentCompany?.companyName || "-" : p.parentAccount?.name || "-"}</td>
+                <td>
+                  {p.layer === "Marine"
+                    ? p.parentCompany?.companyName || "-"
+                    : p.parentAccount?.name || "-"}
+                </td>
                 <td>{p.partnerStatus || p.status}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <CanDisable action="update">
-                    <button className="btn btn-sm btn-primary me-2" onClick={() => onUpdate?.(p)} title="Edit partner">
+                    <button
+                      className="btn btn-sm btn-primary me-2"
+                      onClick={() => onUpdate?.(p)}
+                      title="Edit partner"
+                    >
                       <i className="fa fa-edit"></i>
                     </button>
                   </CanDisable>
@@ -194,61 +238,6 @@ export default function PartnerList({
           </tbody>
         </table>
       </div>
-
-      {/* Server-side Pagination */}
-      {total > 0 && (
-        <div className="d-flex align-items-center justify-content-between mt-3 px-1">
-          <span className="text-muted" style={{ fontSize: "0.875rem" }}>
-            Showing {startRecord} to {endRecord} of {total} entries
-          </span>
-          <nav>
-            <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${page <= 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => onPageChange?.(page - 1)}
-                  disabled={page <= 1}
-                >
-                  Previous
-                </button>
-              </li>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
-                .reduce((acc, p, idx, arr) => {
-                  if (idx > 0 && p - arr[idx - 1] > 1) {
-                    acc.push("ellipsis-" + p)
-                  }
-                  acc.push(p)
-                  return acc
-                }, [])
-                .map((item) =>
-                  typeof item === "string" ? (
-                    <li key={item} className="page-item disabled">
-                      <span className="page-link">…</span>
-                    </li>
-                  ) : (
-                    <li key={item} className={`page-item ${item === page ? "active" : ""}`}>
-                      <button className="page-link" onClick={() => onPageChange?.(item)}>
-                        {item}
-                      </button>
-                    </li>
-                  )
-                )}
-
-              <li className={`page-item ${page >= totalPages ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => onPageChange?.(page + 1)}
-                  disabled={page >= totalPages}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      )}
     </div>
   )
 }

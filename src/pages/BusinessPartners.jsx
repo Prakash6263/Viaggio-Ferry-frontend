@@ -237,19 +237,24 @@ export default function BusinessPartnersPage() {
   const [error, setError] = useState(null)
   const [editingPartner, setEditingPartner] = useState(null) // Track partner being edited
   const [page, setPage] = useState(1)
-  const [limit] = useState(10)
+  const [limit, setLimit] = useState(10)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchPartners(page)
+    fetchPartners(1, limit, searchTerm)
+  }, [limit, searchTerm])
+
+  useEffect(() => {
+    fetchPartners(page, limit, searchTerm)
   }, [page])
 
-  const fetchPartners = async (currentPage = 1) => {
+  const fetchPartners = async (currentPage = 1, currentLimit = limit, search = searchTerm) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await partnerApi.getPartnersList({ page: currentPage, limit })
+      const response = await partnerApi.getPartnersList({ page: currentPage, limit: currentLimit, search })
       setPartners(response.data || [])
       setTotal(response.total || 0)
       setTotalPages(response.pages || 1)
@@ -345,6 +350,16 @@ export default function BusinessPartnersPage() {
     setModalOpen(true)
   }
 
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit)
+    setPage(1) // Reset to first page when limit changes
+  }
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value)
+    setPage(1) // Reset to first page when search changes
+  }
+
   return (
     <div className="main-wrapper">
       <Header />
@@ -421,6 +436,9 @@ export default function BusinessPartnersPage() {
                       total={total}
                       limit={limit}
                       onPageChange={setPage}
+                      onLimitChange={handleLimitChange}
+                      searchTerm={searchTerm}
+                      onSearchChange={handleSearchChange}
                     />
                   ) : (
                     <PartnerKanban partners={partners} />
