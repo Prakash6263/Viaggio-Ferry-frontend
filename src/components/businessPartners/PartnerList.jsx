@@ -122,6 +122,7 @@ export default function PartnerList({
   total = 0,
   limit = 10,
   onPageChange,
+  onLimitChange,
 }) {
   const data = partners.length
     ? partners
@@ -142,6 +143,30 @@ export default function PartnerList({
   return (
     <div id="list-view" className="card-table active">
       <h4 className="mb-3">List View</h4>
+      
+      {/* Items per page dropdown */}
+      {total > 0 && (
+        <div className="mb-3">
+          <div className="d-flex align-items-center gap-2">
+            <label htmlFor="partner-entries-select" className="form-label mb-0" style={{ fontSize: "0.875rem" }}>
+              <span>{limit}</span> entries per page
+            </label>
+            <select
+              id="partner-entries-select"
+              className="form-select form-select-sm"
+              style={{ maxWidth: "120px" }}
+              value={limit}
+              onChange={(e) => onLimitChange?.(Number(e.target.value))}
+            >
+              <option value="10">10 entries per page</option>
+              <option value="25">25 entries per page</option>
+              <option value="50">50 entries per page</option>
+              <option value="100">100 entries per page</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       <div className="table-responsive">
         <table className="partner-table table table-striped">
           <thead>
