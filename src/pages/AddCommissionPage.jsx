@@ -127,7 +127,7 @@ export default function AddCommissionPage() {
       const token = localStorage.getItem("authToken");
       if (token) {
         const decoded = JSON.parse(atob(token.split(".")[1]));
-        setCurrentUserId(decoded.id || decoded.userId || decoded._id);
+        setCurrentUserId(decoded.agent);
       }
     } catch (error) {
       console.error("[v0] Failed to extract user ID from token:", error);

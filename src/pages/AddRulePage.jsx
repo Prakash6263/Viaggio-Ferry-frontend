@@ -40,6 +40,19 @@ const getLayerFromToken = () => {
   }
 }
 
+const getAgentIdFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    const decoded = JSON.parse(atob(token.split(".")[1]));
+    return decoded.agent || null;
+  } catch (error) {
+    console.error("Error decoding token for agent:", error);
+    return null;
+  }
+};
+
 // Helper function to normalize layer value (removes -agent suffix and converts to lowercase)
 const normalizeLayerValue = (layer) => {
   if (!layer) return ""
@@ -405,18 +418,20 @@ export default function AddRulePage() {
           };
         });
 
-      // Use the currently logged-in user's ID as provider
-      if (!currentUserId) {
-        Swal.fire({
-          icon: "warning",
-          title: "Error",
-          text: "User not loaded. Please refresh and try again.",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+// Get providerId from token agent
+const agentId = getAgentIdFromToken();
 
-      const providerId = currentUserId;
+if (!agentId) {
+  Swal.fire({
+    icon: "warning",
+    title: "Error",
+    text: "Agent ID not found in token. Please login again.",
+    confirmButtonColor: "#17a2b8"
+  });
+  return;
+}
+
+const providerId = agentId;
       
       // Determine providerType based on login role
       let providerType = "Company";
