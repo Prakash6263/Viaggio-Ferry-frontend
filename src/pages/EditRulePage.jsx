@@ -106,7 +106,7 @@ export default function EditRulePage() {
 
   // dynamic lists
   const [passengerCabins, setPassengerCabins] = useState([]);
-  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
+  const [passengerTypes, setPassengerTypes] = useState([]);
   const [cargoTypes, setCargoTypes] = useState([]);
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [routes, setRoutes] = useState([{ from: "", to: "" }]);
@@ -148,7 +148,17 @@ export default function EditRulePage() {
 
           // Populate form with existing data
           setRuleName(rule.ruleName || "");
-          setProvider(rule.providerCompany?.companyName || rule.provider?.name || rule.providerName || "");
+
+          // Use providerPartner name if available, otherwise fall back to providerCompany
+          const providerName =
+            rule.providerPartner?.name ||
+            rule.providerCompany?.companyName ||
+            rule.provider?.name ||
+            rule.providerName ||
+            "";
+          setProvider(providerName);
+
+          // Use appliedLayer directly from API response (do not re-derive)
           setAppliedLayer(rule.appliedLayer || "");
           setRuleType(rule.ruleType || "Markup");
           setValue(rule.ruleValue || "");
@@ -233,7 +243,7 @@ export default function EditRulePage() {
     }
   }, [ruleId, loginRole]);
 
-  // Initialize provider and layer from API based on login role
+  // Initialize providerLayer label only (appliedLayer already set from API data)
   useEffect(() => {
     const initializeUserData = async () => {
       try {
@@ -242,48 +252,21 @@ export default function EditRulePage() {
 
           if (response.success && response.data) {
             const userData = response.data;
-            const providerName = userData.fullName || userData.name || userData.username || userData.email || "Unknown";
             const userLayer = userData.layer || userData.role || "Company";
-
             setProviderLayer(userLayer);
-            
-            // Set applied layer to next applicable layer based on provider layer
-            const nextLayer = getNextApplicableLayer(userLayer);
-            setAppliedLayer(nextLayer || userLayer);
-
-            if (!provider) {
-              setProvider(providerName);
-            }
-
-            console.log("[v0] User profile loaded - Layer:", userLayer, "Applied Layer:", nextLayer);
           }
         } else if (loginRole === "company") {
-          const response = await companyApi.getCompanyProfile();
-
-          if (response.data) {
-            const companyData = response.data;
-            const providerName = companyData.companyName || "Unknown";
-
-            setProviderLayer("company");
-            // Company layer always maps to Marine Agent
-            setAppliedLayer("Marine Agent");
-
-            if (!provider) {
-              setProvider(providerName);
-            }
-
-            console.log("[v0] Company profile loaded - Provider Layer: company, Applied Layer: marine");
-          }
+          setProviderLayer("company");
         }
       } catch (error) {
         console.error("[v0] Failed to load profile data:", error.message);
       }
     };
 
-    if (loginRole && !provider) {
+    if (loginRole) {
       initializeUserData();
     }
-  }, [loginRole, provider]);
+  }, [loginRole]);
 
   // Fetch child partners from API
   useEffect(() => {
@@ -675,8 +658,13 @@ export default function EditRulePage() {
                       value={provider}
                       readOnly
                       placeholder="No provider"
-                      title="Provider is automatically set to your company/profile name"
+                      title={ruleData?.providerType === "Partner" ? "Provider Partner" : "Provider Company"}
                     />
+                    {ruleData?.providerType && (
+                      <small className="text-muted d-block mt-1">
+                        Provider Type: {ruleData.providerType}
+                      </small>
+                    )}
                   </div>
                 </div>
 
@@ -692,7 +680,7 @@ export default function EditRulePage() {
                       style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
                     />
                     <small className="text-muted d-block mt-1">
-                      Automatically determined based on provider layer: {providerLayer}
+                      Applied layer as saved in this rule
                     </small>
                   </div>
                   <div className="col-md-6">
