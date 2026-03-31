@@ -195,8 +195,10 @@ export default function AddCommissionPage() {
         const response = await partnerApi.getChildPartners(1, 100, "Active");
 
         if (response.success && response.data) {
-          setChildPartners(response.data);
-          console.log("[v0] Child partners loaded:", response.data.length, "partners");
+          const list = Array.isArray(response.data)
+            ? response.data
+            : response.data.partners || response.data.data || [];
+          setChildPartners(list);
         }
       } catch (error) {
         console.error("[v0] Failed to load child partners:", error.message);

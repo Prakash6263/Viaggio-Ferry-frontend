@@ -301,8 +301,11 @@ export default function EditRulePage() {
         const response = await partnerApi.getChildPartners(1, 100, "Active");
 
         if (response.success && response.data) {
-          setChildPartners(response.data);
-          console.log("[v0] Child partners loaded");
+          // getChildPartners returns paginated response: { partners: [...], total, page }
+          const list = Array.isArray(response.data)
+            ? response.data
+            : response.data.partners || response.data.data || [];
+          setChildPartners(list);
         }
       } catch (error) {
         console.error("[v0] Failed to load child partners:", error.message);
