@@ -706,14 +706,16 @@ const getNextApplicableLayer = (currentLayer) => {
                         <option value="All Child Layer">All Child Layer</option>
                         {childPartners && childPartners.map((partner) => (
                           <option key={partner._id} value={partner._id}>
-                            {partner.name}
+                            {partner.name} {ruleData?.partner?._id === partner._id ? '(Current)' : ''}
                           </option>
                         ))}
                       </select>
                       {ruleData?.partner && (
-                        <small className="text-muted d-block mt-1">
-                          Current Partner: <strong>{ruleData.partner.name}</strong> (ID: {ruleData.partner._id})
-                        </small>
+                        <div className="alert alert-info mt-2 mb-0 py-2 px-3">
+                          <small>
+                            <strong>Current Partner from API:</strong> {ruleData.partner.name} (ID: {ruleData.partner._id})
+                          </small>
+                        </div>
                       )}
                     </div>
                   </div>
