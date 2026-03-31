@@ -457,15 +457,37 @@ const getNextApplicableLayer = (currentLayer) => {
       return;
     }
 
+    // Build service details according to API spec
+    // For passenger: create entries for each combination of cabin and selected passenger type
+    const passengerEntries = [];
+    if (passenger) {
+      const validCabins = passengerCabins.filter(cabinId => cabinId);
+      // passengerTypes in edit mode stores IDs directly (from API response)
+      const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
+      
+      // For each cabin and passenger type combination, create an entry
+      validCabins.forEach(cabinId => {
+        validPassengerTypeIds.forEach(payloadTypeId => {
+          passengerEntries.push({
+            payloadTypeId: payloadTypeId,
+            cabinId: cabinId
+          });
+        });
+      });
+      
+      // If no cabins selected but passenger types selected, still include payload types
+      if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
+        validPassengerTypeIds.forEach(payloadTypeId => {
+          passengerEntries.push({
+            payloadTypeId: payloadTypeId,
+            cabinId: null
+          });
+        });
+      }
+    }
+
     const serviceDetails = {
-      passenger: passenger ? passengerCabins
-        .filter(cabinId => cabinId)
-        .map((cabinId, index) => ({
-          payloadTypeId: passengerTypes[index] || "",
-          cabinId: cabinId
-        }))
-        .filter(item => item.payloadTypeId)
-      : [],
+      passenger: passengerEntries,
       cargo: cargo ? cargoTypes
         .filter(cabinId => cabinId)
         .map((cabinId) => ({
@@ -793,7 +815,7 @@ const getNextApplicableLayer = (currentLayer) => {
                               onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}
                             >
                               <option value="">Select Cabin</option>
-                              {cabins.map(c => (
+                              {cabins.filter(c => c.type === 'passenger').map(c => (
                                 <option key={c._id} value={c._id}>{c.name}</option>
                               ))}
                             </select>
@@ -809,6 +831,34 @@ const getNextApplicableLayer = (currentLayer) => {
                         onClick={() => addItem(setPassengerCabins, passengerCabins, "")}
                       >
                         + Add Cabin
+                      </button>
+
+                      <label className="form-label mt-3">Passenger Types</label>
+                      <div>
+                        {passengerTypes.map((typeId, idx) => (
+                          <div className="input-group mb-2" key={idx}>
+                            <select
+                              className="form-select"
+                              value={typeId}
+                              onChange={e => updateItem(setPassengerTypes, passengerTypes, idx, e.target.value)}
+                            >
+                              <option value="">Select Passenger Type</option>
+                              {passengerPayloadTypes.map(pt => (
+                                <option key={pt._id} value={pt._id}>{pt.name} ({pt.code})</option>
+                              ))}
+                            </select>
+                            <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setPassengerTypes, passengerTypes, idx)}>
+                              <i className="bi bi-x"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => addItem(setPassengerTypes, passengerTypes, "")}
+                      >
+                        + Add Passenger Type
                       </button>
                     </div>
                   )}

@@ -376,22 +376,42 @@ export default function AddRulePage() {
       }
 
       // Build service details according to API spec
-      const serviceDetails = {
-        passenger: passenger ? passengerCabins
-          .filter(cabinId => cabinId) // Filter out empty cabin IDs
-          .map((cabinId) => {
-            const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
-            // Only include if payloadTypeId exists, otherwise skip this entry
+      // For passenger: create entries for each combination of cabin and selected passenger type
+      const passengerEntries = [];
+      if (passenger) {
+        const validCabins = passengerCabins.filter(cabinId => cabinId);
+        const validPassengerTypes = passengerTypes.filter(typeName => typeName);
+        
+        // For each cabin and passenger type combination, create an entry
+        validCabins.forEach(cabinId => {
+          validPassengerTypes.forEach(typeName => {
+            // Find the payload type by name to get its ID
+            const payloadType = passengerPayloadTypes.find(pt => pt.name === typeName);
             if (payloadType?._id) {
-              return {
+              passengerEntries.push({
                 payloadTypeId: payloadType._id,
                 cabinId: cabinId
-              };
+              });
             }
-            return null;
-          })
-          .filter(item => item !== null) // Remove null entries
-        : [],
+          });
+        });
+        
+        // If no cabins selected but passenger types selected, still include payload types
+        if (validCabins.length === 0 && validPassengerTypes.length > 0) {
+          validPassengerTypes.forEach(typeName => {
+            const payloadType = passengerPayloadTypes.find(pt => pt.name === typeName);
+            if (payloadType?._id) {
+              passengerEntries.push({
+                payloadTypeId: payloadType._id,
+                cabinId: null
+              });
+            }
+          });
+        }
+      }
+
+      const serviceDetails = {
+        passenger: passengerEntries,
         cargo: cargo ? cargoTypes
           .filter(cabinId => cabinId) // Filter out empty cabin IDs
           .map((cabinId) => ({
