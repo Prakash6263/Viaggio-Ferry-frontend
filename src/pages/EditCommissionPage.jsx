@@ -710,6 +710,11 @@ const getNextApplicableLayer = (currentLayer) => {
                           </option>
                         ))}
                       </select>
+                      {ruleData?.partner && (
+                        <small className="text-muted d-block mt-1">
+                          Current Partner: <strong>{ruleData.partner.name}</strong> (ID: {ruleData.partner._id})
+                        </small>
+                      )}
                     </div>
                   </div>
 
