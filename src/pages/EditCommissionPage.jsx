@@ -85,6 +85,9 @@ const getNextApplicableLayer = (currentLayer) => {
   const [effectiveDate, setEffectiveDate] = useState("");
   const [childPartners, setChildPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
+  // pendingPartnerScope / pendingPartnerId hold the raw API values until childPartners loads
+  const [pendingPartnerScope, setPendingPartnerScope] = useState(null);
+  const [pendingPartnerId, setPendingPartnerId] = useState(null);
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [cabins, setCabins] = useState([]);
@@ -202,16 +205,9 @@ const getNextApplicableLayer = (currentLayer) => {
             })));
           }
 
-          // Set partner selection based on partnerScope from API
-          if (rule.partnerScope === "SpecificPartner" && rule.partner?._id) {
-            // Store the partner _id so the dropdown can match by value
-            setPartnerSelection(rule.partner._id);
-          } else if (rule.partnerScope === "AllChildLayer") {
-            setPartnerSelection("All Child Layer");
-          } else {
-            // Default: AllChildPartners
-            setPartnerSelection("All Child Partners");
-          }
+          // Store partner scope and ID — will be resolved once childPartners loads
+          setPendingPartnerScope(rule.partnerScope || "AllChildPartners");
+          setPendingPartnerId(rule.partner?._id || null);
 
           console.log("[v0] Rule data loaded successfully");
         } else {
@@ -268,6 +264,29 @@ const getNextApplicableLayer = (currentLayer) => {
       initializeUserData();
     }
   }, [loginRole]);
+
+  // Resolve partner selection once both rule data and childPartners are loaded
+  useEffect(() => {
+    if (pendingPartnerScope === null) return; // rule not loaded yet
+
+    if (pendingPartnerScope === "SpecificPartner" && pendingPartnerId) {
+      // Wait until childPartners has loaded before trying to match
+      if (!loadingPartners) {
+        // Confirm the partner exists in the list, then set its _id
+        const match = childPartners.find(p => p._id === pendingPartnerId);
+        if (match) {
+          setPartnerSelection(match._id);
+        } else {
+          // Partner not in list (maybe inactive) — still set the ID so the value is preserved
+          setPartnerSelection(pendingPartnerId);
+        }
+      }
+    } else if (pendingPartnerScope === "AllChildLayer") {
+      setPartnerSelection("All Child Layer");
+    } else {
+      setPartnerSelection("All Child Partners");
+    }
+  }, [pendingPartnerScope, pendingPartnerId, childPartners, loadingPartners]);
 
   // Fetch child partners
   useEffect(() => {
