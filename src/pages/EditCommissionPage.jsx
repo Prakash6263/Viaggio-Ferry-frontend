@@ -85,6 +85,9 @@ const getNextApplicableLayer = (currentLayer) => {
   const [effectiveDate, setEffectiveDate] = useState("");
   const [childPartners, setChildPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
+  // pendingPartnerScope / pendingPartnerId hold the raw API values until childPartners loads
+  const [pendingPartnerScope, setPendingPartnerScope] = useState(null);
+  const [pendingPartnerId, setPendingPartnerId] = useState(null);
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [cabins, setCabins] = useState([]);
@@ -99,7 +102,7 @@ const getNextApplicableLayer = (currentLayer) => {
   const [vehicle, setVehicle] = useState(false);
 
   const [passengerCabins, setPassengerCabins] = useState([]);
-  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
+  const [passengerTypes, setPassengerTypes] = useState([]);
   const [cargoTypes, setCargoTypes] = useState([]);
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [routes, setRoutes] = useState([{ from: "", to: "" }]);
@@ -144,7 +147,17 @@ const getNextApplicableLayer = (currentLayer) => {
 
           // Populate form with existing data
           setRuleName(rule.ruleName || "");
-          setProvider(rule.providerCompany?.companyName || rule.provider?.name || rule.providerName || "");
+
+          // Use providerPartner name if available, otherwise fall back to providerCompany
+          const providerName =
+            rule.providerPartner?.name ||
+            rule.providerCompany?.companyName ||
+            rule.provider?.name ||
+            rule.providerName ||
+            "";
+          setProvider(providerName);
+
+          // Use appliedLayer directly from API response (do not re-derive)
           setAppliedLayer(rule.appliedLayer || "");
           setValue(rule.commissionValue || rule.ruleValue || "");
           setValueType(rule.valueType === "percentage" ? "%" : rule.valueType === "fixed" ? "fixed" : "%");
@@ -192,10 +205,9 @@ const getNextApplicableLayer = (currentLayer) => {
             })));
           }
 
-          // Set partner selection
-          if (rule.partner) {
-            setPartnerSelection(rule.partner.name || "All Child Partners");
-          }
+          // Store partner scope and ID — will be resolved once childPartners loads
+          setPendingPartnerScope(rule.partnerScope || "AllChildPartners");
+          setPendingPartnerId(rule.partner?._id || null);
 
           console.log("[v0] Rule data loaded successfully");
         } else {
@@ -228,7 +240,7 @@ const getNextApplicableLayer = (currentLayer) => {
     }
   }, [ruleId, loginRole]);
 
-  // Initialize provider and layer
+  // Initialize providerLayer label only (appliedLayer already set from API data)
   useEffect(() => {
     const initializeUserData = async () => {
       try {
@@ -237,48 +249,44 @@ const getNextApplicableLayer = (currentLayer) => {
 
           if (response.success && response.data) {
             const userData = response.data;
-            const providerName = userData.fullName || userData.name || userData.username || userData.email || "Unknown";
             const userLayer = userData.layer || userData.role || "Company";
-
             setProviderLayer(userLayer);
-            
-            // Set applied layer to next applicable layer based on provider layer
-            const nextLayer = getNextApplicableLayer(userLayer);
-            setAppliedLayer(nextLayer || userLayer);
-
-            if (!provider) {
-              setProvider(providerName);
-            }
-
-            console.log("[v0] User profile loaded - Layer:", userLayer, "Applied Layer:", nextLayer);
           }
         } else if (loginRole === "company") {
-          const response = await companyApi.getCompanyProfile();
-
-          if (response.data) {
-            const companyData = response.data;
-            const providerName = companyData.companyName || "Unknown";
-
-            setProviderLayer("company");
-            // Company layer always maps to Marine Agent
-            setAppliedLayer("Marine Agent");
-
-            if (!provider) {
-              setProvider(providerName);
-            }
-
-            console.log("[v0] Company profile loaded - Applied Layer: marine");
-          }
+          setProviderLayer("company");
         }
       } catch (error) {
         console.error("[v0] Failed to load profile data:", error.message);
       }
     };
 
-    if (loginRole && !provider) {
+    if (loginRole) {
       initializeUserData();
     }
-  }, [loginRole, provider]);
+  }, [loginRole]);
+
+  // Resolve partner selection once both rule data and childPartners are loaded
+  useEffect(() => {
+    if (pendingPartnerScope === null) return; // rule not loaded yet
+
+    if (pendingPartnerScope === "SpecificPartner" && pendingPartnerId) {
+      // Wait until childPartners has loaded before trying to match
+      if (!loadingPartners) {
+        // Confirm the partner exists in the list, then set its _id
+        const match = childPartners.find(p => p._id === pendingPartnerId);
+        if (match) {
+          setPartnerSelection(match._id);
+        } else {
+          // Partner not in list (maybe inactive) — still set the ID so the value is preserved
+          setPartnerSelection(pendingPartnerId);
+        }
+      }
+    } else if (pendingPartnerScope === "AllChildLayer") {
+      setPartnerSelection("All Child Layer");
+    } else {
+      setPartnerSelection("All Child Partners");
+    }
+  }, [pendingPartnerScope, pendingPartnerId, childPartners, loadingPartners]);
 
   // Fetch child partners
   useEffect(() => {
@@ -457,15 +465,37 @@ const getNextApplicableLayer = (currentLayer) => {
       return;
     }
 
+    // Build service details according to API spec
+    // For passenger: create entries for each combination of cabin and selected passenger type
+    const passengerEntries = [];
+    if (passenger) {
+      const validCabins = passengerCabins.filter(cabinId => cabinId);
+      // passengerTypes in edit mode stores IDs directly (from API response)
+      const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
+      
+      // For each cabin and passenger type combination, create an entry
+      validCabins.forEach(cabinId => {
+        validPassengerTypeIds.forEach(payloadTypeId => {
+          passengerEntries.push({
+            payloadTypeId: payloadTypeId,
+            cabinId: cabinId
+          });
+        });
+      });
+      
+      // If no cabins selected but passenger types selected, still include payload types
+      if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
+        validPassengerTypeIds.forEach(payloadTypeId => {
+          passengerEntries.push({
+            payloadTypeId: payloadTypeId,
+            cabinId: null
+          });
+        });
+      }
+    }
+
     const serviceDetails = {
-      passenger: passenger ? passengerCabins
-        .filter(cabinId => cabinId)
-        .map((cabinId, index) => ({
-          payloadTypeId: passengerTypes[index] || "",
-          cabinId: cabinId
-        }))
-        .filter(item => item.payloadTypeId)
-      : [],
+      passenger: passengerEntries,
       cargo: cargo ? cargoTypes
         .filter(cabinId => cabinId)
         .map((cabinId) => ({
@@ -504,12 +534,21 @@ const getNextApplicableLayer = (currentLayer) => {
       return;
     }
 
+    // Build partnerScope and partner for payload
+    let partnerScopeValue = "AllChildPartners";
+    if (partnerSelection === "All Child Layer") {
+      partnerScopeValue = "AllChildLayer";
+    } else if (partnerSelection !== "All Child Partners") {
+      // partnerSelection holds the partner _id
+      partnerScopeValue = "SpecificPartner";
+    }
+
     const payload = {
       ruleName,
       provider: currentUserId,
       providerType,
       appliedLayer,
-      partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+      partnerScope: partnerScopeValue,
       commissionType: convertedValueType,
       commissionValue: parseInt(value),
       valueType: convertedValueType,
@@ -525,11 +564,9 @@ const getNextApplicableLayer = (currentLayer) => {
       payload.visaType = visaType;
     }
 
-    if (partnerSelection !== "All Child Partners") {
-      const selectedPartner = childPartners.find(p => p.name === partnerSelection);
-      if (selectedPartner) {
-        payload.partner = selectedPartner._id;
-      }
+    if (partnerScopeValue === "SpecificPartner") {
+      // partnerSelection already holds the _id directly
+      payload.partner = partnerSelection;
     }
 
     console.log("[v0] Updating commission rule:", payload);
@@ -631,8 +668,13 @@ const getNextApplicableLayer = (currentLayer) => {
                         value={provider}
                         readOnly
                         placeholder="No provider"
-                        title="Provider is automatically set to your company/profile name"
+                        title={ruleData?.providerType === "Partner" ? "Provider Partner" : "Provider Company"}
                       />
+                      {ruleData?.providerType && (
+                        <small className="text-muted d-block mt-1">
+                          Provider Type: {ruleData.providerType}
+                        </small>
+                      )}
                     </div>
                   </div>
 
@@ -648,7 +690,7 @@ const getNextApplicableLayer = (currentLayer) => {
                         style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
                       />
                       <small className="text-muted d-block mt-1">
-                        Automatically determined based on provider layer: {providerLayer}
+                        Applied layer as saved in this rule
                       </small>
                     </div>
 
@@ -661,8 +703,9 @@ const getNextApplicableLayer = (currentLayer) => {
                         disabled={loadingPartners}
                       >
                         <option value="All Child Partners">All Child Partners</option>
+                        <option value="All Child Layer">All Child Layer</option>
                         {childPartners && childPartners.map((partner) => (
-                          <option key={partner._id} value={partner.name}>
+                          <option key={partner._id} value={partner._id}>
                             {partner.name}
                           </option>
                         ))}
@@ -793,7 +836,7 @@ const getNextApplicableLayer = (currentLayer) => {
                               onChange={e => updateItem(setPassengerCabins, passengerCabins, idx, e.target.value)}
                             >
                               <option value="">Select Cabin</option>
-                              {cabins.map(c => (
+                              {cabins.filter(c => c.type === 'passenger').map(c => (
                                 <option key={c._id} value={c._id}>{c.name}</option>
                               ))}
                             </select>
@@ -809,6 +852,34 @@ const getNextApplicableLayer = (currentLayer) => {
                         onClick={() => addItem(setPassengerCabins, passengerCabins, "")}
                       >
                         + Add Cabin
+                      </button>
+
+                      <label className="form-label mt-3">Passenger Types</label>
+                      <div>
+                        {passengerTypes.map((typeId, idx) => (
+                          <div className="input-group mb-2" key={idx}>
+                            <select
+                              className="form-select"
+                              value={typeId}
+                              onChange={e => updateItem(setPassengerTypes, passengerTypes, idx, e.target.value)}
+                            >
+                              <option value="">Select Passenger Type</option>
+                              {passengerPayloadTypes.map(pt => (
+                                <option key={pt._id} value={pt._id}>{pt.name} ({pt.code})</option>
+                              ))}
+                            </select>
+                            <button className="btn btn-outline-danger" type="button" onClick={() => removeItem(setPassengerTypes, passengerTypes, idx)}>
+                              <i className="bi bi-x"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => addItem(setPassengerTypes, passengerTypes, "")}
+                      >
+                        + Add Passenger Type
                       </button>
                     </div>
                   )}
