@@ -421,15 +421,15 @@ export default function AddRulePage() {
 // Get providerId from token agent
 const agentId = getAgentIdFromToken();
 
-if (!agentId) {
-  Swal.fire({
-    icon: "warning",
-    title: "Error",
-    text: "Agent ID not found in token. Please login again.",
-    confirmButtonColor: "#17a2b8"
-  });
-  return;
-}
+// if (!agentId) {
+//   Swal.fire({
+//     icon: "warning",
+//     title: "Error",
+//     text: "Agent ID not found in token. Please login again.",
+//     confirmButtonColor: "#17a2b8"
+//   });
+//   return;
+// }
 
 const providerId = agentId;
       
