@@ -202,9 +202,15 @@ const getNextApplicableLayer = (currentLayer) => {
             })));
           }
 
-          // Set partner selection
-          if (rule.partner) {
-            setPartnerSelection(rule.partner.name || "All Child Partners");
+          // Set partner selection based on partnerScope from API
+          if (rule.partnerScope === "SpecificPartner" && rule.partner?._id) {
+            // Store the partner _id so the dropdown can match by value
+            setPartnerSelection(rule.partner._id);
+          } else if (rule.partnerScope === "AllChildLayer") {
+            setPartnerSelection("All Child Layer");
+          } else {
+            // Default: AllChildPartners
+            setPartnerSelection("All Child Partners");
           }
 
           console.log("[v0] Rule data loaded successfully");
@@ -509,12 +515,21 @@ const getNextApplicableLayer = (currentLayer) => {
       return;
     }
 
+    // Build partnerScope and partner for payload
+    let partnerScopeValue = "AllChildPartners";
+    if (partnerSelection === "All Child Layer") {
+      partnerScopeValue = "AllChildLayer";
+    } else if (partnerSelection !== "All Child Partners") {
+      // partnerSelection holds the partner _id
+      partnerScopeValue = "SpecificPartner";
+    }
+
     const payload = {
       ruleName,
       provider: currentUserId,
       providerType,
       appliedLayer,
-      partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+      partnerScope: partnerScopeValue,
       commissionType: convertedValueType,
       commissionValue: parseInt(value),
       valueType: convertedValueType,
@@ -530,11 +545,9 @@ const getNextApplicableLayer = (currentLayer) => {
       payload.visaType = visaType;
     }
 
-    if (partnerSelection !== "All Child Partners") {
-      const selectedPartner = childPartners.find(p => p.name === partnerSelection);
-      if (selectedPartner) {
-        payload.partner = selectedPartner._id;
-      }
+    if (partnerScopeValue === "SpecificPartner") {
+      // partnerSelection already holds the _id directly
+      payload.partner = partnerSelection;
     }
 
     console.log("[v0] Updating commission rule:", payload);
@@ -671,8 +684,9 @@ const getNextApplicableLayer = (currentLayer) => {
                         disabled={loadingPartners}
                       >
                         <option value="All Child Partners">All Child Partners</option>
+                        <option value="All Child Layer">All Child Layer</option>
                         {childPartners && childPartners.map((partner) => (
-                          <option key={partner._id} value={partner.name}>
+                          <option key={partner._id} value={partner._id}>
                             {partner.name}
                           </option>
                         ))}

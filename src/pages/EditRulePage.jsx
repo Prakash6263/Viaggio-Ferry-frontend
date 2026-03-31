@@ -207,9 +207,15 @@ export default function EditRulePage() {
             })));
           }
 
-          // Set partner selection
-          if (rule.partner) {
-            setPartnerSelection(rule.partner.name || "All Child Partners");
+          // Set partner selection based on partnerScope from API
+          if (rule.partnerScope === "SpecificPartner" && rule.partner?._id) {
+            // Store the partner _id so the dropdown can match by value
+            setPartnerSelection(rule.partner._id);
+          } else if (rule.partnerScope === "AllChildLayer") {
+            setPartnerSelection("All Child Layer");
+          } else {
+            // Default: AllChildPartners
+            setPartnerSelection("All Child Partners");
           }
 
           console.log("[v0] Rule data loaded successfully");
@@ -535,13 +541,22 @@ export default function EditRulePage() {
       return;
     }
 
+    // Build partnerScope and partner for payload
+    let partnerScopeValue = "AllChildPartners";
+    if (partnerSelection === "All Child Layer") {
+      partnerScopeValue = "AllChildLayer";
+    } else if (partnerSelection !== "All Child Partners") {
+      // partnerSelection holds the partner _id
+      partnerScopeValue = "SpecificPartner";
+    }
+
     // Build payload according to API spec and backend model
     const payload = {
       ruleName,
       provider: providerId,
       providerType,
       appliedLayer,
-      partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
+      partnerScope: partnerScopeValue,
       ruleType,
       ruleValue: parseInt(value) || null,
       valueType: convertedValueType,
@@ -558,11 +573,9 @@ export default function EditRulePage() {
     }
 
     // Add partner ID only if partnerScope is SpecificPartner
-    if (partnerSelection !== "All Child Partners") {
-      const selectedPartner = childPartners.find(p => p.name === partnerSelection);
-      if (selectedPartner) {
-        payload.partner = selectedPartner._id;
-      }
+    if (partnerScopeValue === "SpecificPartner") {
+      // partnerSelection already holds the _id directly
+      payload.partner = partnerSelection;
     }
 
     console.log("[v0] Updating markup/discount rule:", payload);
@@ -692,8 +705,9 @@ export default function EditRulePage() {
                       disabled={loadingPartners}
                     >
                       <option value="All Child Partners">All Child Partners</option>
+                      <option value="All Child Layer">All Child Layer</option>
                       {childPartners && childPartners.map((partner) => (
-                        <option key={partner._id} value={partner.name}>
+                        <option key={partner._id} value={partner._id}>
                           {partner.name}
                         </option>
                       ))}
