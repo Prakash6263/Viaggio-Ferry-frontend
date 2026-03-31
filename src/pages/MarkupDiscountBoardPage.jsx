@@ -83,6 +83,8 @@ export default function MarkupDiscountBoardPage() {
           services: getServices(rule.serviceDetails),
           providerType: rule.providerType,
           visaType: rule.visaType,
+          partner: rule.partner,
+          partnerScope: rule.partnerScope,
         }));
         setRules(transformedRules);
         setTotalRules(response.meta?.total || transformedRules.length);
@@ -546,6 +548,7 @@ export default function MarkupDiscountBoardPage() {
                                 <th>Type</th>
                                 <th>Value</th>
                                 <th>Applied To</th>
+                                <th>Partner</th>
                                 <th>Services</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -570,6 +573,13 @@ export default function MarkupDiscountBoardPage() {
                                       {rule.valueType === "percentage" ? "%" : ""}
                                     </td>
                                     <td>{rule.appliedLayer || "N/A"}</td>
+                                    <td>
+                                      {rule.partner?.name ? (
+                                        <span className="badge bg-info">{rule.partner.name}</span>
+                                      ) : (
+                                        <span className="text-muted">—</span>
+                                      )}
+                                    </td>
                                     <td>
                                       {rule.services && rule.services.length > 0 ? (
                                         rule.services.map((service) => (
@@ -610,7 +620,7 @@ export default function MarkupDiscountBoardPage() {
                                 ))
                               ) : (
                                 <tr>
-                                  <td colSpan="8" className="text-center py-4">
+                                  <td colSpan="9" className="text-center py-4">
                                     No markup/discount rules found
                                   </td>
                                 </tr>
