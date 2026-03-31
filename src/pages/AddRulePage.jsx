@@ -286,7 +286,7 @@ export default function AddRulePage() {
 
   // dynamic lists
   const [passengerCabins, setPassengerCabins] = useState([]);
-  const [passengerTypes, setPassengerTypes] = useState(["Adult"]);
+  const [passengerTypes, setPassengerTypes] = useState([]);
   const [cargoTypes, setCargoTypes] = useState([]);
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [routes, setRoutes] = useState([{ from: "Muscat", to: "Dubai" }]);
@@ -376,22 +376,36 @@ export default function AddRulePage() {
       }
 
       // Build service details according to API spec
+      // For passenger: create entries for each combination of cabin and selected passenger type
+      // passengerTypes now stores IDs directly from the dropdown
+      const passengerEntries = [];
+      if (passenger) {
+        const validCabins = passengerCabins.filter(cabinId => cabinId);
+        const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
+        
+        // For each cabin and passenger type combination, create an entry
+        validCabins.forEach(cabinId => {
+          validPassengerTypeIds.forEach(payloadTypeId => {
+            passengerEntries.push({
+              payloadTypeId: payloadTypeId,
+              cabinId: cabinId
+            });
+          });
+        });
+        
+        // If no cabins selected but passenger types selected, still include payload types
+        if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
+          validPassengerTypeIds.forEach(payloadTypeId => {
+            passengerEntries.push({
+              payloadTypeId: payloadTypeId,
+              cabinId: null
+            });
+          });
+        }
+      }
+
       const serviceDetails = {
-        passenger: passenger ? passengerCabins
-          .filter(cabinId => cabinId) // Filter out empty cabin IDs
-          .map((cabinId) => {
-            const payloadType = passengerPayloadTypes.length > 0 ? passengerPayloadTypes[0] : null;
-            // Only include if payloadTypeId exists, otherwise skip this entry
-            if (payloadType?._id) {
-              return {
-                payloadTypeId: payloadType._id,
-                cabinId: cabinId
-              };
-            }
-            return null;
-          })
-          .filter(item => item !== null) // Remove null entries
-        : [],
+        passenger: passengerEntries,
         cargo: cargo ? cargoTypes
           .filter(cabinId => cabinId) // Filter out empty cabin IDs
           .map((cabinId) => ({
@@ -645,7 +659,7 @@ const providerId = agentId;
                           <select className="form-select" value={val} onChange={e => updateItem(setPassengerTypes, passengerTypes, idx, e.target.value)}>
                             <option value="">Select Passenger Type</option>
                             {passengerPayloadTypes && passengerPayloadTypes.map((payloadType) => (
-                              <option key={payloadType._id} value={payloadType.name}>
+                              <option key={payloadType._id} value={payloadType._id}>
                                 {payloadType.name} ({payloadType.code})
                               </option>
                             ))}
@@ -654,7 +668,7 @@ const providerId = agentId;
                         </div>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerTypes, passengerTypes, "Adult")}>+ Add Passenger Type</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => addItem(setPassengerTypes, passengerTypes, "")}>+ Add Passenger Type</button>
                   </div>
                 )}
 
