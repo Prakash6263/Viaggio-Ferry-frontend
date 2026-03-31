@@ -396,6 +396,20 @@ export default function EditRulePage() {
     fetchPayloadTypes();
   }, []);
 
+  // Resolve pending partner ID once childPartners are loaded
+  useEffect(() => {
+    if (pendingPartnerId && childPartners.length > 0) {
+      // Check if the pending partner ID exists in childPartners
+      const partnerExists = childPartners.some(p => p._id === pendingPartnerId);
+      if (partnerExists) {
+        setPartnerSelection(pendingPartnerId);
+        console.log("[v0] Partner resolved to:", pendingPartnerId);
+      } else {
+        console.log("[v0] Partner not found in childPartners list, keeping default");
+      }
+    }
+  }, [pendingPartnerId, childPartners]);
+
   const onSave = async (e) => {
     e.preventDefault();
 
