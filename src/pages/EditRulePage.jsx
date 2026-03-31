@@ -717,20 +717,28 @@ export default function EditRulePage() {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Partner <span style={{ color: "red" }}>*</span></label>
-                    <select
-                      className="form-select"
-                      value={partnerSelection}
-                      onChange={e => setPartnerSelection(e.target.value)}
-                      disabled={loadingPartners}
-                    >
-                      <option value="All Child Partners">All Child Partners</option>
-                      <option value="All Child Layer">All Child Layer</option>
-                      {childPartners && childPartners.map((partner) => (
-                        <option key={partner._id} value={partner._id}>
-                          {partner.name}
-                        </option>
-                      ))}
-                    </select>
+<select
+  className="form-select"
+  value={partnerSelection}
+  onChange={e => setPartnerSelection(e.target.value)}
+  disabled={loadingPartners}
+>
+  <option value="All Child Layer">All Child Layer</option>
+
+  {/* Selected partner from API */}
+  {ruleData?.partner && (
+    <option value={ruleData.partner._id}>
+      {ruleData.partner.name}
+    </option>
+  )}
+
+  {/* Child partners list */}
+  {childPartners && childPartners.map((partner) => (
+    <option key={partner._id} value={partner._id}>
+      {partner.name}
+    </option>
+  ))}
+</select>
                   </div>
                 </div>
 
