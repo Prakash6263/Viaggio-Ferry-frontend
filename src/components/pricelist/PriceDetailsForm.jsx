@@ -833,8 +833,8 @@ export default function PriceDetailsForm({ idPrefix = "passenger", onBack, price
                         <select className="form-select w-100 rounded-2 p-1" value={newTicketType} onChange={(e) => setNewTicketType(e.target.value)}>
                           <option value="">Select Ticket Type</option>
                           <option value="one_way">One Way</option>
-                          <option value="round_trip">Round Trip</option>
-                          <option value="return">Return</option>
+                          <option value="round_trip">Round Trip</option> 
+                          {/* <option value="return">Return</option> */} 
                         </select>
                       </td>
 
