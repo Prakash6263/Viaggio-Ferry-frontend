@@ -54,17 +54,16 @@ const normalizeLayerValue = (layer) => {
 // If provider layer is company → applied layer is "Marine Agent"
 // If provider layer is marine/marine-agent → applied layer is "Commercial Agent"
 // If provider layer is commercial/commercial-agent → applied layer is "Selling Agent"
-const getNextApplicableLayer = (currentLayer) => {
-  const layerHierarchy = {
-    "company": "Marine Agent",       // company → Marine Agent
-    "marine": "Commercial Agent",    // marine → Commercial Agent
-    "commercial": "Selling Agent",   // commercial → Selling Agent
-    "selling": null                  // No next layer for selling agent
-  }
-  
-  const normalizedLayer = normalizeLayerValue(currentLayer)
-  return layerHierarchy[normalizedLayer] || null
-}
+const getNextApplicableLayer = (layer) => {
+  const hierarchy = {
+    "Company": "Marine Agent",
+    "Marine Agent": "Commercial Agent",
+    "Commercial Agent": "Selling Agent",
+    "Selling Agent": null
+  };
+
+  return hierarchy[layer] || null;
+};
 
 export default function EditRulePage() {
   const { ruleId } = useParams();
@@ -246,29 +245,34 @@ export default function EditRulePage() {
   }, [ruleId, loginRole]);
 
   // Initialize providerLayer label only (appliedLayer already set from API data)
-  useEffect(() => {
-    const initializeUserData = async () => {
-      try {
-        if (loginRole === "user") {
-          const response = await usersApi.getCurrentProfile();
+useEffect(() => {
+  const initializeUserData = async () => {
+    try {
+      if (loginRole === "user") {
+        const response = await usersApi.getCurrentProfile();
 
-          if (response.success && response.data) {
-            const userData = response.data;
-            const userLayer = userData.layer || userData.role || "Company";
-            setProviderLayer(userLayer);
-          }
-        } else if (loginRole === "company") {
-          setProviderLayer("company");
+        if (response.success && response.data) {
+          const userLayer = response.data.layer || "Company";
+
+          setProviderLayer(userLayer);
+
+          // ONLY ADD PAGE calculates child layer
+          // const nextLayer = getNextApplicableLayer(userLayer);
+          // setAppliedLayer(nextLayer);
         }
-      } catch (error) {
-        console.error("[v0] Failed to load profile data:", error.message);
-      }
-    };
-
-    if (loginRole) {
-      initializeUserData();
+      } else if (loginRole === "company") {
+  setProviderLayer("Company");
+  // Do NOT set appliedLayer in edit page
+}
+    } catch (error) {
+      console.error("Failed to load profile data:", error);
     }
-  }, [loginRole]);
+  };
+
+  if (loginRole) {
+    initializeUserData();
+  }
+}, [loginRole]);
 
   // Resolve partner selection once both rule data and childPartners are loaded
   useEffect(() => {
@@ -585,7 +589,8 @@ export default function EditRulePage() {
       ruleName,
       provider: providerId,
       providerType,
-      appliedLayer,
+      appliedLayer:appliedLayer,
+      providerLayer: providerLayer,
       partnerScope: partnerScopeValue,
       ruleType,
       ruleValue: parseInt(value) || null,
