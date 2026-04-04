@@ -41,6 +41,20 @@ const getLayerFromToken = () => {
   }
 }
 
+// Helper function to get agent ID from JWT token
+const getAgentIdFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    const decoded = JSON.parse(atob(token.split(".")[1]));
+    return decoded.agent || null;
+  } catch (error) {
+    console.error("[v0] Error decoding token for agent:", error);
+    return null;
+  }
+};
+
 // Helper function to normalize layer value (removes -agent suffix and converts to lowercase)
 const normalizeLayerValue = (layer) => {
   if (!layer) return ""
@@ -473,18 +487,31 @@ const getNextApplicableLayer = (currentLayer) => {
       // passengerTypes in edit mode stores IDs directly (from API response)
       const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
       
-      // For each cabin and passenger type combination, create an entry
-      validCabins.forEach(cabinId => {
-        validPassengerTypeIds.forEach(payloadTypeId => {
+      console.log("[v0] Passenger service - validCabins:", validCabins, "validPassengerTypeIds:", validPassengerTypeIds);
+      
+      // Case 1: Both cabins and passenger types are selected
+      if (validCabins.length > 0 && validPassengerTypeIds.length > 0) {
+        // For each cabin and passenger type combination, create an entry
+        validCabins.forEach(cabinId => {
+          validPassengerTypeIds.forEach(payloadTypeId => {
+            passengerEntries.push({
+              payloadTypeId: payloadTypeId,
+              cabinId: cabinId
+            });
+          });
+        });
+      }
+      // Case 2: Only cabins selected (no passenger types)
+      else if (validCabins.length > 0 && validPassengerTypeIds.length === 0) {
+        validCabins.forEach(cabinId => {
           passengerEntries.push({
-            payloadTypeId: payloadTypeId,
+            payloadTypeId: null,
             cabinId: cabinId
           });
         });
-      });
-      
-      // If no cabins selected but passenger types selected, still include payload types
-      if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
+      }
+      // Case 3: Only passenger types selected (no cabins)
+      else if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
         validPassengerTypeIds.forEach(payloadTypeId => {
           passengerEntries.push({
             payloadTypeId: payloadTypeId,
@@ -493,6 +520,8 @@ const getNextApplicableLayer = (currentLayer) => {
         });
       }
     }
+
+    console.log("[v0] Passenger entries built:", passengerEntries);
 
     const serviceDetails = {
       passenger: passengerEntries,
@@ -749,13 +778,8 @@ const getNextApplicableLayer = (currentLayer) => {
                   <div className="row g-3 mb-3">
                     <div className="col-md-4">
                       <label className="form-label">Visa Type</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={visaType}
-                        onChange={e => setVisaType(e.target.value)}
-                        placeholder="E.g., Schengen, Tourist"
-                      />
+                      <input type="text" className="form-control" value={visaType} onChange={e => setVisaType(e.target.value)} placeholder="E.g. Schengen, Tourist" />
+
                     </div>
                     <div className="col-md-4">
                       <label className="form-label">Effective Date <span style={{ color: "red" }}>*</span></label>
@@ -859,7 +883,10 @@ const getNextApplicableLayer = (currentLayer) => {
                       <button
                         type="button"
                         className="btn btn-sm btn-secondary"
-                        onClick={() => addItem(setPassengerCabins, passengerCabins, "")}
+                        onClick={() => {
+                          addItem(setPassengerCabins, passengerCabins, "");
+                          if (!passenger) setPassenger(true);
+                        }}
                       >
                         + Add Cabin
                       </button>
@@ -887,7 +914,10 @@ const getNextApplicableLayer = (currentLayer) => {
                       <button
                         type="button"
                         className="btn btn-sm btn-secondary"
-                        onClick={() => addItem(setPassengerTypes, passengerTypes, "")}
+                        onClick={() => {
+                          addItem(setPassengerTypes, passengerTypes, "");
+                          if (!passenger) setPassenger(true);
+                        }}
                       >
                         + Add Passenger Type
                       </button>

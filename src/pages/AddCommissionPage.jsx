@@ -39,6 +39,20 @@ const getLayerFromToken = () => {
   }
 }
 
+// Helper function to get agent ID from JWT token
+const getAgentIdFromToken = () => {
+  try {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    const decoded = JSON.parse(atob(token.split(".")[1]));
+    return decoded.agent || null;
+  } catch (error) {
+    console.error("[v0] Error decoding token for agent:", error);
+    return null;
+  }
+};
+
 // Helper function to normalize layer value (removes -agent suffix and converts to lowercase)
 const normalizeLayerValue = (layer) => {
   if (!layer) return ""
@@ -151,12 +165,13 @@ export default function AddCommissionPage() {
 
             setProvider(providerName);
             setProviderLayer(userLayer);
+            setCurrentUserId(userData._id || "");
             
             // Set applied layer to next applicable layer based on provider layer
             const nextLayer = getNextApplicableLayer(userLayer);
             setAppliedLayer(nextLayer || userLayer);
 
-            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "Applied Layer:", nextLayer);
+            console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "Applied Layer:", nextLayer, "UserID:", userData._id);
           }
         } else if (loginRole === "company") {
           // For company login: Get company name and set layer as "Company"
@@ -168,11 +183,12 @@ export default function AddCommissionPage() {
 
             setProvider(providerName);
             setProviderLayer("company");
+            setCurrentUserId(companyData._id || "");
             
-// Company layer always maps to Marine Agent
+            // Company layer always maps to Marine Agent
             setAppliedLayer("Marine Agent");
             
-            console.log("[v0] Company profile loaded - Provider:", providerName, "Provider Layer: company", "Applied Layer: Marine Agent");
+            console.log("[v0] Company profile loaded - Provider:", providerName, "Provider Layer: company", "Applied Layer: Marine Agent", "CompanyID:", companyData._id);
           }
         }
       } catch (error) {
@@ -377,18 +393,29 @@ export default function AddCommissionPage() {
       const validCabins = passengerCabins.filter(cabinId => cabinId);
       const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
       
-      // For each cabin and passenger type combination, create an entry
-      validCabins.forEach(cabinId => {
-        validPassengerTypeIds.forEach(payloadTypeId => {
+      // Case 1: Both cabins and passenger types are selected
+      if (validCabins.length > 0 && validPassengerTypeIds.length > 0) {
+        // For each cabin and passenger type combination, create an entry
+        validCabins.forEach(cabinId => {
+          validPassengerTypeIds.forEach(payloadTypeId => {
+            passengerEntries.push({
+              payloadTypeId: payloadTypeId,
+              cabinId: cabinId
+            });
+          });
+        });
+      }
+      // Case 2: Only cabins selected (no passenger types)
+      else if (validCabins.length > 0 && validPassengerTypeIds.length === 0) {
+        validCabins.forEach(cabinId => {
           passengerEntries.push({
-            payloadTypeId: payloadTypeId,
+            payloadTypeId: null,
             cabinId: cabinId
           });
         });
-      });
-      
-      // If no cabins selected but passenger types selected, still include payload types
-      if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
+      }
+      // Case 3: Only passenger types selected (no cabins)
+      else if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
         validPassengerTypeIds.forEach(payloadTypeId => {
           passengerEntries.push({
             payloadTypeId: payloadTypeId,
