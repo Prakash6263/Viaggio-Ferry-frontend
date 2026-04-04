@@ -483,18 +483,29 @@ export default function EditRulePage() {
       // passengerTypes in edit mode stores IDs directly (from API response)
       const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
       
-      // For each cabin and passenger type combination, create an entry
-      validCabins.forEach(cabinId => {
-        validPassengerTypeIds.forEach(payloadTypeId => {
+      // Case 1: Both cabins and passenger types are selected
+      if (validCabins.length > 0 && validPassengerTypeIds.length > 0) {
+        // For each cabin and passenger type combination, create an entry
+        validCabins.forEach(cabinId => {
+          validPassengerTypeIds.forEach(payloadTypeId => {
+            passengerEntries.push({
+              payloadTypeId: payloadTypeId,
+              cabinId: cabinId
+            });
+          });
+        });
+      }
+      // Case 2: Only cabins selected (no passenger types)
+      else if (validCabins.length > 0 && validPassengerTypeIds.length === 0) {
+        validCabins.forEach(cabinId => {
           passengerEntries.push({
-            payloadTypeId: payloadTypeId,
+            payloadTypeId: null,
             cabinId: cabinId
           });
         });
-      });
-      
-      // If no cabins selected but passenger types selected, still include payload types
-      if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
+      }
+      // Case 3: Only passenger types selected (no cabins)
+      else if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
         validPassengerTypeIds.forEach(payloadTypeId => {
           passengerEntries.push({
             payloadTypeId: payloadTypeId,
