@@ -999,11 +999,20 @@ export default function CompanyEditTrip() {
 
       // Show success message
       Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Agent allocations saved successfully!",
-        confirmButtonText: "OK"
-      });
+  icon: "success",
+  title: "Success",
+  text: "Agent allocations saved successfully!",
+  confirmButtonText: "OK"
+}).then(async () => {
+  setLoadingData(true)
+
+  await Promise.all([
+    fetchTripData(),
+    fetchAgentAllocations()
+  ])
+
+  setLoadingData(false)
+})
 
       // Reload allocations to refresh the data
       fetchAgentAllocations();
