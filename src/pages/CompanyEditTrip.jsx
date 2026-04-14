@@ -552,52 +552,59 @@ export default function CompanyEditTrip() {
         const availData = availabilityRes.data || availabilityRes;
         console.log("[v0] Availability data refetched:", availData);
 
+        let firstAvail = null;
         if (Array.isArray(availData)) {
           setAvailabilitiesList(availData);
           if (availData.length > 0) {
-            const firstAvail = availData[0];
-            setSelectedAvailabilityId(firstAvail._id || "");
-
-            // Process passengers
-            const passengerData = firstAvail.availabilityTypes?.find(a => a.type === "passenger");
-            const processedPassengers = passengerData?.cabins?.map(cabin => ({
-              id: makeId("p_"),
-              trip: tripId,
-              cabin: cabin.cabin?.name || cabin.cabin || "",
-              seats: cabin.seats?.toString() || "",
-              isNew: false
-            })) || [{ id: makeId("p_"), trip: "", cabin: "", seats: "", isNew: true }];
-            setPassengers(processedPassengers);
-
-            // Process cargo
-            const cargoData = firstAvail.availabilityTypes?.find(a => a.type === "cargo");
-            const processedCargo = cargoData?.cabins?.map(cabin => ({
-              id: makeId("c_"),
-              trip: tripId,
-              type: cabin.cabin?.name || cabin.cabin || "",
-              spots: cabin.seats?.toString() || "",
-              isNew: false
-            })) || [{ id: makeId("c_"), trip: "", type: "", spots: "", isNew: true }];
-            setCargo(processedCargo);
-
-            // Process vehicles
-            const vehicleData = firstAvail.availabilityTypes?.find(a => a.type === "vehicle");
-            const processedVehicles = vehicleData?.cabins?.map(cabin => ({
-              id: makeId("v_"),
-              trip: tripId,
-              type: cabin.cabin?.name || cabin.cabin || "",
-              spots: cabin.seats?.toString() || "",
-              isNew: false
-            })) || [{ id: makeId("v_"), trip: "", type: "", spots: "", isNew: true }];
-            setVehicles(processedVehicles);
-
-            // Process trip availability for allocations
-            setSelectedTripAvailability({
-              passenger: firstAvail.availabilityTypes?.find(a => a.type === "passenger")?.cabins || [],
-              cargo: firstAvail.availabilityTypes?.find(a => a.type === "cargo")?.cabins || [],
-              vehicle: firstAvail.availabilityTypes?.find(a => a.type === "vehicle")?.cabins || []
-            });
+            firstAvail = availData[0];
           }
+        } else if (availData && availData._id) {
+          setAvailabilitiesList([availData]);
+          firstAvail = availData;
+        }
+
+        if (firstAvail) {
+          setSelectedAvailabilityId(firstAvail._id || "");
+
+          // Process passengers
+          const passengerData = firstAvail.availabilityTypes?.find(a => a.type === "passenger");
+          const processedPassengers = passengerData?.cabins?.map(cabin => ({
+            id: makeId("p_"),
+            trip: tripId,
+            cabin: cabin.cabin?.name || cabin.cabin || "",
+            seats: cabin.seats?.toString() || "",
+            isNew: false
+          })) || [{ id: makeId("p_"), trip: "", cabin: "", seats: "", isNew: true }];
+          setPassengers(processedPassengers);
+
+          // Process cargo
+          const cargoData = firstAvail.availabilityTypes?.find(a => a.type === "cargo");
+          const processedCargo = cargoData?.cabins?.map(cabin => ({
+            id: makeId("c_"),
+            trip: tripId,
+            type: cabin.cabin?.name || cabin.cabin || "",
+            spots: cabin.seats?.toString() || "",
+            isNew: false
+          })) || [{ id: makeId("c_"), trip: "", type: "", spots: "", isNew: true }];
+          setCargo(processedCargo);
+
+          // Process vehicles
+          const vehicleData = firstAvail.availabilityTypes?.find(a => a.type === "vehicle");
+          const processedVehicles = vehicleData?.cabins?.map(cabin => ({
+            id: makeId("v_"),
+            trip: tripId,
+            type: cabin.cabin?.name || cabin.cabin || "",
+            spots: cabin.seats?.toString() || "",
+            isNew: false
+          })) || [{ id: makeId("v_"), trip: "", type: "", spots: "", isNew: true }];
+          setVehicles(processedVehicles);
+
+          // Process trip availability for allocations
+          setSelectedTripAvailability({
+            passenger: firstAvail.availabilityTypes?.find(a => a.type === "passenger")?.cabins || [],
+            cargo: firstAvail.availabilityTypes?.find(a => a.type === "cargo")?.cabins || [],
+            vehicle: firstAvail.availabilityTypes?.find(a => a.type === "vehicle")?.cabins || []
+          });
         }
       }
 
@@ -862,15 +869,15 @@ export default function CompanyEditTrip() {
         title: "Success",
         text: "Availability updated successfully!",
         confirmButtonText: "OK"
+      }).then(async () => {
+        // Refetch trip data and agent allocations to update UI
+        setLoadingData(true);
+        await Promise.all([
+          fetchTripData(),
+          fetchAgentAllocations()
+        ]);
+        setLoadingData(false);
       });
-
-      // Refetch trip data and agent allocations to update UI
-      setLoadingData(true);
-      await Promise.all([
-        fetchTripData(),
-        fetchAgentAllocations()
-      ]);
-      setLoadingData(false);
     } catch (error) {
       console.error("[v0] Error saving availability:", error);
       Swal.fire({
@@ -1121,15 +1128,15 @@ export default function CompanyEditTrip() {
         title: "Success",
         text: "Agent allocation updated successfully!",
         confirmButtonText: "OK"
+      }).then(async () => {
+        // Reload allocations and trip data to refresh the data
+        console.log("[v0] Refetching data after agent allocation update");
+        setLoadingData(true);
+        await fetchTripData();
+        await fetchAgentAllocations();
+        setLoadingData(false);
+        console.log("[v0] Data refetch completed and form updated");
       });
-
-      // Reload allocations and trip data to refresh the data
-      console.log("[v0] Refetching data after agent allocation update");
-      setLoadingData(true);
-      await fetchTripData();
-      await fetchAgentAllocations();
-      setLoadingData(false);
-      console.log("[v0] Data refetch completed and form updated");
     } catch (error) {
       console.error("[v0] Error updating agent allocation:", error);
       Swal.fire({
@@ -1209,14 +1216,14 @@ export default function CompanyEditTrip() {
         title: "Success",
         text: "Ticketing rules saved successfully!",
         confirmButtonText: "OK"
+      }).then(async () => {
+        // Refetch trip data to update UI with latest rules
+        console.log("[v0] Refetching trip data after ticketing rules update");
+        setLoadingData(true);
+        await fetchTripData();
+        setLoadingData(false);
+        console.log("[v0] Trip data refetch completed and form updated");
       });
-
-      // Refetch trip data to update UI with latest rules
-      console.log("[v0] Refetching trip data after ticketing rules update");
-      setLoadingData(true);
-      await fetchTripData();
-      setLoadingData(false);
-      console.log("[v0] Trip data refetch completed and form updated");
     } catch (error) {
       console.error("[v0] Error saving ticketing rules:", error);
       Swal.fire({

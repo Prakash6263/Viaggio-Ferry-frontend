@@ -68,11 +68,18 @@ const waitForToken = async (maxWaitMs = 2000) => {
 export const apiFetch = async (endpoint, options = {}) => {
   const { skipAuth = false, waitForToken: shouldWaitForToken = false, ...fetchOptions } = options
 
-  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`
+  let url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`
 
   // Add default headers (but don't override Content-Type if body is FormData)
   const headers = {
     ...fetchOptions.headers,
+  }
+
+  // Prevent caching for GET requests without triggering CORS preflight headers
+  if (!fetchOptions.method || fetchOptions.method.toUpperCase() === 'GET') {
+    fetchOptions.cache = "no-store"
+    const separator = url.includes('?') ? '&' : '?'
+    url = `${url}${separator}_t=${Date.now()}`
   }
 
   // Only set Content-Type for non-FormData requests
