@@ -15,7 +15,7 @@ import logo from "../../logo.svg"
 import avatar from "../../assets/img/profiles/avatar-07.jpg"
 
 // const API_BASE_URL ="http://localhost:3001"
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3001"
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 
 // Helper function to decode JWT and get role
 const getLoginRoleFromToken = () => {

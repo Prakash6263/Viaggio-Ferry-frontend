@@ -66,15 +66,14 @@ export default function TripsListTable() {
       const response = await tripsApi.deleteTrip(tripId);
       console.log("[v0] Trip deleted successfully:", response);
 
-      // Remove trip from list
-      setTrips(trips.filter(t => t._id !== tripId));
-
       // Show success message
       Swal.fire({
         icon: "success",
         title: "Deleted!",
         text: "Trip deleted successfully.",
         confirmButtonText: "OK"
+      }).then(() => {
+        fetchTrips();
       });
     } catch (error) {
       console.error("[v0] Error deleting trip:", error);

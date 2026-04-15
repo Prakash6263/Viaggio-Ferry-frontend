@@ -7,8 +7,7 @@ import { loginApi } from "../api/loginApi"
 import { useSidebar } from "../context/SidebarContext"
 import Swal from "sweetalert2"
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3001"
-
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 export default function UserProfileModal({ user, isOpen, onClose, onSuccess }) {
   const navigate = useNavigate()
   const { clearSidebar } = useSidebar()
