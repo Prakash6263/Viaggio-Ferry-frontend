@@ -16,14 +16,30 @@ export default function AllocateAgentTab({
   setAgents,
   onSaveAgentAllocations
 }) {
+
+  // Returns cabin IDs already selected in OTHER rows of the same agent + type
+  const getUsedCabinIds = (agent, type, currentLineId) => {
+    const lines =
+      type === "passenger"
+        ? agent.passengerLines
+        : type === "cargo"
+        ? agent.cargoLines
+        : agent.vehicleLines;
+    return new Set(
+      lines
+        .filter((l) => l.id !== currentLineId && l.select)
+        .map((l) => l.select)
+    );
+  };
+
   return (
     <div id="allocateAvailabilityContent">
       <div className="row mb-3">
         <div className="col-md-6">
           <label className="form-label">Select Trip for Allocation</label>
-          <select 
-            className="form-select" 
-            value={form.trip || ""} 
+          <select
+            className="form-select"
+            value={form.trip || ""}
             onChange={(e) => handleTripSelection(e.target.value)}
           >
             <option value="">-- Select a Trip --</option>
@@ -42,25 +58,27 @@ export default function AllocateAgentTab({
           <div className="agent-block" key={agent.id}>
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6>Agent Details</h6>
-              <button 
-                type="button" 
-                className="btn btn-sm btn-danger remove-agent" 
+              <button
+                type="button"
+                className="btn btn-sm btn-danger remove-agent"
                 onClick={() => removeAgent(agent.id)}
               >
                 Remove Agent
               </button>
             </div>
 
-            <select 
-              className="form-select mb-3" 
-              value={agent.agentName} 
+            <select
+              className="form-select mb-3"
+              value={agent.agentName}
               onChange={(e) => {
-                const selectedPartner = partners.find(p => p.name === e.target.value);
-                setAgents((a) => a.map((ag) => 
-                  ag.id === agent.id 
-                    ? { ...ag, agentName: e.target.value, agentId: selectedPartner?._id || "" } 
-                    : ag
-                ));
+                const selectedPartner = partners.find((p) => p.name === e.target.value);
+                setAgents((a) =>
+                  a.map((ag) =>
+                    ag.id === agent.id
+                      ? { ...ag, agentName: e.target.value, agentId: selectedPartner?._id || "" }
+                      : ag
+                  )
+                );
               }}
             >
               <option value="">-- Select a Partner --</option>
@@ -71,42 +89,53 @@ export default function AllocateAgentTab({
               ))}
             </select>
 
+            {/* ── Passenger Allocation ─────────────────────────────────── */}
             <div className="allocation-section">
               <h6>Passenger Allocation</h6>
               <div className="passenger-lines">
                 {agent.passengerLines.map((line) => {
-                  const selectedPassenger = selectedTripAvailability.passenger.find(p => p.cabin._id === line.select);
+                  const selectedPassenger = selectedTripAvailability.passenger.find(
+                    (p) => p.cabin._id === line.select
+                  );
+                  const usedIds = getUsedCabinIds(agent, "passenger", line.id);
                   return (
                     <div className="mb-3" key={line.id}>
                       <div className="capacity-grid align-items-center">
-                        <select 
-                          className="form-select" 
-                          value={line.select} 
-                          onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)}
+                        <select
+                          className="form-select"
+                          value={line.select}
+                          onChange={(e) =>
+                            updateAgentLine(agent.id, "passenger", line.id, "select", e.target.value)
+                          }
                         >
                           <option value="">Select</option>
-                          {selectedTripAvailability.passenger.map((p) => (
-                            <option key={p.cabin._id} value={p.cabin._id}>
-                              {p.cabin.name} (Remaining: {p.remainingSeats})
-                            </option>
-                          ))}
+                          {selectedTripAvailability.passenger
+                            // hide cabins already picked in another row; always show own current value
+                            .filter((p) => !usedIds.has(p.cabin._id) || p.cabin._id === line.select)
+                            .map((p) => (
+                              <option key={p.cabin._id} value={p.cabin._id}>
+                                {p.cabin.name} (Remaining: {p.remainingSeats})
+                              </option>
+                            ))}
                         </select>
-                        <input 
-                          className="form-control" 
-                          placeholder="Qty" 
-                          value={line.qty} 
-                          onChange={(e) => updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)} 
+                        <input
+                          className="form-control"
+                          placeholder="Qty"
+                          value={line.qty}
+                          onChange={(e) =>
+                            updateAgentLine(agent.id, "passenger", line.id, "qty", e.target.value)
+                          }
                         />
-                        <button 
-                          type="button" 
-                          className="btn btn-sm btn-danger" 
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
                           onClick={() => removeAgentLine(agent.id, "passenger", line.id)}
                         >
                           Remove
                         </button>
                       </div>
                       {selectedPassenger && (
-                        <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
+                        <small className="text-danger" style={{ display: "block", marginTop: "5px" }}>
                           Remaining: {selectedPassenger.remainingSeats}
                         </small>
                       )}
@@ -114,51 +143,61 @@ export default function AllocateAgentTab({
                   );
                 })}
               </div>
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-secondary add-passenger-line" 
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary add-passenger-line"
                 onClick={() => addAgentLine(agent.id, "passenger")}
               >
                 Add Passenger Line
               </button>
             </div>
 
+            {/* ── Cargo Allocation ─────────────────────────────────────── */}
             <div className="allocation-section">
               <h6>Cargo Allocation</h6>
               <div className="cargo-lines">
                 {agent.cargoLines.map((line) => {
-                  const selectedCargo = selectedTripAvailability.cargo.find(c => c.cabin._id === line.select);
+                  const selectedCargo = selectedTripAvailability.cargo.find(
+                    (c) => c.cabin._id === line.select
+                  );
+                  const usedIds = getUsedCabinIds(agent, "cargo", line.id);
                   return (
                     <div className="mb-3" key={line.id}>
                       <div className="capacity-grid align-items-center">
-                        <select 
-                          className="form-select" 
-                          value={line.select} 
-                          onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)}
+                        <select
+                          className="form-select"
+                          value={line.select}
+                          onChange={(e) =>
+                            updateAgentLine(agent.id, "cargo", line.id, "select", e.target.value)
+                          }
                         >
                           <option value="">Select</option>
-                          {selectedTripAvailability.cargo.map((c) => (
-                            <option key={c.cabin._id} value={c.cabin._id}>
-                              {c.cabin.name} (Remaining: {c.remainingSeats})
-                            </option>
-                          ))}
+                          {selectedTripAvailability.cargo
+                            .filter((c) => !usedIds.has(c.cabin._id) || c.cabin._id === line.select)
+                            .map((c) => (
+                              <option key={c.cabin._id} value={c.cabin._id}>
+                                {c.cabin.name} (Remaining: {c.remainingSeats})
+                              </option>
+                            ))}
                         </select>
-                        <input 
-                          className="form-control" 
-                          placeholder="Qty" 
-                          value={line.qty} 
-                          onChange={(e) => updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)} 
+                        <input
+                          className="form-control"
+                          placeholder="Qty"
+                          value={line.qty}
+                          onChange={(e) =>
+                            updateAgentLine(agent.id, "cargo", line.id, "qty", e.target.value)
+                          }
                         />
-                        <button 
-                          type="button" 
-                          className="btn btn-sm btn-danger" 
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
                           onClick={() => removeAgentLine(agent.id, "cargo", line.id)}
                         >
                           Remove
                         </button>
                       </div>
                       {selectedCargo && (
-                        <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
+                        <small className="text-danger" style={{ display: "block", marginTop: "5px" }}>
                           Remaining: {selectedCargo.remainingSeats}
                         </small>
                       )}
@@ -166,51 +205,61 @@ export default function AllocateAgentTab({
                   );
                 })}
               </div>
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-secondary add-cargo-line" 
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary add-cargo-line"
                 onClick={() => addAgentLine(agent.id, "cargo")}
               >
                 Add Cargo Line
               </button>
             </div>
 
+            {/* ── Vehicle Allocation ───────────────────────────────────── */}
             <div className="allocation-section">
               <h6>Vehicle Allocation</h6>
               <div className="vehicle-lines">
                 {agent.vehicleLines.map((line) => {
-                  const selectedVehicle = selectedTripAvailability.vehicle.find(v => v.cabin._id === line.select);
+                  const selectedVehicle = selectedTripAvailability.vehicle.find(
+                    (v) => v.cabin._id === line.select
+                  );
+                  const usedIds = getUsedCabinIds(agent, "vehicle", line.id);
                   return (
                     <div className="mb-3" key={line.id}>
                       <div className="capacity-grid align-items-center">
-                        <select 
-                          className="form-select" 
-                          value={line.select} 
-                          onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)}
+                        <select
+                          className="form-select"
+                          value={line.select}
+                          onChange={(e) =>
+                            updateAgentLine(agent.id, "vehicle", line.id, "select", e.target.value)
+                          }
                         >
                           <option value="">Select</option>
-                          {selectedTripAvailability.vehicle.map((v) => (
-                            <option key={v.cabin._id} value={v.cabin._id}>
-                              {v.cabin.name} (Remaining: {v.remainingSeats})
-                            </option>
-                          ))}
+                          {selectedTripAvailability.vehicle
+                            .filter((v) => !usedIds.has(v.cabin._id) || v.cabin._id === line.select)
+                            .map((v) => (
+                              <option key={v.cabin._id} value={v.cabin._id}>
+                                {v.cabin.name} (Remaining: {v.remainingSeats})
+                              </option>
+                            ))}
                         </select>
-                        <input 
-                          className="form-control" 
-                          placeholder="Qty" 
-                          value={line.qty} 
-                          onChange={(e) => updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)} 
+                        <input
+                          className="form-control"
+                          placeholder="Qty"
+                          value={line.qty}
+                          onChange={(e) =>
+                            updateAgentLine(agent.id, "vehicle", line.id, "qty", e.target.value)
+                          }
                         />
-                        <button 
-                          type="button" 
-                          className="btn btn-sm btn-danger" 
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
                           onClick={() => removeAgentLine(agent.id, "vehicle", line.id)}
                         >
                           Remove
                         </button>
                       </div>
                       {selectedVehicle && (
-                        <small className="text-danger" style={{ display: 'block', marginTop: '5px' }}>
+                        <small className="text-danger" style={{ display: "block", marginTop: "5px" }}>
                           Remaining: {selectedVehicle.remainingSeats}
                         </small>
                       )}
@@ -218,9 +267,9 @@ export default function AllocateAgentTab({
                   );
                 })}
               </div>
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-secondary add-vehicle-line" 
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary add-vehicle-line"
                 onClick={() => addAgentLine(agent.id, "vehicle")}
               >
                 Add Vehicle Line
@@ -230,19 +279,19 @@ export default function AllocateAgentTab({
         ))}
       </div>
 
-      <button 
-        type="button" 
-        id="addAgentLine" 
-        className="btn btn-sm btn-outline-secondary" 
+      <button
+        type="button"
+        id="addAgentLine"
+        className="btn btn-sm btn-outline-secondary"
         onClick={addAgent}
       >
         Add Another Agent
       </button>
 
       <div className="text-end mt-3">
-        <button 
-          type="button" 
-          className="btn btn-success" 
+        <button
+          type="button"
+          className="btn btn-success"
           onClick={onSaveAgentAllocations}
         >
           Save Allocation

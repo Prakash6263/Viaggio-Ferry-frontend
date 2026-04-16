@@ -375,60 +375,36 @@ export default function AddRulePage() {
         return;
       }
 
-      // Build service details according to API spec
-      // For passenger: create entries for each combination of cabin and selected passenger type
-      // passengerTypes now stores IDs directly from the dropdown
+      // Build service details: pair cabinId[i] with payloadTypeId[i] (1-to-1, not cartesian product)
+      // If user selects 1 cabin + 1 type → 1 entry. If 2 cabins + 2 types → 2 entries.
       const passengerEntries = [];
       if (passenger) {
         const validCabins = passengerCabins.filter(cabinId => cabinId);
         const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
-        
-        // Case 1: Both cabins and passenger types are selected
-        if (validCabins.length > 0 && validPassengerTypeIds.length > 0) {
-          // For each cabin and passenger type combination, create an entry
-          validCabins.forEach(cabinId => {
-            validPassengerTypeIds.forEach(payloadTypeId => {
-              passengerEntries.push({
-                payloadTypeId: payloadTypeId,
-                cabinId: cabinId
-              });
-            });
-          });
-        }
-        // Case 2: Only cabins selected (no passenger types)
-        else if (validCabins.length > 0 && validPassengerTypeIds.length === 0) {
-          validCabins.forEach(cabinId => {
+        const maxLen = Math.max(validCabins.length, validPassengerTypeIds.length);
+
+        if (maxLen > 0) {
+          for (let i = 0; i < maxLen; i++) {
             passengerEntries.push({
-              payloadTypeId: null,
-              cabinId: cabinId
+              cabinId: validCabins[i] || null,
+              payloadTypeId: validPassengerTypeIds[i] || null,
             });
-          });
-        }
-        // Case 3: Only passenger types selected (no cabins)
-        else if (validCabins.length === 0 && validPassengerTypeIds.length > 0) {
-          validPassengerTypeIds.forEach(payloadTypeId => {
-            passengerEntries.push({
-              payloadTypeId: payloadTypeId,
-              cabinId: null
-            });
-          });
+          }
         }
       }
 
       const serviceDetails = {
         passenger: passengerEntries,
-        cargo: cargo ? cargoTypes
-          .filter(cabinId => cabinId) // Filter out empty cabin IDs
-          .map((cabinId) => ({
-            cabinId: cabinId
-          }))
-        : [],
-        vehicle: vehicle ? vehicleTypes
-          .filter(cabinId => cabinId) // Filter out empty cabin IDs
-          .map((cabinId) => ({
-            cabinId: cabinId
-          }))
-        : []
+        cargo: cargo
+          ? cargoTypes
+              .filter(cabinId => cabinId)
+              .map(cabinId => ({ cabinId }))
+          : [],
+        vehicle: vehicle
+          ? vehicleTypes
+              .filter(cabinId => cabinId)
+              .map(cabinId => ({ cabinId }))
+          : [],
       };
 
       // Build routes according to API spec - only include valid routes
