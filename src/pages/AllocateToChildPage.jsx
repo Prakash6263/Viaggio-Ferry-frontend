@@ -41,9 +41,9 @@ export default function AllocateToChildPage() {
   const [editBlocks, setEditBlocks]         = useState([]);
 
   // ─── Fetch trip + allocation data ─────────────────────────────────────────
-  const fetchData = async () => {
+  const fetchData = async (isRefetch = false) => {
     try {
-      setPageLoading(true);
+      if (!isRefetch) setPageLoading(true);
       setPageError(null);
       const [allocRes, agentsRes] = await Promise.all([
         allocationApi.getMyTrips(1, 100),
@@ -66,8 +66,10 @@ export default function AllocateToChildPage() {
     } catch (err) {
       setPageError(err.message);
     } finally {
-      setPageLoading(false);
-      setAgentsLoading(false);
+      if (!isRefetch) {
+        setPageLoading(false);
+        setAgentsLoading(false);
+      }
     }
   };
 
@@ -213,12 +215,14 @@ export default function AllocateToChildPage() {
         text: "Seats have been successfully allocated to the child agent.",
         timer: 2000,
         showConfirmButton: false,
+      }).then(() => {
+        setSelectedAgent("");
+        setAddBlocks([{ type: availableTypes[0] || "", cabinValues: {} }]);
+        // Dispatch event for all allocation pages to re-fetch
+        window.dispatchEvent(new CustomEvent("allocationDataChanged"));
+        fetchChildAllocations();
+        fetchData(true);
       });
-      setSelectedAgent("");
-      setAddBlocks([{ type: availableTypes[0] || "", cabinValues: {} }]);
-      // Dispatch event for all allocation pages to re-fetch
-      window.dispatchEvent(new CustomEvent("allocationDataChanged"));
-      await fetchChildAllocations();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     } finally {
@@ -306,18 +310,17 @@ export default function AllocateToChildPage() {
     try {
       setIsSaving(true);
       await allocationApi.updateAllocation(editingAlloc._id, payload);
-      Swal.fire({ icon: "success", title: "Updated", text: "Allocation updated successfully.", timer: 2000, showConfirmButton: false });
-      setEditingAlloc(null);
-      setEditBlocks([]);
-      
-      // Dispatch event for all allocation pages to re-fetch
-      window.dispatchEvent(new CustomEvent("allocationDataChanged"));
-      
-      // Refetch child allocations and related data
-      await Promise.all([
-        fetchChildAllocations(),
-        fetchData()
-      ]);
+      Swal.fire({ icon: "success", title: "Updated", text: "Allocation updated successfully.", timer: 2000, showConfirmButton: false }).then(() => {
+        setEditingAlloc(null);
+        setEditBlocks([]);
+        
+        // Dispatch event for all allocation pages to re-fetch
+        window.dispatchEvent(new CustomEvent("allocationDataChanged"));
+        
+        // Refetch child allocations and related data
+        fetchChildAllocations();
+        fetchData(true);
+      });
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     } finally {
@@ -344,10 +347,14 @@ export default function AllocateToChildPage() {
     if (!result.isConfirmed) return;
     try {
       await allocationApi.deleteAllocation(allocationObjectId);
-      setChildAllocations((prev) => prev.filter((a) => a._id !== allocationObjectId));
-      Swal.fire({ icon: "success", title: "Deleted", text: "Allocation deleted successfully.", timer: 2000, showConfirmButton: false });
-      // Dispatch event for all allocation pages to re-fetch
-      window.dispatchEvent(new CustomEvent("allocationDataChanged"));
+      
+      Swal.fire({ icon: "success", title: "Deleted", text: "Allocation deleted successfully.", timer: 2000, showConfirmButton: false }).then(() => {
+        setChildAllocations((prev) => prev.filter((a) => a._id !== allocationObjectId));
+        // Dispatch event for all allocation pages to re-fetch
+        window.dispatchEvent(new CustomEvent("allocationDataChanged"));
+        fetchChildAllocations();
+        fetchData(true);
+      });
     } catch (err) {
       Swal.fire({ icon: "error", title: "Error", text: err.message });
     }
