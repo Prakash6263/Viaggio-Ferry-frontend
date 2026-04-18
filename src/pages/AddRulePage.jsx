@@ -66,14 +66,15 @@ const normalizeLayerValue = (layer) => {
 // If provider layer is company → applied layer is "Marine Agent"
 // If provider layer is marine/marine-agent → applied layer is "Commercial Agent"
 // If provider layer is commercial/commercial-agent → applied layer is "Selling Agent"
+// If provider layer is selling/selling-agent → applied layer is "Selling Agent" (self-referential)
 const getNextApplicableLayer = (currentLayer) => {
   const layerHierarchy = {
-    "company": "Marine Agent",       // company → Marine Agent
-    "marine": "Commercial Agent",    // marine → Commercial Agent
-    "commercial": "Selling Agent",   // commercial → Selling Agent
-    "selling": null                  // No next layer for selling agent
+    "company": "Marine Agent",         // company → Marine Agent
+    "marine": "Commercial Agent",      // marine → Commercial Agent
+    "commercial": "Selling Agent",     // commercial → Selling Agent
+    "selling": "Selling Agent",        // selling agent → Selling Agent (self)
   }
-  
+
   const normalizedLayer = normalizeLayerValue(currentLayer)
   return layerHierarchy[normalizedLayer] || null
 }
@@ -103,7 +104,7 @@ export default function AddRulePage() {
 
         // Get layer from token for all cases
         const tokenLayer = getLayerFromToken();
-        
+
         if (loginRole === "user") {
           // For user login: Get company name from user's company object and user's layer
           const response = await usersApi.getCurrentProfile();
@@ -115,10 +116,18 @@ export default function AddRulePage() {
 
             setProvider(providerName);
             setProviderLayer(userLayer);
-            
+
             // Set applied layer to next applicable layer based on provider layer
             const nextLayer = getNextApplicableLayer(userLayer);
-            setAppliedLayer(nextLayer || userLayer);
+            // Fall back to the canonical backend enum value based on normalized layer
+            const normalizedLayerStr = normalizeLayerValue(userLayer);
+            const canonicalFallback = {
+              "company": "Company",
+              "marine": "Marine Agent",
+              "commercial": "Commercial Agent",
+              "selling": "Selling Agent",
+            }[normalizedLayerStr] || "Selling Agent";
+            setAppliedLayer(nextLayer || canonicalFallback);
             setCurrentUserId(userData._id || "");
 
             console.log("[v0] User profile loaded - Provider:", providerName, "Layer:", userLayer, "Applied Layer:", nextLayer, "UserID:", userData._id);
@@ -133,7 +142,7 @@ export default function AddRulePage() {
 
             setProvider(providerName);
             setProviderLayer("company");
-            
+
             // Company layer always maps to Marine Agent
             setAppliedLayer("Marine Agent");
             setCurrentUserId(companyData._id || "");
@@ -296,222 +305,232 @@ export default function AddRulePage() {
   const removeItem = (setter, arr, idx) => setter(arr.filter((_, i) => i !== idx));
   const updateItem = (setter, arr, idx, val) => setter(arr.map((a, i) => i === idx ? val : a));
 
-    const onSave = async (e) => {
-      e.preventDefault();
+  const onSave = async (e) => {
+    e.preventDefault();
 
-      // Validation
-      if (!ruleName.trim()) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Rule Name is required",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    // Validation
+    if (!ruleName.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Rule Name is required",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      // Markup/Discount value is optional, but if provided must be greater than 0
-      if (value && value <= 0) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Rule Value must be greater than 0 if provided",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    // Markup/Discount value is optional, but if provided must be greater than 0
+    if (value && value <= 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Rule Value must be greater than 0 if provided",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      if (!effectiveDate) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Effective Date is required",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    if (!effectiveDate) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Effective Date is required",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      if (!expiryDate) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Expiry Date is required",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    if (!expiryDate) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Expiry Date is required",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      // Validate ruleType matches backend RULE_TYPES
-      const validRuleTypes = ["Markup", "Discount"];
-      if (!ruleType || !validRuleTypes.includes(ruleType)) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Rule Type must be Markup or Discount",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    // Validate ruleType matches backend RULE_TYPES
+    const validRuleTypes = ["Markup", "Discount"];
+    if (!ruleType || !validRuleTypes.includes(ruleType)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Rule Type must be Markup or Discount",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      // Validate appliedLayer matches backend APPLIED_LAYERS enum
-      const validAppliedLayers = ["Company", "Marine Agent", "Commercial Agent", "Selling Agent"];
-      if (!appliedLayer || !validAppliedLayers.includes(appliedLayer)) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Applied Layer is invalid",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    // Validate appliedLayer matches backend APPLIED_LAYERS enum
+    const validAppliedLayers = ["Company", "Marine Agent", "Commercial Agent", "Selling Agent"];
+    if (!appliedLayer || !validAppliedLayers.includes(appliedLayer)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Applied Layer is invalid",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      if (!passenger && !cargo && !vehicle) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Select at least one Service Type",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
+    if (!passenger && !cargo && !vehicle) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Select at least one Service Type",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
 
-      // Build service details: pair cabinId[i] with payloadTypeId[i] (1-to-1, not cartesian product)
-      // If user selects 1 cabin + 1 type → 1 entry. If 2 cabins + 2 types → 2 entries.
-      const passengerEntries = [];
-      if (passenger) {
-        const validCabins = passengerCabins.filter(cabinId => cabinId);
-        const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
-        const maxLen = Math.max(validCabins.length, validPassengerTypeIds.length);
+    // Build service details: pair cabinId[i] with payloadTypeId[i] (1-to-1, not cartesian product)
+    // If user selects 1 cabin + 1 type → 1 entry. If 2 cabins + 2 types → 2 entries.
+    const passengerEntries = [];
+    if (passenger) {
+      const validCabins = passengerCabins.filter(cabinId => cabinId);
+      const validPassengerTypeIds = passengerTypes.filter(typeId => typeId);
+      const maxLen = Math.max(validCabins.length, validPassengerTypeIds.length);
 
-        if (maxLen > 0) {
-          for (let i = 0; i < maxLen; i++) {
-            passengerEntries.push({
-              cabinId: validCabins[i] || null,
-              payloadTypeId: validPassengerTypeIds[i] || null,
-            });
-          }
-        }
-      }
-
-      const serviceDetails = {
-        passenger: passengerEntries,
-        cargo: cargo
-          ? cargoTypes
-              .filter(cabinId => cabinId)
-              .map(cabinId => ({ cabinId }))
-          : [],
-        vehicle: vehicle
-          ? vehicleTypes
-              .filter(cabinId => cabinId)
-              .map(cabinId => ({ cabinId }))
-          : [],
-      };
-
-      // Build routes according to API spec - only include valid routes
-      const routesData = routes
-        .filter(route => route.from && route.to)
-        .map((route) => {
-          const fromPort = ports.find(p => p.name === route.from);
-          const toPort = ports.find(p => p.name === route.to);
-          return {
-            routeFrom: fromPort?._id || "",
-            routeTo: toPort?._id || ""
-          };
-        });
-
-// Get providerId from token agent
-const agentId = getAgentIdFromToken();
-
-// if (!agentId) {
-//   Swal.fire({
-//     icon: "warning",
-//     title: "Error",
-//     text: "Agent ID not found in token. Please login again.",
-//     confirmButtonColor: "#17a2b8"
-//   });
-//   return;
-// }
-
-const providerId = agentId;
-      
-      // Determine providerType based on login role
-      let providerType = "Company";
-      if (loginRole === "partner") {
-        providerType = "Partner";
-      }
-
-      // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
-      const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
-      
-      if (!["percentage", "fixed"].includes(convertedValueType)) {
-        Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Value Type must be percentage or fixed",
-          confirmButtonColor: "#17a2b8"
-        });
-        return;
-      }
-
-      // Build payload according to API spec and backend model
-      const payload = {
-        ruleName,
-        provider: providerId,
-        providerType,
-        appliedLayer,
-        partnerScope: partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner",
-        ruleType,
-        ruleValue: parseInt(value) || null,
-        valueType: convertedValueType,
-        serviceDetails,
-        routes: routesData,
-        effectiveDate: new Date(effectiveDate).toISOString(),
-        expiryDate: new Date(expiryDate).toISOString(),
-        priority: parseInt(priority),
-        status: "Active"
-      };
-      
-      // Add optional fields only if they have values
-      if (visaType) {
-        payload.visaType = visaType;
-      }
-
-      // Add partner ID only if partnerScope is SpecificPartner
-      if (partnerSelection !== "All Child Partners") {
-        const selectedPartner = childPartners.find(p => p.name === partnerSelection);
-        if (selectedPartner) {
-          payload.partner = selectedPartner._id;
-        }
-      }
-
-      console.log("[v0] Submitting markup/discount rule:", payload);
-
-      try {
-        setIsSubmitting(true);
-        const response = await markupDiscountApi.createRule(payload);
-
-        if (response.success || response.data) {
-          Swal.fire({
-            icon: "success",
-            title: "Success!",
-            text: response.message || "Markup/Discount rule created successfully",
-            confirmButtonColor: "#17a2b8"
-          }).then(() => {
-            window.location.href = "/company/markup";
+      if (maxLen > 0) {
+        for (let i = 0; i < maxLen; i++) {
+          passengerEntries.push({
+            cabinId: validCabins[i] || null,
+            payloadTypeId: validPassengerTypeIds[i] || null,
           });
         }
-      } catch (error) {
-        console.error("[v0] Error creating rule:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.message || "Failed to create rule. Please try again.",
-          confirmButtonColor: "#17a2b8"
-        });
-      } finally {
-        setIsSubmitting(false);
       }
+    }
+
+    const serviceDetails = {
+      passenger: passengerEntries,
+      cargo: cargo
+        ? cargoTypes
+          .filter(cabinId => cabinId)
+          .map(cabinId => ({ cabinId }))
+        : [],
+      vehicle: vehicle
+        ? vehicleTypes
+          .filter(cabinId => cabinId)
+          .map(cabinId => ({ cabinId }))
+        : [],
     };
+
+    // Build routes according to API spec - only include valid routes
+    const routesData = routes
+      .filter(route => route.from && route.to)
+      .map((route) => {
+        const fromPort = ports.find(p => p.name === route.from);
+        const toPort = ports.find(p => p.name === route.to);
+        return {
+          routeFrom: fromPort?._id || "",
+          routeTo: toPort?._id || ""
+        };
+      });
+
+    // Get providerId from token agent
+    const agentId = getAgentIdFromToken();
+
+    // if (!agentId) {
+    //   Swal.fire({
+    //     icon: "warning",
+    //     title: "Error",
+    //     text: "Agent ID not found in token. Please login again.",
+    //     confirmButtonColor: "#17a2b8"
+    //   });
+    //   return;
+    // }
+
+    const providerId = agentId;
+
+    // Determine providerType based on provider layer:
+    // Only "company" layer is a Company — all agent layers (marine, commercial, selling) are Partners
+    const normalizedProviderLayer = normalizeLayerValue(providerLayer);
+    let providerType = normalizedProviderLayer === "company" ? "Company" : "Partner";
+
+    // Convert valueType to match backend VALUE_TYPES ["percentage", "fixed"]
+    const convertedValueType = valueType === "%" ? "percentage" : valueType === "Fixed" ? "fixed" : valueType.toLowerCase();
+
+    if (!["percentage", "fixed"].includes(convertedValueType)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Value Type must be percentage or fixed",
+        confirmButtonColor: "#17a2b8"
+      });
+      return;
+    }
+
+    // Determine if current user is a selling agent
+    const isSelling = normalizeLayerValue(providerLayer) === "selling";
+
+    // Build payload according to API spec and backend model
+    const payload = {
+      ruleName,
+      provider: providerId,
+      providerType,
+      appliedLayer,
+      // Selling agents always target themselves (SpecificPartner); others use dropdown selection
+      partnerScope: isSelling ? "SpecificPartner" : (partnerSelection === "All Child Partners" ? "AllChildPartners" : "SpecificPartner"),
+      ruleType,
+      ruleValue: value !== "" && value !== undefined ? (parseFloat(value) || 0) : 0,
+      valueType: convertedValueType,
+      serviceDetails,
+      routes: routesData,
+      effectiveDate: new Date(effectiveDate).toISOString(),
+      expiryDate: new Date(expiryDate).toISOString(),
+      priority: parseInt(priority),
+      status: "Active"
+    };
+
+    // Add optional fields only if they have values
+    if (visaType) {
+      payload.visaType = visaType;
+    }
+
+    // Partner field logic:
+    // - Selling Agent: always send their own agentId as partner (SpecificPartner)
+    // - Others: send selected child partner ID if SpecificPartner scope
+    if (isSelling) {
+      const agentIdForPartner = getAgentIdFromToken();
+      if (agentIdForPartner) {
+        payload.partner = agentIdForPartner;
+      }
+    } else if (partnerSelection !== "All Child Partners") {
+      const selectedPartner = childPartners.find(p => p.name === partnerSelection);
+      if (selectedPartner) {
+        payload.partner = selectedPartner._id;
+      }
+    }
+
+    console.log("[v0] Submitting markup/discount rule:", payload);
+
+    try {
+      setIsSubmitting(true);
+      const response = await markupDiscountApi.createRule(payload);
+
+      if (response.success || response.data) {
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: response.message || "Markup/Discount rule created successfully",
+          confirmButtonColor: "#17a2b8"
+        }).then(() => {
+          window.location.href = "/company/markup";
+        });
+      }
+    } catch (error) {
+      console.error("[v0] Error creating rule:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to create rule. Please try again.",
+        confirmButtonColor: "#17a2b8"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="main-wrapper">
@@ -557,13 +576,13 @@ const providerId = agentId;
                 </div>
 
                 <div className="row g-3 mb-3">
-                  <div className="col-md-6">
+                  <div className={normalizeLayerValue(providerLayer) === "selling" ? "col-md-12" : "col-md-6"}>
                     <label className="form-label">Applied Layer <span style={{ color: "red" }}>*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      value={appliedLayer} 
-                      readOnly 
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={appliedLayer}
+                      readOnly
                       disabled
                       style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
                     />
@@ -571,22 +590,24 @@ const providerId = agentId;
                       Automatically determined based on provider layer: {providerLayer}
                     </small>
                   </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Partner <span style={{ color: "red" }}>*</span></label>
-                    <select
-                      className="form-select"
-                      value={partnerSelection}
-                      onChange={e => setPartnerSelection(e.target.value)}
-                      disabled={loadingPartners}
-                    >
-                      <option value="All Child Partners">All Child Partners</option>
-                      {childPartners && childPartners.map((partner) => (
-                        <option key={partner._id} value={partner.name}>
-                          {partner.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {normalizeLayerValue(providerLayer) !== "selling" && (
+                    <div className="col-md-6">
+                      <label className="form-label">Partner <span style={{ color: "red" }}>*</span></label>
+                      <select
+                        className="form-select"
+                        value={partnerSelection}
+                        onChange={e => setPartnerSelection(e.target.value)}
+                        disabled={loadingPartners}
+                      >
+                        <option value="All Child Partners">All Child Partners</option>
+                        {childPartners && childPartners.map((partner) => (
+                          <option key={partner._id} value={partner.name}>
+                            {partner.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
 
@@ -768,8 +789,8 @@ const providerId = agentId;
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Effective Date <span style={{ color: "red" }}>*</span></label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       className="form-control"
                       value={effectiveDate}
                       onChange={e => setEffectiveDate(e.target.value)}
@@ -780,8 +801,8 @@ const providerId = agentId;
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
                     <label className="form-label">Expiry Date <span style={{ color: "red" }}>*</span></label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       className="form-control"
                       value={expiryDate}
                       onChange={e => setExpiryDate(e.target.value)}
