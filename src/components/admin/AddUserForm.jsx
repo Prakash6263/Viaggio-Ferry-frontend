@@ -386,9 +386,11 @@ export default function AddUserForm() {
                 <option value="">Select</option>
                 {!partnersLoading && (
                   <>
-                    <optgroup label="Company">
-                      <option value="company">{currentCompany?.companyName || "Current Company"}</option>
-                    </optgroup>
+                    {(!currentCompany?.layer || currentCompany.layer.toLowerCase() === "company") && (
+                      <optgroup label="Company">
+                        <option value="company">{currentCompany?.companyName || "Current Company"}</option>
+                      </optgroup>
+                    )}
 
                     {partnersByLayer["marine-agent"] && partnersByLayer["marine-agent"].length > 0 && (
                       <optgroup label="Marine Agent">
